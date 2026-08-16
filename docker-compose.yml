@@ -16,7 +16,7 @@ services:
       # a DB GUI tool (e.g. TablePlus/DBeaver) from your dev machine for
       # debugging. Remove this if you want the DB reachable only from
       # other containers.
-      - "5432:5432"
+      - "5433:5432"
 
   backend:
     build:
@@ -30,7 +30,7 @@ services:
       DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB}
       JWT_SECRET: ${JWT_SECRET}
     ports:
-      - "8000:8000"
+      - "8001:8000"
     volumes:
       # Mounts your local ./backend/app into the container, so code edits
       # show up immediately (paired with --reload in the Dockerfile CMD).
