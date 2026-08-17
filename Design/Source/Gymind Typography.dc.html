@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600;700&family=Sora:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e7e2;font-family:Space Grotesk,system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#1b5fb0}
+.dv-turn{padding:40px 44px 32px;border-bottom:1px solid rgba(0,0,0,.08)}
+.dv-thd{display:flex;align-items:baseline;gap:10px;margin:0 0 20px}
+.dv-tid{font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px;text-decoration:none}
+.dv-tname{font:600 13px/1.2 system-ui,sans-serif;color:#1a1a1a}
+.dv-opts{display:flex;flex-wrap:wrap;gap:28px;align-items:flex-start}
+.dv-opt{flex:none;display:flex;flex-direction:column;gap:9px;scroll-margin-top:16px}
+.dv-oid{font:600 10.5px ui-monospace,Menlo,monospace;padding:3px 7px;background:rgba(0,0,0,.08);color:#1a1a1a;border-radius:5px;text-decoration:none}
+.dv-olabel{display:flex;align-items:baseline;gap:8px;font:400 11px/1.3 system-ui,sans-serif;color:rgba(0,0,0,.55)}
+.dv-opt:target .dv-oid{background:#2a78d6;color:#fff}
+.dv-next{margin:22px 0 0;font:12px/1.5 system-ui,sans-serif;color:rgba(0,0,0,.5)}
+.dv-spec{font:400 10.5px/1.6 ui-monospace,Menlo,monospace;color:rgba(0,0,0,.5);max-width:376px}
+</style></helmet>
+
+<section class="dv-turn" id="t6">
+<div class="dv-thd"><a class="dv-tid" href="#t6">6</a><span class="dv-tname">Two small layout refinements — exercise card (Signal, dark)</span></div>
+<div class="dv-opts">
+
+<div class="dv-opt" id="6a">
+<div class="dv-olabel"><a class="dv-oid" href="#6a">6a</a>Stacked fields — bigger tap targets, labeled inputs</div>
+<div style="width:340px;background:#0A0F1A;border-radius:20px;padding:16px;font-family:Space Grotesk,sans-serif;color:#F0F3F8">
+<div style="background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:16px;overflow:hidden">
+<div style="padding:15px 16px 13px;display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:600 16px Space Grotesk;letter-spacing:-.01em">Barbell Bench Press</div><div style="font:400 11px JetBrains Mono,monospace;color:rgba(240,243,248,.42);margin-top:7px">PREV 185×8·8·7 · TGT 190</div></div>
+<div style="font:500 10.5px JetBrains Mono,monospace;color:#7ED8FF;background:rgba(63,196,255,.18);border-radius:6px;padding:4px 7px">3/4</div></div>
+<div style="padding:0 16px 8px;display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:18px;font:500 11px JetBrains Mono,monospace;color:rgba(240,243,248,.42)">01</span><span style="flex:1;background:rgba(255,255,255,.045);border-radius:10px;padding:11px 13px;font:500 14px JetBrains Mono,monospace;color:rgba(240,243,248,.72)">185 lb × 8</span><span style="width:28px;height:28px;border-radius:50%;background:rgba(63,196,255,.18);color:#7ED8FF;display:flex;align-items:center;justify-content:center;font:600 13px Space Grotesk">✓</span></div>
+<div style="background:rgba(63,196,255,.06);border:1.5px solid #3FC4FF;border-radius:12px;padding:12px 13px">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:600 11px JetBrains Mono,monospace;color:#7ED8FF">SET 03</span><span style="font:400 10px JetBrains Mono,monospace;color:rgba(240,243,248,.42)">TARGET 190 × 8</span></div>
+<div style="display:flex;gap:10px;margin-top:11px">
+<div style="flex:1"><div style="font:500 9px JetBrains Mono,monospace;letter-spacing:.1em;color:rgba(240,243,248,.42)">WEIGHT (LB)</div><div style="background:#0A0F1A;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;margin-top:6px;font:600 20px JetBrains Mono,monospace">190</div></div>
+<div style="flex:1"><div style="font:500 9px JetBrains Mono,monospace;letter-spacing:.1em;color:rgba(240,243,248,.42)">REPS</div><div style="background:#0A0F1A;border:1px solid rgba(255,255,255,.14);border-radius:10px;padding:10px 12px;margin-top:6px;font:600 20px JetBrains Mono,monospace">8</div></div>
+<div style="width:56px;display:flex;flex-direction:column;justify-content:flex-end"><div style="background:#3FC4FF;color:#001622;border-radius:10px;text-align:center;padding:0;height:44px;display:flex;align-items:center;justify-content:center;font:700 15px Space Grotesk">✓</div></div>
+</div></div>
+</div>
+<div style="display:flex;gap:1px;background:rgba(255,255,255,.07);margin-top:8px">
+<div style="flex:1;background:#131B2B;text-align:center;padding:13px 0;font:500 11.5px JetBrains Mono,monospace;color:rgba(240,243,248,.72)">+ SET</div>
+<div style="flex:1;background:#131B2B;text-align:center;padding:13px 0;font:500 11.5px JetBrains Mono,monospace;color:#7ED8FF">REST 2:00</div>
+<div style="flex:1;background:#131B2B;text-align:center;padding:13px 0;font:500 11.5px JetBrains Mono,monospace;color:rgba(240,243,248,.72)">NOTE</div></div>
+</div></div>
+<div class="dv-spec">Active set expands to labeled 44px inputs + inline log button.<br>Slower per-set, far fewer mis-taps. Better for the "balanced" logging you picked.</div>
+</div>
+
+<div class="dv-opt" id="6b">
+<div class="dv-olabel"><a class="dv-oid" href="#6b">6b</a>Softer cards — 20px radii, hairline top-accent, pill buttons</div>
+<div style="width:340px;background:#0A0F1A;border-radius:20px;padding:16px;font-family:Space Grotesk,sans-serif;color:#F0F3F8">
+<div style="background:#131B2B;border-radius:20px;overflow:hidden;box-shadow:0 6px 20px rgba(0,0,0,.35)">
+<div style="height:3px;background:linear-gradient(90deg,#3FC4FF,rgba(63,196,255,0))"></div>
+<div style="padding:15px 17px 13px;display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:600 16px Space Grotesk;letter-spacing:-.01em">Barbell Bench Press</div><div style="font:400 11px JetBrains Mono,monospace;color:rgba(240,243,248,.42);margin-top:7px">PREV 185×8·8·7 · TGT 190</div></div>
+<div style="font:500 10.5px JetBrains Mono,monospace;color:#7ED8FF;background:rgba(63,196,255,.18);border-radius:20px;padding:5px 10px">3/4</div></div>
+<div style="padding:0 17px 14px;display:flex;flex-direction:column;gap:7px">
+<div style="display:flex;align-items:center;gap:10px"><span style="width:18px;font:500 11px JetBrains Mono,monospace;color:rgba(240,243,248,.42)">01</span><span style="flex:1;background:rgba(255,255,255,.045);border-radius:12px;padding:10px 13px;font:500 14px JetBrains Mono,monospace;color:rgba(240,243,248,.72)">185 lb × 8</span><span style="width:26px;height:26px;border-radius:50%;background:rgba(63,196,255,.18);color:#7ED8FF;display:flex;align-items:center;justify-content:center;font:600 12px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:18px;font:500 11px JetBrains Mono,monospace;color:#7ED8FF">03</span><span style="flex:1;display:flex;gap:7px"><span style="flex:1;background:#0A0F1A;border:1.5px solid #3FC4FF;border-radius:12px;padding:9px 13px;font:500 15px JetBrains Mono,monospace">190 <span style="font-size:11px;color:rgba(240,243,248,.45)">lb</span></span><span style="width:76px;background:#0A0F1A;border:1px solid rgba(255,255,255,.14);border-radius:12px;padding:9px 13px;font:500 15px JetBrains Mono,monospace">8 <span style="font-size:11px;color:rgba(240,243,248,.45)">rp</span></span></span><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);display:block"></span></div>
+</div>
+<div style="padding:0 17px 16px;display:flex;gap:8px">
+<div style="flex:1;background:rgba(255,255,255,.06);border-radius:20px;text-align:center;padding:11px 0;font:500 12px Space Grotesk">+ Add set</div>
+<div style="flex:1;background:rgba(63,196,255,.16);color:#7ED8FF;border-radius:20px;text-align:center;padding:11px 0;font:600 12px Space Grotesk">Rest 2:00</div></div>
+</div></div>
+<div class="dv-spec">Rounder radii, gradient accent hairline, pill secondary buttons.<br>Warmer than the current hard-edged card; keeps the same data density.</div>
+</div>
+
+</div>
+<p class="dv-next">Try next: "use <a class="dv-oid" href="#6a">6a</a>'s stacked fields everywhere" · "keep the current card but pill buttons like <a class="dv-oid" href="#6b">6b</a>" · "build all screens now"</p>
+</section>
+
+<section class="dv-turn" id="t5">
+<div class="dv-thd"><a class="dv-tid" href="#t5">5</a><span class="dv-tname">Three font pairings × two accents — workout logging, dark, layout &amp; colors fixed</span></div>
+<div class="dv-opts">
+<sc-for list="{{ variants }}" as="v" hint-placeholder-count="6">
+<div class="dv-opt" id="{{ v.id }}">
+<div class="dv-olabel"><a class="dv-oid" href="{{ v.href }}">{{ v.id }}</a>{{ v.label }}</div>
+<div style="width:376px;border-radius:26px;overflow:hidden;border:1px solid rgba(255,255,255,.1);background:#0A0F1A;color:#F0F3F8;font-family:{{ v.fBody }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;font:500 12px {{ v.fData }};color:rgba(240,243,248,.55)"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:14px 20px 0">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:{{ v.acc }};display:block"></span><span style="font:600 10.5px {{ v.fData }};letter-spacing:.14em;color:{{ v.accText }}">SESSION LIVE</span></div>
+<span style="font:400 11px {{ v.fData }};color:rgba(240,243,248,.42)">W4 · D1</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px">
+<div style="font:700 26px/1.1 {{ v.fDisplay }};letter-spacing:{{ v.dispLs }}">Push Day A</div>
+<div style="font:{{ v.numW }} 30px/1 {{ v.fData }};letter-spacing:-.04em;font-variant-numeric:tabular-nums">42:16</div></div>
+<div style="display:flex;gap:8px;margin-top:18px">
+<div style="flex:1;background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ v.fData }};letter-spacing:.1em;color:rgba(240,243,248,.42)">VOLUME</div><div style="font:{{ v.numW }} 18px/1 {{ v.fData }};margin-top:8px;font-variant-numeric:tabular-nums">8240</div></div>
+<div style="flex:1;background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ v.fData }};letter-spacing:.1em;color:rgba(240,243,248,.42)">SETS</div><div style="font:{{ v.numW }} 18px/1 {{ v.fData }};margin-top:8px;font-variant-numeric:tabular-nums">11<span style="color:rgba(240,243,248,.4)">/14</span></div></div>
+<div style="flex:1;background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ v.fData }};letter-spacing:.1em;color:rgba(240,243,248,.42)">e1RM</div><div style="font:{{ v.numW }} 18px/1 {{ v.fData }};margin-top:8px;color:{{ v.accText }};font-variant-numeric:tabular-nums">238</div></div></div></div>
+<div style="padding:18px 20px 0">
+<div style="background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:16px;overflow:hidden">
+<div style="padding:14px 15px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:600 16px/1.2 {{ v.fDisplay }};letter-spacing:{{ v.dispLs }}">Barbell Bench Press</div><div style="font:400 11px {{ v.fData }};color:rgba(240,243,248,.42);margin-top:7px">PREV 185×8·8·7 · TGT 190</div></div>
+<div style="font:500 10.5px {{ v.fData }};color:{{ v.accText }};background:{{ v.accSoft }};border-radius:6px;padding:4px 7px">3/4</div></div>
+<div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ v.fData }};color:rgba(240,243,248,.42)">01</span><span style="flex:1;background:rgba(255,255,255,.045);border-radius:9px;padding:9px 12px;font:500 14px {{ v.fData }};color:rgba(240,243,248,.72)">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ v.accSoft }};color:{{ v.accText }};display:flex;align-items:center;justify-content:center;font:600 12px {{ v.fDisplay }}">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ v.fData }};color:rgba(240,243,248,.42)">02</span><span style="flex:1;background:rgba(255,255,255,.045);border-radius:9px;padding:9px 12px;font:500 14px {{ v.fData }};color:rgba(240,243,248,.72)">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ v.accSoft }};color:{{ v.accText }};display:flex;align-items:center;justify-content:center;font:600 12px {{ v.fDisplay }}">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ v.fData }};color:{{ v.accText }}">03</span><span style="flex:1;display:flex;gap:7px"><span style="flex:1;background:#0A0F1A;border:1.5px solid {{ v.acc }};border-radius:9px;padding:8px 11px;font:500 15px {{ v.fData }}">190 <span style="font-size:11px;color:rgba(240,243,248,.45)">lb</span></span><span style="width:78px;background:#0A0F1A;border:1px solid rgba(255,255,255,.14);border-radius:9px;padding:8px 11px;font:500 15px {{ v.fData }}">8 <span style="font-size:11px;color:rgba(240,243,248,.45)">rp</span></span></span><span style="width:25px;height:25px;border-radius:50%;border:1.5px solid rgba(255,255,255,.2);display:block"></span></div>
+<div style="display:flex;align-items:center;gap:9px;opacity:.35"><span style="width:20px;font:500 11px {{ v.fData }}">04</span><span style="flex:1;padding:9px 12px;font:500 14px {{ v.fData }}">190 lb &nbsp;×&nbsp; 8</span><span style="width:25px"></span></div></div>
+<div style="display:flex;gap:1px;background:rgba(255,255,255,.07)">
+<div style="flex:1;background:#131B2B;text-align:center;padding:12px 0;font:500 11.5px {{ v.fData }};color:rgba(240,243,248,.72)">+ SET</div>
+<div style="flex:1;background:#131B2B;text-align:center;padding:12px 0;font:500 11.5px {{ v.fData }};color:{{ v.accText }}">REST 2:00</div>
+<div style="flex:1;background:#131B2B;text-align:center;padding:12px 0;font:500 11.5px {{ v.fData }};color:rgba(240,243,248,.72)">NOTE</div></div></div>
+<div style="background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:14px;padding:14px 15px;margin-top:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font:600 15px {{ v.fDisplay }};color:rgba(240,243,248,.72)">Incline DB Press</div><div style="font:400 11px {{ v.fData }};color:rgba(240,243,248,.42);margin-top:6px">QUEUED · 3 SETS</div></div><span style="color:rgba(240,243,248,.35);font-size:17px">›</span></div>
+<div style="border:1px dashed {{ v.accDash }};border-radius:14px;padding:13px;margin-top:12px;text-align:center;font:500 11.5px {{ v.fData }};letter-spacing:.06em;color:{{ v.accText }}">+ ADD EXERCISE</div></div>
+<div style="padding:20px;display:flex;gap:10px"><div style="flex:1;background:{{ v.acc }};color:{{ v.accOn }};border-radius:13px;text-align:center;padding:15px 0;font:600 14px {{ v.fDisplay }}">Finish session</div><div style="width:50px;background:#131B2B;border:1px solid rgba(255,255,255,.06);border-radius:13px;display:flex;align-items:center;justify-content:center;color:rgba(240,243,248,.72)">⋯</div></div>
+</div>
+<div class="dv-spec">{{ v.spec }}</div>
+</div>
+</sc-for>
+</div>
+<p class="dv-next">Try next: "build everything in <a class="dv-oid" href="#5a">5a</a>'s fonts" · "geometric like <a class="dv-oid" href="#5c">5c</a> but numbers stay mono" · "rounded <a class="dv-oid" href="#5e">5e</a> with the <a class="dv-oid" href="#6a">6a</a> card"</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const A = {
+  Signal:{base:'#3FC4FF',t2:'#7ED8FF',on:'#001622'},
+  Teal:  {base:'#17C3B2',t2:'#5FDBCF',on:'#02201D'},
+  Ember: {base:'#FF6B1F',t2:'#FF9A5E',on:'#170800'},
+  Amber: {base:'#FFD23F',t2:'#FFE07A',on:'#241A00'},
+  Volt:  {base:'#3FE07A',t2:'#7DEBA6',on:'#04240F'},
+  Violet:{base:'#A78BFA',t2:'#C4B2FC',on:'#170634'}
+};
+const rgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const soft = (h,a) => `rgba(${rgb(h).join(',')},${a})`;
+const MONO='"JetBrains Mono",ui-monospace,monospace';
+const GEO='"Sora",system-ui,sans-serif';
+const ROUND='"Nunito",system-ui,sans-serif';
+
+class Component extends DCLogic {
+  renderVals() {
+    const mk = (id, label, accName, fonts, spec) => {
+      const a = A[accName];
+      return {
+        id, href:'#'+id, label,
+        acc:a.base, accText:a.t2, accOn:a.on,
+        accSoft:soft(a.base,.18), accDash:soft(a.base,.4),
+        fDisplay:fonts.d, fData:fonts.n, fBody:fonts.b,
+        dispLs:fonts.ls, numW:fonts.numW, spec
+      };
+    };
+    const mono  = {d:'"Space Grotesk",sans-serif', n:MONO, b:MONO, ls:'-.01em', numW:'600'};
+    const geo   = {d:GEO, n:GEO, b:GEO, ls:'-.02em', numW:'600'};
+    const round = {d:ROUND, n:ROUND, b:ROUND, ls:'-.01em', numW:'700'};
+    return { variants: [
+      mk('5a','Mono-heavy · Signal','Signal',mono,'Space Grotesk display + JetBrains Mono everywhere. Instrument-panel; every digit tabular. Most "precise / technical".'),
+      mk('5b','Mono-heavy · Teal','Teal',mono,'Same pairing, cooler accent. The mono reads like lab telemetry — strongest data-forward feel.'),
+      mk('5c','Geometric sans · Ember','Ember',geo,'Sora throughout. Clean, modern, a touch friendlier than mono; numbers still tabular for alignment.'),
+      mk('5d','Geometric sans · Amber','Amber',geo,'Sora with a bright amber. Softer than mono without losing structure — safest all-rounder.'),
+      mk('5e','Rounded sans · Volt','Volt',round,'Nunito, heavier numeric weight. Approachable, casual-fitness; least clinical of the three.'),
+      mk('5f','Rounded sans · Violet','Violet',round,'Nunito + violet. Warmest, most consumer-app feel; watch legibility of dense stats.')
+    ]};
+  }
+}
+</script>
+</body>
+</html>

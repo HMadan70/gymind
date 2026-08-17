@@ -1,0 +1,230 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="flex:1;padding:14px 22px 0">
+<div style="font:700 24px Sora;letter-spacing:-.02em">Progress</div>
+<div style="display:flex;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:11px;padding:3px;margin-top:16px">
+<span style="flex:1;text-align:center;padding:9px 0;border-radius:8px;background:{{ c.acc }};color:{{ c.accOn }};font:600 12px Sora">4 weeks</span>
+<span style="flex:1;text-align:center;padding:9px 0;font:500 12px Sora;color:{{ c.dim }}">3 months</span>
+<span style="flex:1;text-align:center;padding:9px 0;font:500 12px Sora;color:{{ c.dim }}">1 year</span></div>
+
+<div style="margin-top:22px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:20px 20px 18px">
+<div style="display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:400 12px Sora;color:{{ c.dim }}">Body weight</div><div style="font:700 34px/1 Sora;letter-spacing:-.02em;margin-top:8px;font-variant-numeric:tabular-nums">182 <span style="font:400 15px Sora;color:{{ c.dim }}">lb</span></div></div>
+<div style="text-align:right;padding-top:4px"><div style="font:600 14px Sora;color:{{ c.accText }}">+2 lb</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">this month</div></div></div>
+<svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%;height:120px;display:block;margin-top:16px">
+<path d="{{ wt.area }}" fill="{{ c.accSoft }}" stroke="none"></path>
+<polyline points="{{ wt.pts }}" fill="none" stroke="{{ c.acc }}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font:400 10px {{ c.mono }};color:{{ c.faint }};margin-top:8px"><span>4 wk ago</span><span>Today</span></div>
+</div>
+
+<div style="margin-top:16px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:20px 20px 16px">
+<sc-if value="{{ overview }}" hint-placeholder-val="{{ true }}">
+<div style="font:400 12px Sora;color:{{ c.dim }}">Strength by muscle group</div>
+<div style="font:600 15px Sora;margin-top:4px">Back is progressing fastest <span style="color:{{ c.accText }}">+7 kg</span></div>
+<div style="display:flex;align-items:flex-end;gap:12px;height:150px;margin-top:20px">
+<sc-for list="{{ strength }}" as="s" hint-placeholder-count="5">
+<div onClick="{{ s.pick }}" style="cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">
+<span style="font:600 12px {{ c.mono }};color:{{ s.valColor }};font-variant-numeric:tabular-nums">{{ s.kg }}</span>
+<div style="width:100%;height:{{ s.barH }};background:{{ s.color }};border-radius:6px;margin-top:6px"></div>
+<span style="font:{{ s.labelWeight }} 10.5px Sora;color:{{ s.labelColor }};margin-top:8px">{{ s.name }}</span>
+<span style="font:400 9px Sora;color:{{ c.accText }};margin-top:2px">{{ s.delta }}</span></div>
+</sc-for>
+</div>
+<div style="font:400 10px Sora;color:{{ c.faint }};margin-top:10px;text-align:center">Tap a muscle group to see its exercises</div>
+</sc-if>
+<sc-if value="{{ drill }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ reset }}" style="cursor:pointer;display:flex;align-items:center;gap:6px;font:500 12px Sora;color:{{ c.accText }}"><span style="font-size:15px">‹</span> All muscle groups</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:12px">
+<div><div style="font:400 11px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">{{ groupName }}</div><div style="font:700 19px/1.15 Sora;letter-spacing:-.01em;margin-top:6px">{{ ex.name }}</div></div>
+<div style="text-align:right"><div style="font:700 24px/1 Sora;font-variant-numeric:tabular-nums">{{ ex.kg }} <span style="font:400 12px Sora;color:{{ c.dim }}">kg</span></div><div style="font:600 12px Sora;color:{{ c.accText }};margin-top:3px">{{ ex.delta }} kg</div></div></div>
+<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:14px">
+<sc-for list="{{ exOptions }}" as="o" hint-placeholder-count="3">
+<span onClick="{{ o.pick }}" style="cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};border-radius:20px;padding:8px 13px;font:{{ o.weight }} 11.5px Sora;color:{{ o.fg }}">{{ o.name }}</span>
+</sc-for>
+</div>
+<svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%;height:120px;display:block;margin-top:18px">
+<path d="{{ ex.area }}" fill="{{ c.accSoft }}" stroke="none"></path>
+<polyline points="{{ ex.pts }}" fill="none" stroke="{{ c.acc }}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font:400 10px {{ c.mono }};color:{{ c.faint }};margin-top:8px"><span>4 wk ago</span><span>Today · e1RM kg</span></div>
+</sc-if>
+</div>
+
+<div style="margin-top:18px;display:flex;align-items:center;justify-content:space-between;padding:2px 4px">
+<span style="font:400 13px Sora;color:{{ c.dim }}">Consistency</span>
+<span style="font:600 14px Sora"><span style="color:{{ c.accText }};font-variant-numeric:tabular-nums">18</span> of 28 days trained</span></div>
+<div style="height:6px;border-radius:5px;background:{{ c.inset }};margin-top:10px;overflow:hidden"><div style="width:64%;height:6px;background:{{ c.acc }};border-radius:5px"></div></div>
+<div style="height:16px"></div>
+<dc-import name="TabBar" c="{{ c }}" active="Progress" hint-size="368px,74px"></dc-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:820px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Progress" hint-size="240px,820px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:22px 34px;border-bottom:1px solid {{ c.border }}">
+<div><div style="font:700 22px/1.1 Sora;letter-spacing:-.02em">Progress</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:3px">Last 4 weeks</div></div>
+<div style="display:flex;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:10px;padding:3px"><span style="padding:8px 16px;border-radius:7px;background:{{ c.acc }};color:{{ c.accOn }};font:600 12px Sora">4 weeks</span><span style="padding:8px 16px;font:500 12px Sora;color:{{ c.dim }}">3 months</span><span style="padding:8px 16px;font:500 12px Sora;color:{{ c.dim }}">1 year</span></div></div>
+<div style="flex:1;padding:32px 40px;display:flex;flex-direction:column;gap:22px;max-width:920px;width:100%;box-sizing:border-box">
+
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:26px 28px;box-shadow:{{ c.shadow }}">
+<div style="display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:400 13px Sora;color:{{ c.dim }}">Body weight</div><div style="font:700 44px/1 Sora;letter-spacing:-.02em;margin-top:10px;font-variant-numeric:tabular-nums">182 <span style="font:400 18px Sora;color:{{ c.dim }}">lb</span></div></div>
+<div style="text-align:right"><div style="font:600 17px Sora;color:{{ c.accText }}">+2 lb</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:3px">this month · goal 185</div></div></div>
+<svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%;height:200px;display:block;margin-top:22px">
+<path d="{{ wt.area }}" fill="{{ c.accSoft }}" stroke="none"></path>
+<polyline points="{{ wt.pts }}" fill="none" stroke="{{ c.acc }}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font:400 11px {{ c.mono }};color:{{ c.faint }};margin-top:10px"><span>4 weeks ago</span><span>Today</span></div>
+</div>
+
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:26px 28px;box-shadow:{{ c.shadow }}">
+<sc-if value="{{ overview }}" hint-placeholder-val="{{ true }}">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<div><div style="font:400 13px Sora;color:{{ c.dim }}">Strength by muscle group</div><div style="font:700 20px Sora;letter-spacing:-.01em;margin-top:6px">Back is progressing fastest <span style="color:{{ c.accText }}">+7 kg</span></div></div>
+<span style="font:400 11px {{ c.mono }};color:{{ c.faint }}">tap a group · e1RM kg</span></div>
+<div style="display:flex;align-items:flex-end;gap:32px;height:230px;margin-top:26px">
+<sc-for list="{{ strength }}" as="s" hint-placeholder-count="5">
+<div onClick="{{ s.pick }}" style="cursor:pointer;flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end">
+<span style="font:600 15px {{ c.mono }};color:{{ s.valColor }};font-variant-numeric:tabular-nums">{{ s.kg }}</span>
+<div style="width:100%;max-width:80px;height:{{ s.barH }};background:{{ s.color }};border-radius:8px;margin-top:8px"></div>
+<span style="font:{{ s.labelWeight }} 13px Sora;color:{{ s.labelColor }};margin-top:12px">{{ s.name }}</span>
+<span style="font:500 11px Sora;color:{{ c.accText }};margin-top:3px">{{ s.delta }}</span></div>
+</sc-for>
+</div>
+</sc-if>
+<sc-if value="{{ drill }}" hint-placeholder-val="{{ true }}">
+<div onClick="{{ reset }}" style="cursor:pointer;display:flex;align-items:center;gap:6px;font:500 13px Sora;color:{{ c.accText }}"><span style="font-size:17px">‹</span> All muscle groups</div>
+<div style="display:flex;justify-content:space-between;align-items:flex-start;margin-top:14px">
+<div><div style="font:400 11px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }}">{{ groupName }}</div><div style="font:700 26px/1.1 Sora;letter-spacing:-.01em;margin-top:8px">{{ ex.name }}</div></div>
+<div style="text-align:right"><div style="font:700 34px/1 Sora;font-variant-numeric:tabular-nums">{{ ex.kg }} <span style="font:400 15px Sora;color:{{ c.dim }}">kg</span></div><div style="font:600 14px Sora;color:{{ c.accText }};margin-top:4px">{{ ex.delta }} kg this range</div></div></div>
+<div style="display:flex;flex-wrap:wrap;gap:10px;margin-top:18px">
+<sc-for list="{{ exOptions }}" as="o" hint-placeholder-count="3">
+<span onClick="{{ o.pick }}" style="cursor:pointer;background:{{ o.bg }};border:1px solid {{ o.border }};border-radius:20px;padding:9px 16px;font:{{ o.weight }} 12.5px Sora;color:{{ o.fg }}">{{ o.name }}</span>
+</sc-for>
+</div>
+<svg viewBox="0 0 1000 200" preserveAspectRatio="none" style="width:100%;height:200px;display:block;margin-top:22px">
+<path d="{{ ex.area }}" fill="{{ c.accSoft }}" stroke="none"></path>
+<polyline points="{{ ex.pts }}" fill="none" stroke="{{ c.acc }}" stroke-width="2.5" vector-effect="non-scaling-stroke" stroke-linejoin="round" stroke-linecap="round"></polyline>
+</svg>
+<div style="display:flex;justify-content:space-between;font:400 11px {{ c.mono }};color:{{ c.faint }};margin-top:10px"><span>4 weeks ago</span><span>Today · e1RM kg</span></div>
+</sc-if>
+</div>
+
+<div style="display:flex;align-items:center;justify-content:space-between;padding:4px 6px">
+<span style="font:400 14px Sora;color:{{ c.dim }}">Consistency</span>
+<div style="display:flex;align-items:center;gap:16px;flex:1;max-width:420px;margin-left:24px"><div style="flex:1;height:8px;border-radius:5px;background:{{ c.inset }};overflow:hidden"><div style="width:64%;height:8px;background:{{ c.acc }};border-radius:5px"></div></div><span style="font:600 15px Sora;white-space:nowrap"><span style="color:{{ c.accText }};font-variant-numeric:tabular-nums">18</span> of 28 days</span></div></div>
+
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+function buildLine(data, W, H, px, py) {
+  const min=Math.min(...data), max=Math.max(...data), rng=(max-min)||1;
+  const X=i=> px + i*(W-2*px)/(data.length-1);
+  const Y=v=> H-py - (v-min)/rng*(H-2*py);
+  const pts = data.map((v,i)=>`${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ');
+  const area = `M ${X(0).toFixed(1)},${Y(data[0]).toFixed(1)} `
+    + data.map((v,i)=>`L ${X(i).toFixed(1)},${Y(v).toFixed(1)}`).join(' ')
+    + ` L ${X(data.length-1).toFixed(1)},${(H-py).toFixed(1)} L ${X(0).toFixed(1)},${(H-py).toFixed(1)} Z`;
+  return { pts, area };
+}
+
+const GROUPS = [
+  {name:'Chest', kg:108, delta:'+2', fast:false},
+  {name:'Back', kg:184, delta:'+7', fast:true},
+  {name:'Legs', kg:143, delta:'+5', fast:false},
+  {name:'Shoulders', kg:66, delta:'+1', fast:false},
+  {name:'Arms', kg:52, delta:'+3', fast:false}
+];
+const EXERCISES = {
+  Chest: [
+    {name:'Barbell Bench Press', kg:108, delta:'+2', data:[104,104,105,105,106,107,107,108]},
+    {name:'Incline DB Press', kg:74, delta:'+3', data:[69,70,70,71,72,72,73,74]},
+    {name:'Dips', kg:95, delta:'+4', data:[88,89,90,91,92,93,94,95]}
+  ],
+  Back: [
+    {name:'Deadlift', kg:184, delta:'+7', data:[170,173,175,177,179,181,183,184]},
+    {name:'Barbell Row', kg:102, delta:'+5', data:[95,96,98,99,100,101,101,102]},
+    {name:'Pull-up', kg:42, delta:'+4', data:[36,37,38,39,40,41,41,42]}
+  ],
+  Legs: [
+    {name:'Back Squat', kg:143, delta:'+5', data:[136,137,139,140,141,142,142,143]},
+    {name:'Romanian Deadlift', kg:120, delta:'+6', data:[112,114,115,117,118,119,119,120]},
+    {name:'Leg Press', kg:250, delta:'+10', data:[236,239,242,244,246,248,249,250]}
+  ],
+  Shoulders: [
+    {name:'Overhead Press', kg:66, delta:'+1', data:[64,64,65,65,65,66,66,66]},
+    {name:'Lateral Raise', kg:22, delta:'+2', data:[19,19,20,20,21,21,22,22]},
+    {name:'Face Pull', kg:40, delta:'+2', data:[37,37,38,38,39,39,40,40]}
+  ],
+  Arms: [
+    {name:'Barbell Curl', kg:52, delta:'+3', data:[48,48,49,50,50,51,51,52]},
+    {name:'Tricep Pushdown', kg:60, delta:'+4', data:[55,56,57,58,58,59,59,60]},
+    {name:'Hammer Curl', kg:30, delta:'+2', data:[27,27,28,28,29,29,30,30]}
+  ]
+};
+
+class Component extends DCLogic {
+  state = { group:null, exercise:null, touched:false };
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const wt = buildLine([178,177.5,179,178.5,180,179.5,181,182], 1000, 200, 24, 30);
+
+    let group = this.state.group, exercise = this.state.exercise;
+    if (!this.state.touched && (this.props.demoDrill===true || this.props.demoDrill==='true')) {
+      group = 'Back'; exercise = 'Deadlift';
+    }
+    const drill = !!group;
+    const maxKg = Math.max(...GROUPS.map(g=>g.kg));
+    const strength = GROUPS.map(g=>({
+      name:g.name, kg:g.kg, delta:g.delta,
+      barH: (18 + g.kg/maxKg*82) + '%',
+      color: g.fast ? c.acc : c.accSoftStrong,
+      valColor: g.fast ? c.accText : c.dim,
+      labelColor: g.fast ? c.text : c.dim,
+      labelWeight: g.fast ? 600 : 500,
+      pick: () => this.setState({ group:g.name, exercise:EXERCISES[g.name][0].name, touched:true })
+    }));
+
+    let exOptions = [], ex = null, groupName = '';
+    if (drill) {
+      const list = EXERCISES[group] || [];
+      const chosen = list.find(e=>e.name===exercise) || list[0];
+      groupName = group.toUpperCase();
+      const line = buildLine(chosen.data, 1000, 200, 24, 30);
+      ex = { name:chosen.name, kg:chosen.kg, delta:chosen.delta, pts:line.pts, area:line.area };
+      exOptions = list.map(e=>{
+        const on = e.name===chosen.name;
+        return { name:e.name,
+          bg: on ? c.acc : c.card, border: on ? c.acc : c.border,
+          fg: on ? c.accOn : c.dim, weight: on ? 600 : 500,
+          pick: () => this.setState({ exercise:e.name, touched:true }) };
+      });
+    }
+    return {
+      m:p==='mobile', w:p==='web', c, wt, strength,
+      overview: !drill, drill, ex, exOptions, groupName,
+      reset: () => this.setState({ group:null, exercise:null, touched:true })
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,81 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }};padding:0 26px">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 0 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:14px 0 0;display:flex;align-items:center;gap:12px"><span style="font:500 22px Sora;color:{{ c.dim }}">‹</span><span style="font:500 13px Sora;color:{{ c.dim }}">Log in</span></div>
+<div style="margin-top:20px">
+<div style="width:52px;height:52px;border-radius:15px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:700 26px Sora;color:{{ c.accOn }}">G</div>
+<div style="font:700 28px/1.1 Sora;letter-spacing:-.02em;margin-top:22px">Create your account</div>
+<div style="font:400 14px/1.5 Sora;color:{{ c.dim }};margin-top:8px">Two minutes, then straight into onboarding.</div>
+</div>
+<div style="margin-top:26px;display:flex;flex-direction:column;gap:15px">
+<div style="display:flex;gap:12px">
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">FIRST NAME</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">Alex</div></div>
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">LAST NAME</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">Mercer</div></div></div>
+<div><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">EMAIL</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">alex.mercer@email.com</div></div>
+<div><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">PASSWORD</div>
+<div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;display:flex;justify-content:space-between;align-items:center"><span style="font:400 15px Sora;letter-spacing:2px">••••••••••</span><span style="font:400 12px Sora;color:{{ c.faint }}">Show</span></div>
+<div style="display:flex;gap:5px;margin-top:9px"><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span></div>
+<div style="font:400 11px Sora;color:{{ c.dim }};margin-top:7px">Strong — add a symbol for maximum strength.</div></div>
+</div>
+<div style="display:flex;align-items:flex-start;gap:10px;margin-top:20px">
+<span style="width:20px;height:20px;border-radius:6px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 12px Sora;flex:none">✓</span>
+<span style="font:400 12px/1.5 Sora;color:{{ c.dim }}">I agree to the <span style="color:{{ c.accText }};font-weight:600">Terms</span> and <span style="color:{{ c.accText }};font-weight:600">Privacy Policy</span>.</span></div>
+<div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:12px;text-align:center;padding:16px 0;font:600 15px Sora;margin-top:20px">Create account</div>
+<div style="text-align:center;padding:18px 0 30px;font:400 13px Sora;color:{{ c.dim }}">Already have an account? <span style="color:{{ c.accText }};font-weight:600">Log in</span></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:760px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<div style="width:44%;background:{{ c.bg2 }};position:relative;overflow:hidden;padding:52px;display:flex;flex-direction:column;justify-content:space-between;border-right:1px solid {{ c.border }}">
+<div style="position:absolute;inset:0;background:radial-gradient(120% 90% at 85% 20%, {{ c.accSoft }}, transparent 55%)"></div>
+<div style="position:relative;display:flex;align-items:center;gap:12px"><span style="width:38px;height:38px;border-radius:11px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:700 20px Sora;color:{{ c.accOn }}">G</span><span style="font:700 22px Sora">Gymind</span></div>
+<div style="position:relative">
+<div style="font:300 38px/1.15 Sora;letter-spacing:-.02em">Start training<br><span style="color:{{ c.accText }};font-weight:600">with intent.</span></div>
+<div style="display:flex;flex-direction:column;gap:16px;margin-top:28px;max-width:320px">
+<div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 13px Sora;flex:none">1</span><span style="font:400 13.5px Sora;color:{{ c.dim }}">Personalised plan from your goals</span></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 13px Sora;flex:none">2</span><span style="font:400 13.5px Sora;color:{{ c.dim }}">Fast set-by-set logging</span></div>
+<div style="display:flex;gap:12px;align-items:center"><span style="width:30px;height:30px;border-radius:9px;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 13px Sora;flex:none">3</span><span style="font:400 13.5px Sora;color:{{ c.dim }}">Progress you can actually see</span></div>
+</div></div>
+<div style="position:relative;font:400 12.5px Sora;color:{{ c.faint }}">© 2026 Gymind</div>
+</div>
+<div style="flex:1;display:flex;align-items:center;justify-content:center;padding:48px">
+<div style="width:100%;max-width:420px">
+<div style="font:700 28px/1.1 Sora;letter-spacing:-.02em">Create your account</div>
+<div style="font:400 14px Sora;color:{{ c.dim }};margin-top:8px">Free to start — no card required.</div>
+<div style="margin-top:26px;display:flex;flex-direction:column;gap:15px">
+<div style="display:flex;gap:14px">
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">FIRST NAME</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">Alex</div></div>
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">LAST NAME</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">Mercer</div></div></div>
+<div><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">EMAIL</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 14.5px Sora">alex.mercer@email.com</div></div>
+<div style="display:flex;gap:14px">
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">PASSWORD</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 15px Sora;letter-spacing:2px">••••••••</div></div>
+<div style="flex:1"><div style="font:500 10.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">CONFIRM</div><div style="margin-top:8px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px;font:400 15px Sora;letter-spacing:2px">••••••••</div></div></div>
+<div style="display:flex;gap:5px"><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span></div>
+</div>
+<div style="display:flex;align-items:flex-start;gap:10px;margin-top:18px"><span style="width:20px;height:20px;border-radius:6px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 12px Sora;flex:none">✓</span><span style="font:400 12px/1.5 Sora;color:{{ c.dim }}">I agree to the <span style="color:{{ c.accText }};font-weight:600">Terms</span> and <span style="color:{{ c.accText }};font-weight:600">Privacy Policy</span>.</span></div>
+<div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:12px;text-align:center;padding:15px 0;font:600 15px Sora;margin-top:20px">Create account</div>
+<div style="text-align:center;margin-top:20px;font:400 13px Sora;color:{{ c.dim }}">Already have an account? <span style="color:{{ c.accText }};font-weight:600">Log in</span></div>
+</div></div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    return { m: p==='mobile', w: p==='web', c: this.props.c || {} };
+  }
+}
+</script>
+</body>
+</html>

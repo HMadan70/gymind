@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="flex:1;padding:14px 20px 0">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:{{ c.acc }};display:block"></span><span style="font:600 10.5px {{ c.mono }};letter-spacing:.14em;color:{{ c.accText }}">SESSION LIVE</span></div>
+<span style="font:400 11px {{ c.mono }};color:{{ c.faint }}">W4 · D1</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px"><div style="font:700 26px/1.1 Sora;letter-spacing:-.025em">Push Day A</div><div style="font:500 30px/1 {{ c.mono }};letter-spacing:-.04em;font-variant-numeric:tabular-nums">42:16</div></div>
+<div style="display:flex;gap:8px;margin-top:18px">
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">VOLUME</div><div style="font:500 18px/1 {{ c.mono }};margin-top:8px;font-variant-numeric:tabular-nums">8240</div></div>
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">SETS</div><div style="font:500 18px/1 {{ c.mono }};margin-top:8px;font-variant-numeric:tabular-nums">11<span style="color:{{ c.faint }}">/14</span></div></div>
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:12px;padding:11px 13px"><div style="font:500 9.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">e1RM</div><div style="font:500 18px/1 {{ c.mono }};margin-top:8px;color:{{ c.accText }};font-variant-numeric:tabular-nums">238</div></div></div>
+<div style="margin-top:18px;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:16px;overflow:hidden">
+<div style="padding:14px 15px 12px;display:flex;justify-content:space-between;align-items:flex-start"><div><div style="font:600 16px/1.2 Sora;letter-spacing:-.01em">Barbell Bench Press</div><div style="font:400 11px {{ c.mono }};color:{{ c.faint }};margin-top:7px">PREV 185×8·8·7 · TGT 190</div></div><div style="font:500 10.5px {{ c.mono }};color:{{ c.accText }};background:{{ c.accSoft }};border-radius:6px;padding:4px 7px">3/4</div></div>
+<div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ c.mono }};color:{{ c.faint }}">01</span><span style="flex:1;background:{{ c.inset }};border-radius:9px;padding:9px 12px;font:500 14px {{ c.mono }};color:{{ c.dim }}">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ c.accSoft }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ c.mono }};color:{{ c.faint }}">02</span><span style="flex:1;background:{{ c.inset }};border-radius:9px;padding:9px 12px;font:500 14px {{ c.mono }};color:{{ c.dim }}">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ c.accSoft }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px {{ c.mono }};color:{{ c.accText }}">03</span><span style="flex:1;display:flex;gap:7px"><span style="flex:1;background:{{ c.bg }};border:1.5px solid {{ c.acc }};border-radius:9px;padding:8px 11px;font:500 15px {{ c.mono }}">190 <span style="font-size:11px;color:{{ c.faint }}">lb</span></span><span style="width:78px;background:{{ c.bg }};border:1px solid {{ c.border }};border-radius:9px;padding:8px 11px;font:500 15px {{ c.mono }}">8 <span style="font-size:11px;color:{{ c.faint }}">rp</span></span></span><span style="width:25px;height:25px;border-radius:50%;border:1.5px solid {{ c.border }};display:block"></span></div>
+<div style="display:flex;align-items:center;gap:9px;opacity:.35"><span style="width:20px;font:500 11px {{ c.mono }}">04</span><span style="flex:1;padding:9px 12px;font:500 14px {{ c.mono }}">190 lb &nbsp;×&nbsp; 8</span><span style="width:25px"></span></div></div>
+<div style="display:flex;gap:1px;background:{{ c.border }}"><div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px {{ c.mono }};color:{{ c.dim }}">+ SET</div><div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px {{ c.mono }};color:{{ c.accText }}">REST 2:00</div><div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px {{ c.mono }};color:{{ c.dim }}">NOTE</div></div></div>
+<div style="margin-top:12px;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:14px;padding:14px 15px;display:flex;justify-content:space-between;align-items:center"><div><div style="font:600 15px Sora;color:{{ c.dim }}">Incline DB Press</div><div style="font:400 11px {{ c.mono }};color:{{ c.faint }};margin-top:6px">QUEUED · 3 SETS</div></div><span style="color:{{ c.faint }};font-size:17px">›</span></div>
+<div style="margin-top:12px;border:1px dashed {{ c.accDash }};border-radius:14px;padding:13px;text-align:center;font:500 11.5px {{ c.mono }};letter-spacing:.06em;color:{{ c.accText }}">+ ADD EXERCISE</div>
+<div style="padding:18px 0 18px;display:flex;gap:10px"><div style="flex:1;background:{{ c.acc }};color:{{ c.accOn }};border-radius:13px;text-align:center;padding:15px 0;font:600 14px Sora">Finish session</div><div style="width:50px;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:13px;display:flex;align-items:center;justify-content:center;color:{{ c.dim }}">⋯</div></div>
+</div>
+<dc-import name="TabBar" c="{{ c }}" active="Workout" hint-size="368px,74px"></dc-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:900px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Workout" hint-size="240px,900px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:20px 34px;border-bottom:1px solid {{ c.border }}">
+<div style="display:flex;align-items:center;gap:14px"><span style="width:8px;height:8px;border-radius:50%;background:{{ c.acc }};display:block"></span><div><div style="font:700 20px/1.1 Sora;letter-spacing:-.02em">Push Day A</div><div style="font:400 11.5px Sora;color:{{ c.dim }};margin-top:3px">Week 4 · Day 1 · in progress</div></div></div>
+<div style="display:flex;align-items:center;gap:18px"><span style="font:500 26px {{ c.mono }};letter-spacing:-.03em;font-variant-numeric:tabular-nums">42:16</span><div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:10px;padding:11px 18px;font:600 13px Sora">Rest 2:00</div><div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:10px;padding:11px 22px;font:600 13px Sora">Finish session</div></div></div>
+<div style="flex:1;padding:26px 34px;display:flex;gap:24px">
+<div style="flex:1.7;display:flex;flex-direction:column;gap:16px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;overflow:hidden;box-shadow:{{ c.shadow }}">
+<div style="padding:16px 20px;display:flex;justify-content:space-between;align-items:flex-start;border-bottom:1px solid {{ c.border }}"><div><div style="font:600 17px Sora;letter-spacing:-.01em">Barbell Bench Press</div><div style="font:400 11.5px {{ c.mono }};color:{{ c.faint }};margin-top:6px">PREVIOUS 185×8·8·7 &nbsp;·&nbsp; TARGET 190 &nbsp;·&nbsp; e1RM 238</div></div><span style="font:500 11px {{ c.mono }};color:{{ c.accText }};background:{{ c.accSoft }};border-radius:6px;padding:5px 9px">3 / 4 SETS</span></div>
+<div style="padding:10px 20px">
+<div style="display:flex;padding:6px 0;font:500 9.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}"><span style="width:44px">SET</span><span style="flex:1">WEIGHT</span><span style="flex:1">REPS</span><span style="width:70px">RPE</span><span style="width:60px;text-align:right">DONE</span></div>
+<sc-for list="{{ sets }}" as="s" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;padding:9px 0;border-top:1px solid {{ c.border }};{{ s.rowStyle }}">
+<span style="width:44px;font:500 13px {{ c.mono }};color:{{ s.numColor }}">{{ s.n }}</span>
+<span style="flex:1;font:500 15px {{ c.mono }};color:{{ s.fg }}">{{ s.w }}</span>
+<span style="flex:1;font:500 15px {{ c.mono }};color:{{ s.fg }}">{{ s.r }}</span>
+<span style="width:70px;font:400 13px {{ c.mono }};color:{{ c.dim }}">{{ s.rpe }}</span>
+<span style="width:60px;display:flex;justify-content:flex-end"><span style="width:24px;height:24px;border-radius:50%;background:{{ s.markBg }};border:{{ s.markBorder }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">{{ s.mark }}</span></span></div>
+</sc-for>
+</div>
+<div style="display:flex;gap:1px;background:{{ c.border }};border-top:1px solid {{ c.border }}"><div style="flex:1;background:{{ c.card }};text-align:center;padding:13px 0;font:500 12px Sora;color:{{ c.dim }}">+ Add set</div><div style="flex:1;background:{{ c.card }};text-align:center;padding:13px 0;font:500 12px Sora;color:{{ c.accText }}">Start rest timer</div><div style="flex:1;background:{{ c.card }};text-align:center;padding:13px 0;font:500 12px Sora;color:{{ c.dim }}">Add note</div></div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:16px 20px;display:flex;justify-content:space-between;align-items:center"><div><div style="font:600 16px Sora;color:{{ c.dim }}">Incline Dumbbell Press</div><div style="font:400 11.5px {{ c.mono }};color:{{ c.faint }};margin-top:6px">QUEUED · 3 SETS · PREV 65×10·10·9</div></div><span style="font:500 13px Sora;color:{{ c.accText }}">Start ›</span></div>
+<div style="border:1px dashed {{ c.accDash }};border-radius:16px;padding:16px;text-align:center;font:500 13px Sora;color:{{ c.accText }}">+ Add exercise</div>
+</div>
+<div style="width:330px;display:flex;flex-direction:column;gap:18px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:18px 19px">
+<div style="font:600 14px Sora">Session summary</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px">
+<div><div style="font:600 22px {{ c.mono }};font-variant-numeric:tabular-nums">8,240</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">Volume (lb)</div></div>
+<div><div style="font:600 22px {{ c.mono }};font-variant-numeric:tabular-nums">11/14</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">Sets done</div></div>
+<div><div style="font:600 22px {{ c.mono }};color:{{ c.accText }};font-variant-numeric:tabular-nums">+2</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">PRs today</div></div>
+<div><div style="font:600 22px {{ c.mono }};font-variant-numeric:tabular-nums">42:16</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">Elapsed</div></div></div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:18px 19px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px Sora">Recent sessions</span><span style="font:500 11.5px Sora;color:{{ c.accText }}">All</span></div>
+<div style="margin-top:12px;display:flex;flex-direction:column">
+<sc-for list="{{ history }}" as="h" hint-placeholder-count="4">
+<div style="display:flex;align-items:center;gap:12px;padding:11px 0;border-bottom:1px solid {{ c.border }}"><span style="width:32px;height:32px;border-radius:9px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 12.5px Sora">{{ h.name }}</div><div style="font:400 10.5px Sora;color:{{ c.dim }};margin-top:2px">{{ h.when }}</div></div><span style="font:500 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ h.vol }}</span></div>
+</sc-for>
+</div></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const done = (n,w,r,rpe)=>({n,w,r,rpe,fg:c.dim,numColor:c.faint,rowStyle:'',mark:'✓',markBg:c.accSoft,markBorder:'none'});
+    const sets = [
+      done('01','185 lb','8','7.5'),
+      done('02','185 lb','8','8'),
+      {n:'03',w:'190 lb',r:'8',rpe:'—',fg:c.text,numColor:c.accText,rowStyle:`background:${c.accSoft}`,mark:'',markBg:'transparent',markBorder:`1.5px solid ${c.border}`},
+      {n:'04',w:'190 lb',r:'8',rpe:'—',fg:c.faint,numColor:c.faint,rowStyle:'opacity:.5',mark:'',markBg:'transparent',markBorder:`1.5px solid ${c.border}`}
+    ];
+    const history = [
+      {name:'Pull Day B', when:'Yesterday', vol:'11,240'},
+      {name:'Leg Day', when:'Sunday', vol:'18,600'},
+      {name:'Push Day A', when:'Fri 13 Aug', vol:'8,080'},
+      {name:'Pull Day A', when:'Wed 11 Aug', vol:'10,900'}
+    ];
+    return { m: p==='mobile', w: p==='web', c, sets, history };
+  }
+}
+</script>
+</body>
+</html>

@@ -2,7 +2,7 @@
 
 _Last updated: 2026-08-17_
 
-A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, and how the dev workflow works.
+A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
 ---
 
@@ -21,7 +21,7 @@ A fitness tracking app being built from scratch, learning as I go. This doc is t
 |---|---|---|
 | Backend | Python / FastAPI | REST API |
 | Database | PostgreSQL 16 | Runs in Docker |
-| Mobile / Web | React Native + React Native Web | Not started yet — will share code between mobile app and web |
+| Mobile / Web | React Native + React Native Web | Not started yet — full visual design now complete, ready to begin implementation |
 | Auth | JWT (JSON Web Tokens) | Passwords hashed with bcrypt via passlib |
 | Deployment | Docker Compose, self-hosted | Runs on a home server (ZimaOS) |
 
@@ -61,6 +61,8 @@ gymind/
 ├── backend/        # FastAPI app
 │   ├── ...
 ├── mobile/         # React Native app (not built yet)
+├── Design/          # Exported design screens + design source files
+│   └── exports/    # PNG/image exports of final screens
 ├── docker-compose.yml
 └── PROJECT_STATUS.md
 ```
@@ -80,18 +82,21 @@ _(Fill in exact commands as you formalize this — placeholder based on stack so
 
 **TODO:** actually create a `requirements.txt` and `.env.example` if they don't exist yet, and pin dependency versions (see Section 13).
 
+**Also decided:** while actively developing (e.g. JWT work), run FastAPI locally with `uvicorn --reload` for fast iteration, rather than push → SSH → rebuild each change. Push to the server only once a feature is tested and working.
+
 ---
 
 ## 6. Deployment & Server Access
 
 - **Server OS:** ZimaOS (Docker-based)
 - **SSH access:** `ssh root@192.168.0.241`
+- **Repo path on server:** `/DATA/gymind`
 - **Containers:**
   - `db` — Postgres 16, `5433:5432`
   - `backend` — FastAPI, `8001:8000`
 - **DB GUI access:** TablePlus → host `192.168.0.241`, port `5433`
 - **Server git policy:** server only ever runs `git pull` — never commits or pushes. All code changes happen on dev laptops.
-- **Restart after a pull:** `docker compose up -d --build` (rebuilds the backend image if code changed)
+- **Restart after a pull:** `docker compose up -d --build` (rebuilds the backend image if code changed; not needed for doc-only changes)
 
 ---
 
@@ -108,6 +113,7 @@ Two laptops (MSI and Dell), each with its own independent clone:
   4. `git commit -m "..."`
   5. `git push`
 - Server: SSH in, `git pull`, restart containers if needed (`docker compose up -d --build`)
+- Both laptops now have the repo open in VS Code
 
 ---
 
@@ -130,17 +136,30 @@ Draft fields (to be finalized):
 | `user_id` | int (FK → users.id) | One profile per user |
 | `goal` | text or enum | e.g. "lose weight", "build muscle", "maintain" |
 | `experience_level` | text or enum | beginner / intermediate / advanced |
-| `injuries` | text (free-form) or a related table | Needs design decision — see Section 15 |
+| `injuries` | text (free-form) or a related table | Needs design decision — see Section 17 |
 | `equipment` | text[] or related table | e.g. "dumbbells", "barbell", "none" |
 | `dietary_restrictions` | text[] or related table | e.g. "vegetarian", "gluten-free" |
 | `created_at` | timestamp | Default now() |
 | `updated_at` | timestamp | Update on edit |
 
+### `user_preferences` — planned, not built (new — from design phase)
+Needed to support the theming system (Section 14):
+| Column | Type (draft) | Notes |
+|---|---|---|
+| `id` | int/serial | Primary key |
+| `user_id` | int (FK → users.id) | One row per user |
+| `theme_mode` | text/enum | "dark" or "light" |
+| `accent_preset` | text/enum | One of: Ember, Signal, Amber, Violet, Teal, Volt |
+| `updated_at` | timestamp | Update on edit |
+
 ### `workouts` — not designed yet
-Will need at minimum: workout sessions, exercises performed, sets/reps/weight per exercise, timestamps.
+Will need at minimum: workout sessions, exercises performed, sets/reps/weight per exercise, timestamps. Design screens imply we'll also need: session duration, target vs. actual weight per set (for the "TGT 190" style previous/target display), and a way to compute e1RM (estimated 1-rep max) per exercise for Progress charts.
 
 ### `nutrition_logs` — not designed yet
-Will need at minimum: meal entries, food items, macros, timestamps.
+Will need at minimum: meal entries, food items, macros (protein/carbs/fat), timestamps. Design screens show a daily calorie ring + macro bars against a target, so we'll also need a per-user daily calorie/macro target (likely lives in `user_profiles` or its own targets table).
+
+### `body_weight_logs` — not designed yet (new — from design phase)
+Needed for the Progress screen's body weight chart. At minimum: user_id, weight, unit (lb/kg), logged_at timestamp.
 
 ---
 
@@ -151,7 +170,7 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 |---|---|---|---|
 | POST | `/auth/register` | ✅ Built | Creates a user, hashes password with bcrypt |
 | POST | `/auth/login` | ✅ Built | Login by email or username, returns signed JWT |
-| — | `get_current_user` dependency | 🔧 In progress | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes |
+| — | `get_current_user` dependency | 🔧 In progress | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — **today's task, not yet started** |
 
 ### Health
 | Method | Path | Status | Description |
@@ -163,11 +182,13 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 | Method | Path | Status | Description |
 |---|---|---|---|
 | GET/POST | `/users/profile` | ❌ Not built | Read/create/update `user_profiles` |
+| GET/POST | `/users/preferences` | ❌ Not built | Theme mode + accent color, to support the theming system |
 | GET/POST | `/workouts` | ❌ Not built | List/create workout sessions |
 | GET/PUT/DELETE | `/workouts/{id}` | ❌ Not built | Get/update/delete a specific workout |
 | GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries |
-| GET | `/progress` | ❌ Not built | Aggregated stats/trends |
-| POST | `/coach` | ❌ Not built | AI coach interaction endpoint |
+| GET/POST | `/body-weight` | ❌ Not built | Log/list body weight entries for Progress chart |
+| GET | `/progress` | ❌ Not built | Aggregated stats/trends — scoped per design: body weight trend, e1RM trend per exercise, muscle-group strength summary |
+| POST | `/coach` | ❌ Not built | AI coach interaction endpoint — chat UI is fully designed, backend/LLM integration not started |
 
 ---
 
@@ -177,6 +198,7 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 - **Non-default ports** (`5433` for Postgres, `8001` for backend) — because other containers on the home server already occupy the defaults. Keep this in mind in `.env` files, TablePlus configs, and any new service that needs to talk to these.
 - **Git & OneDrive** — repo clones are intentionally kept outside OneDrive sync folders to avoid `.git` corruption/conflicts from cloud sync.
 - **Server never commits** — treat the server as a deploy target only, not a place to edit code.
+- **Theming is presentation-only** — theme/accent changes affect color tokens only; layout, spacing, and typography never change per theme. Worth keeping this discipline in the actual React Native implementation (e.g. a single theme context object, not per-component conditional styling).
 
 ---
 
@@ -186,18 +208,21 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 - [x] `users` table
 - [x] Register / login endpoints
 - [x] JWT issuing on login
-- [ ] **JWT route protection**
+- [ ] **JWT route protection** — today's task
   - [ ] Write `get_current_user` dependency: extract `Authorization: Bearer <token>` header
   - [ ] Decode/verify JWT signature and expiry
   - [ ] Look up user by id from token payload; raise `401` if invalid/missing/expired
   - [ ] Apply `Depends(get_current_user)` to a test route to confirm it works end-to-end
   - [ ] Decide token expiry length and whether refresh tokens are needed later
 - [ ] **`user_profiles` table**
-  - [ ] Finalize schema (see open question on injuries/equipment structure, Section 15)
+  - [ ] Finalize schema (see open question on injuries/equipment structure, Section 17)
   - [ ] Write migration (or manual `CREATE TABLE` if not using a migration tool yet)
   - [ ] Build `POST /users/profile` (create/update, requires auth)
   - [ ] Build `GET /users/profile` (requires auth, returns current user's profile)
   - [ ] Decide: is profile creation mandatory before using the rest of the app (onboarding gate)?
+- [ ] **`user_preferences` table**
+  - [ ] Design schema (theme_mode, accent_preset)
+  - [ ] Build `GET/POST /users/preferences`
 
 ### Phase 2 — Core Tracking
 - [ ] **Workouts**
@@ -208,24 +233,34 @@ Will need at minimum: meal entries, food items, macros, timestamps.
   - [ ] `PUT /workouts/{id}` — edit
   - [ ] `DELETE /workouts/{id}` — delete
   - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
+  - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
 - [ ] **Nutrition**
   - [ ] Design `nutrition_logs` schema
-  - [ ] Decide: manual macro entry vs. food database API lookup (see open question, Section 15)
+  - [ ] Decide: manual macro entry vs. food database API lookup
   - [ ] CRUD endpoints mirroring the workouts pattern
+  - [ ] Decide where daily calorie/macro targets live (per-user setting)
+- [ ] **Body weight tracking**
+  - [ ] Design `body_weight_logs` schema
+  - [ ] CRUD endpoints
 - [ ] **Progress**
-  - [ ] Design aggregation queries (e.g. weekly volume, weight trend)
-  - [ ] `GET /progress` endpoint returning summarized stats
-  - [ ] Decide what "progress" surfaces first — simplest useful version, not everything at once
+  - [ ] Design aggregation queries: body weight trend, e1RM trend per exercise, muscle-group strength summary, simple consistency count
+  - [ ] `GET /progress` endpoint(s) returning this data, shaped for the charts already designed
 
 ### Phase 3 — Mobile App
+- [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Section 12–16)
 - [ ] Scaffold React Native + React Native Web project in `/mobile`
-- [ ] Set up shared navigation (React Navigation or similar)
+- [ ] Set up shared navigation (React Navigation or similar) — nav structure already decided: Home, Coach, Workout, Nutrition, Progress, Settings
+- [ ] Implement theme system as a single context/provider (dark/light + 6 accent presets), matching the token contract in Section 14
 - [ ] Build register/login screens wired to `/auth/*`
 - [ ] Build onboarding screen wired to `/users/profile`
 - [ ] Build core workout logging UI
+- [ ] Build Home screen (streak strip, AI Coach card, Nutrition card, Workout card)
+- [ ] Build Progress screen with drillable muscle-group → exercise → e1RM chart
 - [ ] Decide on state management approach (Context API vs. something like Zustand/Redux) once the app has enough shared state to justify it
+- [ ] Design still open: empty states, loading/error states, exact icon set, where Profile lives now it's off the bottom nav (see Section 17)
 
 ### Phase 4 — AI Coach
+- [x] Chat UI fully designed (mobile + web) — message thread, quick-prompt chips, contextual Home card tie-in
 - [ ] Define scope: chat-based Q&A vs. auto-generated plans vs. both
 - [ ] Choose LLM integration approach (API-based, likely)
 - [ ] Design how profile + logged data feeds into coach context
@@ -237,6 +272,7 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 - [ ] Add basic input validation/error handling conventions (see Section 13)
 - [ ] Add at least minimal tests for auth endpoints before building more on top
 - [ ] Decide on a migration tool (e.g. Alembic) before the schema grows much further, so schema changes are tracked rather than manual
+- [ ] Finish organizing exported design screens in `/Design/exports` and reference them properly from this doc
 
 ---
 
@@ -260,10 +296,128 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 - **Testing:** no test suite yet — consider `pytest` + FastAPI's `TestClient` starting with auth endpoints
 - **Migrations:** no migration tool yet — consider Alembic before schema grows further, so changes are tracked and repeatable across devices/server instead of manual SQL
 - **Dependency pinning:** pin versions in `requirements.txt` to avoid surprises like the bcrypt/passlib issue recurring elsewhere
+- **Theming discipline:** color tokens only change per theme — never layout/spacing/typography (see Section 10)
 
 ---
 
-## 14. Glossary (for learning-as-I-go reference)
+## 14. Design System — Direction & Theming
+
+Design work was done collaboratively in Claude Design (claude.ai/design). Full screen exports live in `/Design/exports` in the repo.
+
+### Design Direction
+- **Style:** "5c" direction — dark base, geometric sans typography, warm accent
+- **Typeface:** Sora (throughout — headings, body, and numerals; tabular figures used for aligned data)
+- **Default accent:** Ember (`#FF6B1F`)
+- **Base mode:** Dark (default), Light mode available
+- **Tone:** Clean, modern, slightly energetic — data-forward without feeling clinical
+
+### Theming System
+Users can change the **accent color** and **light/dark mode** — layout, spacing, and typography stay fixed; only color tokens change.
+
+**Accent presets (final shortlist of 6):**
+| Preset | Hex |
+|---|---|
+| Ember (default) | `#FF6B1F` |
+| Signal | `#3FC4FF` |
+| Amber | `#FFD023` |
+| Violet | `#A788FA` |
+| Teal | `#17C382` |
+| Volt | `#3FE07A` |
+
+_(Explored but not shortlisted: Coral, Indigo, Crimson)_
+
+**Base tokens — dark mode:**
+| Token | Value | Use |
+|---|---|---|
+| `bg.base` | `#0A0F1A` | Screen background |
+| `bg.card` | `#131B2B` | Card / input fill |
+| `bg.inset` | `rgba(255,255,255,.045)` | Subtle inset surfaces |
+| `border` | `rgba(255,255,255,.14)` | Card/input borders |
+| `text.primary` | `#F0F3F8` | Headings, body |
+| `text.dim` | 72% opacity | Secondary text |
+| `text.faint` | 42% opacity | Tertiary/placeholder text |
+
+**Base tokens — light mode:**
+| Token | Value | Use |
+|---|---|---|
+| `bg.base` | `#F4F5F7` | Screen background |
+| `bg.card` | `#FFFFFF` | Card / input fill |
+| `bg.inset` | `#F4F5F7` | Subtle inset surfaces |
+| `border` | `rgba(16,20,28,.14)` | Card/input borders |
+| `text.primary` | `#10141C` | Headings, body |
+| `text.dim` | 68% opacity | Secondary text |
+| `text.faint` | 42% opacity | Tertiary/placeholder text |
+
+**Accent contract (applies per-preset, both modes):**
+| Token | Use |
+|---|---|
+| `accent` | Fills, active borders |
+| `accent.tint2` | Dark-mode text/icons on accent-tinted surfaces |
+| `accent.tint3` | Charts, rings, data visualization |
+| `accent.deep` | Light-mode text on accent-tinted surfaces |
+| `accent.on` | Text rendered on top of a solid accent fill |
+| `accent.soft` | 16% wash — subtle accent backgrounds |
+
+---
+
+## 15. Design System — Screens
+
+| Screen | Status | Notes |
+|---|---|---|
+| Login | ✅ Designed | Email/username + password |
+| Register | ✅ Designed | Create account |
+| Onboarding | ✅ Designed | Grouped steps: goal, experience, injuries, equipment, dietary restrictions |
+| Home | ✅ Designed | Order: greeting → week streak strip → AI Coach card → Nutrition card (ring + macros + recent food) → Workout card (today's plan + recent workouts) |
+| Workout (logging) | ✅ Designed | Session header, set-by-set logging, add exercise, finish session |
+| Nutrition | ✅ Designed | Calorie ring, macro bars, recent food logged |
+| Progress | ✅ Designed | Simplified: body weight line chart, drillable strength-by-muscle-group chart (muscle group → specific exercise → e1RM trend line), simple consistency line |
+| Settings | ✅ Designed | Includes theme picker (dark/light + 6 accent swatches) |
+| AI Coach (chat) | ✅ Designed | Accessed via nav tab; example thread, quick-prompt chips, input field, "Beta" label |
+
+**Bottom nav (mobile) / sidebar (web):** Home, Coach, Workout, Nutrition, Progress, Settings — Profile moved out of the bottom bar to keep the nav from overcrowding at 6 items (see open question, Section 17).
+
+### Home Screen — Section Order (finalized)
+1. Greeting header (date + "Good morning, [name]")
+2. **This week** — 7-day streak strip (dot/check per day), streak count label — lightweight, no card border
+3. **AI Coach card** — standalone, contextual tip referencing today's workout/nutrition, "Preview coaching →" link into the Coach chat screen
+4. **Nutrition card** — one combined card: today's calorie ring + macro bars, then "Recent food logged" list below it in the same card
+5. **Workout card** — one combined card: today's plan (name, quick stats, Start button), then "Recent workouts" list below it in the same card
+
+### Progress Screen — Finalized Structure
+Simplified from an earlier, denser draft (4-stat header row + separate lift list + volume-by-muscle bars) down to:
+1. Time range selector (4 weeks / 3 months / 1 year)
+2. **Body weight chart** — line chart, current weight + change vs. period, goal marker
+3. **Strength by muscle group** — interactive: default bar chart by muscle group (kg improvement) → tap a group → select a specific exercise → drills into an e1RM trend line chart for that exercise, same time range
+4. **Consistency** — single line ("18 of 28 days trained"), not a full calendar heatmap
+
+---
+
+## 16. Design System — AI Coach
+
+- Referenced contextually on Home (workout-specific tips) and has its own dedicated chat screen
+- Chat screen: header with back nav, message thread (coach messages in accent-tinted cards), quick-prompt chips (e.g. "Adjust today's plan," "How's my progress this month?"), text input, "Beta"/"Preview" label
+- **Not yet built on the backend** — this is UI/UX design only. Actual LLM integration is Phase 4 (Section 11) and hasn't been started
+
+---
+
+## 17. Open Questions / Ideas (not committed yet)
+
+- Should `injuries` and `equipment` in `user_profiles` be free-text, arrays, or their own related tables (more structured, more work upfront)?
+- Should nutrition tracking use a food database API, or manual entry only, to start?
+- What does "AI coach" mean concretely, technically — chat interface via an LLM API, wired to real logged data? (UI is designed; backend approach not decided)
+- Should exercises come from a seeded reference table, or be entirely user-defined?
+- When to introduce a migration tool (Alembic) — now, or once the schema stabilizes a bit more?
+- Is a full test suite worth setting up now, or after the API surface is bigger?
+- Which e1RM formula to use (Epley, Brzycki, etc.) — needs a decision before Progress charts can be built
+- Where do daily nutrition targets (calories/macros) get set — onboarding, a settings screen, or calculated from profile data (goal/weight/activity)?
+- Where does Profile live on mobile now that it's off the bottom nav?
+- Exact icon set for nav items not finalized
+- Empty states (no workouts logged yet, no food logged yet) not yet designed
+- Error/loading states not yet designed
+
+---
+
+## 18. Glossary (for learning-as-I-go reference)
 
 - **JWT (JSON Web Token):** A signed piece of data the server gives the client after login, proving who they are on future requests, without the server needing to store session state.
 - **Dependency (FastAPI):** A function FastAPI runs automatically before your route logic, and injects its return value as an argument — used for things like auth checks.
@@ -272,14 +426,4 @@ Will need at minimum: meal entries, food items, macros, timestamps.
 - **Host port vs container port:** The container's internal port (e.g. 5432) vs the port exposed on the actual server machine (e.g. 5433) — they can differ, which is why you sometimes need to specify both.
 - **Migration (database):** A version-controlled, repeatable script that changes your DB schema (e.g. adding a table/column), so schema changes can be tracked and applied consistently across environments instead of run manually and forgotten.
 - **Pydantic model:** A Python class (used heavily by FastAPI) that defines the shape and validation rules of request/response data.
-
----
-
-## 15. Open Questions / Ideas (not committed yet)
-
-- Should `injuries` and `equipment` in `user_profiles` be free-text, arrays, or their own related tables (more structured, more work upfront)?
-- Should nutrition tracking use a food database API, or manual entry only, to start?
-- What does "AI coach" mean concretely — chat interface? Auto-generated workout plans? Both?
-- Should exercises come from a seeded reference table, or be entirely user-defined?
-- When to introduce a migration tool (Alembic) — now, or once the schema stabilizes a bit more?
-- Is a full test suite worth setting up now, or after the API surface is bigger?
+- **e1RM (estimated 1-rep max):** A calculated estimate of the maximum weight someone could lift for one rep, based on a formula applied to their actual logged reps/weight (e.g. 8 reps at 185 lb). Used to track strength progress over time without requiring an actual 1-rep max test every session.

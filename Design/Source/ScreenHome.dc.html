@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="flex:1;overflow:hidden;padding:12px 22px 0">
+
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><div style="font:400 12.5px Sora;color:{{ c.dim }}">Tuesday, 17 Aug</div><div style="font:700 24px/1.15 Sora;letter-spacing:-.02em;margin-top:3px">Good morning, Alex</div></div>
+<span style="width:44px;height:44px;border-radius:50%;background:{{ c.inset }};border:1px solid {{ c.border }};display:block"></span></div>
+
+<div style="margin-top:20px;display:flex;flex-direction:column;gap:12px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 12.5px Sora">This week</span><span style="display:flex;align-items:center;gap:6px"><span style="width:16px;height:16px;border-radius:50%;background:{{ c.acc }};display:block"></span><span style="font:600 12px Sora;color:{{ c.accText }}">6 day streak</span></span></div>
+<div style="display:flex;justify-content:space-between">
+<sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;gap:7px"><span style="width:32px;height:32px;border-radius:50%;background:{{ d.bg }};border:{{ d.border }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 12px Sora;box-shadow:{{ d.ring }}">{{ d.mark }}</span><span style="font:500 10px Sora;color:{{ d.labelColor }}">{{ d.d }}</span></div>
+</sc-for>
+</div>
+</div>
+
+<div style="margin-top:14px;background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:16px;padding:15px 16px;display:flex;gap:12px;align-items:flex-start">
+<span style="width:32px;height:32px;border-radius:9px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 13px Sora;flex:none">AI</span>
+<div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><span style="font:600 12.5px Sora">Coach</span><span style="font:500 8px {{ c.mono }};letter-spacing:.1em;background:{{ c.accSoftStrong }};color:{{ c.accText }};border-radius:4px;padding:2px 5px">SOON</span></div>
+<div style="font:400 12.5px/1.5 Sora;color:{{ c.dim }};margin-top:5px"><span style="color:{{ c.text }};font-weight:600">Push Day A</span> is due today — bench is ready for a +5 lb bump. I'll pre-fill 190 lb on your working sets.</div>
+<div style="margin-top:9px;font:500 12px Sora;color:{{ c.accText }}">Preview coaching →</div></div></div>
+
+<div style="margin-top:14px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:18px 18px 8px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 10px {{ c.mono }};letter-spacing:.12em;color:{{ c.accText }}">TODAY'S NUTRITION</span><span style="font:400 11.5px Sora;color:{{ c.dim }}">Macros</span></div>
+<div style="display:flex;align-items:center;gap:18px;margin-top:14px">
+<div style="width:118px;height:118px;border-radius:50%;background:conic-gradient({{ c.acc }} 0 76%, {{ c.inset }} 76% 100%);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:92px;height:92px;border-radius:50%;background:{{ c.card }};display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:600 21px {{ c.mono }};font-variant-numeric:tabular-nums">1840</div><div style="font:400 9.5px Sora;color:{{ c.dim }};margin-top:2px">of 2400</div></div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:11px">
+<sc-for list="{{ macros }}" as="mac" hint-placeholder-count="3">
+<div><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 11.5px Sora">{{ mac.name }}</span><span style="font:400 10.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ mac.have }}/{{ mac.goal }}g</span></div><div style="height:6px;border-radius:4px;background:{{ c.inset }};margin-top:6px;overflow:hidden"><div style="width:{{ mac.pct }};height:6px;background:{{ c.acc }};border-radius:4px"></div></div></div>
+</sc-for>
+</div></div>
+<div style="margin-top:16px;border-top:1px solid {{ c.border }};padding-top:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 12px Sora">Recent food logged</span><span style="font:500 11px Sora;color:{{ c.accText }}">Nutrition ›</span></div>
+<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;padding-bottom:6px">
+<sc-for list="{{ food }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:8px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 12.5px Sora">{{ f.name }}</div><div style="font:400 10px Sora;color:{{ c.dim }};margin-top:1px">{{ f.meal }} · {{ f.time }}</div></div><span style="font:500 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ f.kcal }}</span></div>
+</sc-for>
+</div></div>
+</div>
+
+<div style="margin-top:14px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;overflow:hidden">
+<div style="height:3px;background:{{ c.acc }}"></div>
+<div style="padding:16px 17px 6px">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div><div style="font:500 10px {{ c.mono }};letter-spacing:.12em;color:{{ c.accText }}">TODAY'S PLAN</div>
+<div style="font:700 20px/1.1 Sora;letter-spacing:-.01em;margin-top:9px">Push Day A</div>
+<div style="font:400 12px Sora;color:{{ c.dim }};margin-top:5px">6 exercises · ~52 min · chest, shoulders, triceps</div></div>
+<div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:11px;padding:13px 20px;font:600 13.5px Sora;white-space:nowrap">Start</div></div>
+<div style="margin-top:14px;border-top:1px solid {{ c.border }};padding-top:12px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 12px Sora">Recent workouts</span><span style="font:500 11px Sora;color:{{ c.accText }}">See all ›</span></div>
+<div style="margin-top:10px;display:flex;flex-direction:column;gap:8px;padding-bottom:8px">
+<sc-for list="{{ recent }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:11px"><span style="width:30px;height:30px;border-radius:8px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 12.5px Sora">{{ r.name }}</div><div style="font:400 10px Sora;color:{{ c.dim }};margin-top:1px">{{ r.when }} · {{ r.sets }} sets</div></div><span style="font:500 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ r.vol }}</span></div>
+</sc-for>
+</div></div>
+</div></div>
+<div style="height:16px"></div>
+<dc-import name="TabBar" c="{{ c }}" active="Home" hint-size="368px,74px"></dc-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:860px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Home" hint-size="240px,860px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:22px 36px;border-bottom:1px solid {{ c.border }}">
+<div><div style="font:700 22px/1.1 Sora;letter-spacing:-.02em">Good morning, Alex</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:3px">Tuesday, 17 August · week 4 of your block</div></div>
+<div style="display:flex;align-items:center;gap:14px"><div style="width:240px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:10px;padding:10px 13px;font:400 12.5px Sora;color:{{ c.faint }}">Search exercises, foods…</div><div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:10px;padding:10px 18px;font:600 13px Sora">Start workout</div></div></div>
+<div style="flex:1;padding:26px 36px;display:flex;flex-direction:column;gap:18px;max-width:1040px">
+
+<div style="display:flex;justify-content:space-between;align-items:center;padding:2px 4px">
+<div style="display:flex;align-items:center;gap:26px">
+<span style="font:600 13.5px Sora">This week</span>
+<div style="display:flex;gap:14px">
+<sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+<div style="display:flex;flex-direction:column;align-items:center;gap:8px"><span style="width:36px;height:36px;border-radius:50%;background:{{ d.bg }};border:{{ d.border }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 13px Sora;box-shadow:{{ d.ring }}">{{ d.mark }}</span><span style="font:500 10.5px Sora;color:{{ d.labelColor }}">{{ d.d }}</span></div>
+</sc-for>
+</div></div>
+<span style="display:flex;align-items:center;gap:8px"><span style="width:20px;height:20px;border-radius:50%;background:{{ c.acc }};display:block"></span><span style="font:600 14px Sora;color:{{ c.accText }}">6 day streak</span></span>
+</div>
+
+<div style="background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:16px;padding:18px 20px;display:flex;gap:14px;align-items:flex-start">
+<span style="width:34px;height:34px;border-radius:10px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 14px Sora;flex:none">AI</span>
+<div style="flex:1"><div style="display:flex;align-items:center;gap:9px"><span style="font:600 14px Sora">Coach</span><span style="font:500 8.5px {{ c.mono }};letter-spacing:.1em;background:{{ c.accSoftStrong }};color:{{ c.accText }};border-radius:4px;padding:2px 5px">SOON</span></div>
+<div style="font:400 13px/1.6 Sora;color:{{ c.dim }};margin-top:7px"><span style="color:{{ c.text }};font-weight:600">Push Day A</span> is due today — bench is ready for a +5 lb bump. I'll pre-fill 190 lb on your working sets and hold rest at 2:00.</div>
+<div style="margin-top:11px;font:500 12.5px Sora;color:{{ c.accText }}">Preview coaching →</div></div></div>
+
+<div style="display:flex;gap:18px;align-items:stretch">
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:20px 22px;box-shadow:{{ c.shadow }};display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:600 15px Sora">Today's nutrition</span><span style="font:500 12px Sora;color:{{ c.accText }}">Open nutrition →</span></div>
+<div style="display:flex;gap:20px;margin-top:16px;align-items:center">
+<div style="width:120px;height:120px;border-radius:50%;background:conic-gradient({{ c.acc }} 0 76%, {{ c.inset }} 76% 100%);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:94px;height:94px;border-radius:50%;background:{{ c.card }};display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:600 22px {{ c.mono }};font-variant-numeric:tabular-nums">1,840</div><div style="font:400 10px Sora;color:{{ c.dim }};margin-top:2px">of 2,400</div></div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ macros }}" as="mac" hint-placeholder-count="3">
+<div><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 12px Sora">{{ mac.name }}</span><span style="font:400 11px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ mac.have }}/{{ mac.goal }}g</span></div><div style="height:7px;border-radius:5px;background:{{ c.inset }};margin-top:7px;overflow:hidden"><div style="width:{{ mac.pct }};height:7px;background:{{ c.acc }};border-radius:5px"></div></div></div>
+</sc-for>
+</div></div>
+<div style="margin-top:16px;border-top:1px solid {{ c.border }};padding-top:12px">
+<div style="font:600 13.5px Sora">Recent food logged</div>
+<div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ food }}" as="f" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:13px"><span style="width:36px;height:36px;border-radius:10px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 13px Sora">{{ f.name }}</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">{{ f.meal }} · {{ f.time }}</div></div><span style="font:600 12.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ f.kcal }}</span></div>
+</sc-for>
+</div></div>
+</div>
+
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;overflow:hidden;box-shadow:{{ c.shadow }};display:flex;flex-direction:column">
+<div style="height:4px;background:{{ c.acc }}"></div>
+<div style="padding:20px 22px;display:flex;justify-content:space-between;align-items:center">
+<div><div style="font:500 10px {{ c.mono }};letter-spacing:.12em;color:{{ c.accText }}">TODAY'S PLAN</div><div style="font:700 24px/1.05 Sora;letter-spacing:-.02em;margin-top:9px">Push Day A</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:6px">6 exercises · ~52 min · chest, shoulders, triceps</div></div>
+<div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:11px;padding:14px 26px;font:600 14px Sora;white-space:nowrap">Start session</div></div>
+<div style="margin:0 22px;border-top:1px solid {{ c.border }}"></div>
+<div style="padding:14px 22px 18px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 13.5px Sora">Recent workouts</span><span style="font:500 12px Sora;color:{{ c.accText }}">View history →</span></div>
+<div style="margin-top:12px;display:flex;flex-direction:column;gap:12px">
+<sc-for list="{{ recent }}" as="r" hint-placeholder-count="3">
+<div style="display:flex;align-items:center;gap:13px"><span style="width:36px;height:36px;border-radius:10px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 13.5px Sora">{{ r.name }}</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">{{ r.when }} · {{ r.sets }} sets</div></div><span style="font:600 12.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ r.vol }}</span></div>
+</sc-for>
+</div></div>
+</div>
+</div>
+
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const days = [
+      {d:'W', active:false}, {d:'T', active:true}, {d:'F', active:true},
+      {d:'S', active:true}, {d:'S', active:true}, {d:'M', active:true}, {d:'T', active:true, today:true}
+    ];
+    const week = days.map(x => ({
+      d: x.d, mark: x.active ? '✓' : '',
+      bg: x.active ? c.acc : 'transparent',
+      border: x.active ? 'none' : `1.5px solid ${c.border}`,
+      ring: x.today ? `0 0 0 2px ${c.bg}, 0 0 0 4px ${c.acc}` : 'none',
+      labelColor: x.today ? c.text : (x.active ? c.dim : c.faint)
+    }));
+    const macros = [
+      {name:'Protein', have:148, goal:195, pct:'76%'},
+      {name:'Carbs', have:190, goal:250, pct:'76%'},
+      {name:'Fat', have:52, goal:70, pct:'74%'}
+    ];
+    const food = [
+      {name:'Whey shake', meal:'Snack', time:'2:40 pm', kcal:130},
+      {name:'Chicken & rice', meal:'Lunch', time:'12:30 pm', kcal:610},
+      {name:'Greek yogurt bowl', meal:'Breakfast', time:'7:15 am', kcal:310}
+    ];
+    const recent = [
+      {name:'Pull Day B', when:'Yesterday', vol:'11,240 lb', sets:14},
+      {name:'Leg Day', when:'Sunday', vol:'18,600 lb', sets:16},
+      {name:'Push Day A', when:'Friday', vol:'8,240 lb', sets:14}
+    ];
+    return { m: p==='mobile', w: p==='web', c, week, macros, food, recent };
+  }
+}
+</script>
+</body>
+</html>

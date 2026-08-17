@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#dedbd4;font-family:Sora,system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#1b5fb0}
+.gm-lab{font:600 13px Sora,sans-serif;color:#1a1a1a}
+.gm-sub{font:400 11.5px Sora,sans-serif;color:rgba(0,0,0,.5);margin-top:3px}
+.gm-row{display:flex;gap:36px;align-items:flex-start;flex-wrap:wrap}
+.gm-sec{display:flex;flex-direction:column;gap:14px}
+.gm-frames{display:flex;gap:40px;align-items:flex-start}
+.gm-fcap{font:500 10px JetBrains Mono,monospace;letter-spacing:.12em;color:rgba(0,0,0,.4);margin-bottom:8px;text-transform:uppercase}
+.gm-phone{width:390px;border-radius:46px;padding:11px;background:#05070c;box-shadow:0 20px 50px rgba(0,0,0,.28)}
+.gm-screen{border-radius:36px;overflow:hidden;position:relative}
+.gm-web{border-radius:12px;overflow:hidden;box-shadow:0 20px 50px rgba(0,0,0,.28);border:1px solid rgba(0,0,0,.12)}
+.gm-chrome{height:38px;display:flex;align-items:center;gap:8px;padding:0 14px;background:#e7e7ea;border-bottom:1px solid rgba(0,0,0,.08)}
+.gm-dot{width:11px;height:11px;border-radius:50%;display:block}
+.gm-url{flex:1;margin-left:10px;height:22px;border-radius:6px;background:#fff;border:1px solid rgba(0,0,0,.08);display:flex;align-items:center;padding:0 10px;font:400 10.5px JetBrains Mono,monospace;color:rgba(0,0,0,.45)}
+</style></helmet>
+
+<div style="position:sticky;top:0;z-index:20;background:rgba(222,219,212,.86);backdrop-filter:blur(10px);border-bottom:1px solid rgba(0,0,0,.1);padding:16px 40px;display:flex;align-items:center;gap:22px;flex-wrap:wrap">
+<div style="display:flex;align-items:center;gap:11px">
+<span style="width:26px;height:26px;border-radius:8px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:700 14px Sora;color:{{ c.accOn }}">G</span>
+<span style="font:700 16px Sora;color:#141414">Gymind</span>
+<span style="font:500 10px JetBrains Mono,monospace;letter-spacing:.1em;color:rgba(0,0,0,.4);border:1px solid rgba(0,0,0,.15);border-radius:5px;padding:2px 6px">5c · SORA</span></div>
+<div style="width:1px;height:26px;background:rgba(0,0,0,.12)"></div>
+<div style="display:flex;background:#fff;border:1px solid rgba(0,0,0,.1);border-radius:9px;padding:3px">
+<span onClick="{{ setDark }}" style="cursor:pointer;font:600 12px Sora;padding:6px 14px;border-radius:6px;background:{{ darkTabBg }};color:{{ darkTabFg }}">Dark</span>
+<span onClick="{{ setLight }}" style="cursor:pointer;font:600 12px Sora;padding:6px 14px;border-radius:6px;background:{{ lightTabBg }};color:{{ lightTabFg }}">Light</span></div>
+<div style="display:flex;align-items:center;gap:10px">
+<span style="font:500 10px JetBrains Mono,monospace;letter-spacing:.1em;color:rgba(0,0,0,.4)">ACCENT</span>
+<div style="display:flex;gap:9px">
+<sc-for list="{{ swatches }}" as="s" hint-placeholder-count="6">
+<span onClick="{{ s.pick }}" title="{{ s.name }}" style="cursor:pointer;width:26px;height:26px;border-radius:50%;background:{{ s.base }};box-shadow:{{ s.ring }};display:block"></span>
+</sc-for>
+</div>
+<span style="font:500 11.5px Sora;color:#141414;min-width:52px">{{ accName }}</span></div>
+</div>
+
+<div style="padding:34px 40px 70px;display:flex;flex-direction:column;gap:46px">
+
+<sc-for list="{{ screens }}" as="scr" hint-placeholder-count="8">
+<div class="gm-sec" id="{{ scr.id }}">
+<div><span class="gm-lab">{{ scr.num }} · {{ scr.name }}</span><div class="gm-sub">{{ scr.note }}</div></div>
+<div class="gm-frames">
+<div>
+<div class="gm-fcap">Mobile · iOS</div>
+<div class="gm-phone"><div class="gm-screen" style="background:{{ c.bg }}">
+
+<sc-if value="{{ scr.isLogin }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenLogin" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isRegister }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenRegister" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isOnboard }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenOnboard" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isHome }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenHome" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isWorkout }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenWorkout" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isNutrition }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenNutrition" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isProgress }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenProgress" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isSettings }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenSettings" platform="mobile" c="{{ c }}" mode="{{ c.mode }}" accent-name="{{ accName }}" accent-list="{{ accentList }}" on-set-mode="{{ setMode }}" on-set-accent="{{ setAccent }}" hint-size="368px,798px"></dc-import></sc-if>
+<sc-if value="{{ scr.isCoach }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenCoach" platform="mobile" c="{{ c }}" hint-size="368px,798px"></dc-import></sc-if>
+
+</div></div></div>
+<div>
+<div class="gm-fcap">Web · responsive</div>
+<div class="gm-web" style="width:{{ scr.webW }}px">
+<div class="gm-chrome"><span class="gm-dot" style="background:#ff5f57"></span><span class="gm-dot" style="background:#febc2e"></span><span class="gm-dot" style="background:#28c840"></span><span class="gm-url">app.gymind.fit{{ scr.url }}</span></div>
+<div style="background:{{ c.bg }}">
+
+<sc-if value="{{ scr.isLogin }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenLogin" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isRegister }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenRegister" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isOnboard }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenOnboard" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isHome }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenHome" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isWorkout }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenWorkout" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isNutrition }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenNutrition" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isProgress }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenProgress" platform="web" c="{{ c }}" demo-drill="true" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isSettings }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenSettings" platform="web" c="{{ c }}" mode="{{ c.mode }}" accent-name="{{ accName }}" accent-list="{{ accentList }}" on-set-mode="{{ setMode }}" on-set-accent="{{ setAccent }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+<sc-if value="{{ scr.isCoach }}" hint-placeholder-val="{{ true }}"><dc-import name="ScreenCoach" platform="web" c="{{ c }}" hint-size="{{ scr.webHint }}"></dc-import></sc-if>
+
+</div>
+</div></div>
+</div>
+</div>
+</sc-for>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;,&quot;section&quot;:&quot;Theme&quot;},&quot;defaultAccent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Ember&quot;,&quot;Signal&quot;,&quot;Amber&quot;,&quot;Violet&quot;,&quot;Teal&quot;,&quot;Volt&quot;],&quot;default&quot;:&quot;Ember&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Theme&quot;}}">
+const ACCENTS = {
+  Ember: {base:'#FF6B1F',t2:'#FF9A5E',t3:'#FFD2B3',deep:'#C4470D',on:'#170800'},
+  Signal:{base:'#3FC4FF',t2:'#7ED8FF',t3:'#B7EBFF',deep:'#0A6E9E',on:'#001622'},
+  Amber: {base:'#FFD23F',t2:'#FFE07A',t3:'#FFEFBC',deep:'#A6740A',on:'#241A00'},
+  Violet:{base:'#A78BFA',t2:'#C4B2FC',t3:'#E2D9FE',deep:'#6D45D9',on:'#170634'},
+  Teal:  {base:'#17C3B2',t2:'#5FDBCF',t3:'#B0EEE7',deep:'#0B7F74',on:'#02201D'},
+  Volt:  {base:'#3FE07A',t2:'#7DEBA6',t3:'#BAF5CE',deep:'#12813F',on:'#04240F'}
+};
+const ORDER = ['Ember','Signal','Amber','Violet','Teal','Volt'];
+const rgb = h => [1,3,5].map(i=>parseInt(h.slice(i,i+2),16));
+const soft = (h,a) => `rgba(${rgb(h).join(',')},${a})`;
+
+const SCREENS = [
+  {id:'s-login',num:'01',name:'Login',comp:'ScreenLogin',note:'Email or username + password. Mobile: centered stack. Web: split brand panel + form.',url:'/login',webW:1180,webHint:'1180px,720px'},
+  {id:'s-register',num:'02',name:'Register',comp:'ScreenRegister',note:'Create account. Same split system as login, extended fields + strength meter.',url:'/signup',webW:1180,webHint:'1180px,760px'},
+  {id:'s-onboard',num:'03',name:'Onboarding',comp:'ScreenOnboard',note:'Grouped steps: goal · experience · injuries · equipment · diet. Mobile: one step/screen. Web: rail + content.',url:'/welcome',webW:1180,webHint:'1180px,720px'},
+  {id:'s-home',num:'04',name:'Home',comp:'ScreenHome',note:'Post-login dashboard. Mobile: feed + tab bar. Web: sidebar + dashboard grid. AI coach shown as a hint.',url:'/home',webW:1240,webHint:'1240px,860px'},
+  {id:'s-workout',num:'05',name:'Workout',comp:'ScreenWorkout',note:'Live logging (5c) + recent history. Mobile: logging screen. Web: log left, session + history right.',url:'/workout/live',webW:1240,webHint:'1240px,900px'},
+  {id:'s-nutrition',num:'06',name:'Nutrition',comp:'ScreenNutrition',note:'Macros-only logging. Mobile: macro ring + meals. Web: macro summary + food entry table.',url:'/nutrition',webW:1240,webHint:'1240px,840px'},
+  {id:'s-progress',num:'07',name:'Progress',comp:'ScreenProgress',note:'Simplified: body-weight line chart + strength-by-muscle-group bars + one consistency line. Glanceable in 3 seconds.',url:'/progress',webW:1240,webHint:'1240px,880px'},
+  {id:'s-settings',num:'08',name:'Settings',comp:'ScreenSettings',note:'Account, units, theme picker (mode toggle + 6 accents). Mobile: grouped list. Web: two-column.',url:'/settings/theme',webW:1180,webHint:'1180px,820px'},
+  {id:'s-coach',num:'09',name:'AI Coach chat',comp:'ScreenCoach',note:'Navigated into from Home\u2019s "Preview coaching" \u2014 not a nav tab. Coach-card treatment carried into a full chat. Preview/beta.',url:'/coach',webW:1240,webHint:'1240px,820px'}
+];
+
+class Component extends DCLogic {
+  state = { mode:null, accent:null };
+  renderVals() {
+    const mode = this.state.mode ?? this.props.defaultMode ?? 'dark';
+    const accName = this.state.accent ?? this.props.defaultAccent ?? 'Ember';
+    const a = ACCENTS[accName] || ACCENTS.Ember;
+    const dark = mode === 'dark';
+    const base = dark ? {
+      mode:'dark', bg:'#0A0F1A', bg2:'#0D1420', card:'#131B2B', cardEdge:'rgba(255,255,255,.06)',
+      inset:'rgba(255,255,255,.045)', border:'rgba(255,255,255,.14)', text:'#F0F3F8',
+      dim:'rgba(240,243,248,.72)', faint:'rgba(240,243,248,.42)', shadow:'0 8px 30px rgba(0,0,0,.45)',
+      accText:a.t2, accChart:a.t3, sidebar:'#0D1420'
+    } : {
+      mode:'light', bg:'#F4F5F7', bg2:'#EDEEF1', card:'#FFFFFF', cardEdge:'rgba(16,20,28,.09)',
+      inset:'#F1F2F5', border:'rgba(16,20,28,.14)', text:'#10141C',
+      dim:'rgba(16,20,28,.68)', faint:'rgba(16,20,28,.42)', shadow:'0 2px 12px rgba(16,20,28,.07)',
+      accText:a.deep, accChart:a.base, sidebar:'#FFFFFF'
+    };
+    const c = { ...base, acc:a.base, accOn:a.on, accT2:a.t2, accT3:a.t3, accDeep:a.deep,
+      accSoft:soft(a.base, dark?.16:.14), accSoftStrong:soft(a.base, dark?.24:.18), accDash:soft(a.base,dark?.4:.45), font:'Sora,system-ui,sans-serif', mono:'JetBrains Mono,monospace' };
+    return {
+      c, accName,
+      setDark:()=>this.setState({mode:'dark'}), setLight:()=>this.setState({mode:'light'}),
+      setMode:(mm)=>this.setState({mode:mm}), setAccent:(nn)=>this.setState({accent:nn}),
+      accentList: ORDER.map(n=>({name:n, base:ACCENTS[n].base})),
+      darkTabBg: dark?'#141414':'transparent', darkTabFg: dark?'#fff':'rgba(0,0,0,.55)',
+      lightTabBg: dark?'transparent':'#141414', lightTabFg: dark?'rgba(0,0,0,.55)':'#fff',
+      swatches: ORDER.map(n=>({ name:n, base:ACCENTS[n].base,
+        ring: n===accName ? `0 0 0 2px #dedbd4, 0 0 0 4px ${ACCENTS[n].base}` : '0 0 0 1px rgba(0,0,0,.12)',
+        pick:()=>this.setState({accent:n}) })),
+      screens: SCREENS.map(s => ({ ...s,
+        isLogin:s.comp==='ScreenLogin', isRegister:s.comp==='ScreenRegister',
+        isOnboard:s.comp==='ScreenOnboard', isHome:s.comp==='ScreenHome',
+        isWorkout:s.comp==='ScreenWorkout', isNutrition:s.comp==='ScreenNutrition',
+        isProgress:s.comp==='ScreenProgress', isSettings:s.comp==='ScreenSettings',
+        isCoach:s.comp==='ScreenCoach' }))
+    };
+  }
+}
+</script>
+</body>
+</html>

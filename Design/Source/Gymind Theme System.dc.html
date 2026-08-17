@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet data-dc-atomics><meta name="design_doc_mode" content="canvas">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+body{margin:0;background:#e9e7e2;font-family:Space Grotesk,system-ui,sans-serif}
+a{color:#2a78d6}a:hover{color:#1b5fb0}
+</style></helmet>
+
+<div style="padding:40px 44px 56px;display:flex;flex-direction:column;gap:34px">
+
+<div style="display:flex;align-items:baseline;gap:12px">
+<span style="font:600 10px ui-monospace,Menlo,monospace;padding:3px 7px;background:#1a1a1a;color:#fff;border-radius:4px">4</span>
+<span style="font:600 13px system-ui,sans-serif;color:#1a1a1a">Gymind theming system — one base, two modes, six accents. Live: tap the swatches.</span></div>
+
+<div style="display:flex;flex-wrap:wrap;gap:30px;align-items:flex-start">
+
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:400 11px system-ui,sans-serif;color:rgba(0,0,0,.55)">Theme settings — mobile</div>
+<div style="width:376px;border-radius:26px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.1);background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;font:500 12px JetBrains Mono,monospace;color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:12px 20px 0;display:flex;align-items:center;gap:12px">
+<span style="font:500 20px Space Grotesk;color:{{ c.dim }}">‹</span>
+<span style="font:700 22px/1 Space Grotesk;letter-spacing:-.02em">Theme</span></div>
+
+<div style="padding:24px 20px 0">
+<div style="font:500 10px JetBrains Mono,monospace;letter-spacing:.14em;color:{{ c.faint }}">APPEARANCE</div>
+<div style="display:flex;gap:12px;margin-top:12px">
+<div onClick="{{ setDark }}" style="flex:1;border-radius:16px;padding:12px;cursor:pointer;background:{{ c.card }};border:{{ darkRing }}">
+<div style="border-radius:10px;overflow:hidden;background:#0A0F1A;padding:9px">
+<div style="height:6px;width:54%;border-radius:6px;background:{{ acc }}"></div>
+<div style="height:5px;width:78%;border-radius:6px;background:rgba(240,243,248,.28);margin-top:7px"></div>
+<div style="height:5px;width:40%;border-radius:6px;background:rgba(240,243,248,.16);margin-top:6px"></div>
+<div style="height:16px;border-radius:6px;background:#131B2B;margin-top:9px"></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px">
+<span style="font:600 13.5px Space Grotesk">Dark</span>
+<span style="font:600 11px Space Grotesk;color:{{ darkMark }}">{{ darkDot }}</span></div></div>
+<div onClick="{{ setLight }}" style="flex:1;border-radius:16px;padding:12px;cursor:pointer;background:{{ c.card }};border:{{ lightRing }}">
+<div style="border-radius:10px;overflow:hidden;background:#F4F5F7;padding:9px">
+<div style="height:6px;width:54%;border-radius:6px;background:{{ acc }}"></div>
+<div style="height:5px;width:78%;border-radius:6px;background:rgba(16,20,28,.24);margin-top:7px"></div>
+<div style="height:5px;width:40%;border-radius:6px;background:rgba(16,20,28,.13);margin-top:6px"></div>
+<div style="height:16px;border-radius:6px;background:#fff;margin-top:9px;border:1px solid rgba(16,20,28,.08)"></div></div>
+<div style="display:flex;align-items:center;justify-content:space-between;margin-top:11px">
+<span style="font:600 13.5px Space Grotesk">Light</span>
+<span style="font:600 11px Space Grotesk;color:{{ lightMark }}">{{ lightDot }}</span></div></div>
+</div></div>
+
+<div style="padding:26px 20px 0">
+<div style="display:flex;justify-content:space-between;align-items:baseline">
+<span style="font:500 10px JetBrains Mono,monospace;letter-spacing:.14em;color:{{ c.faint }}">ACCENT COLOR</span>
+<span style="font:500 11.5px Space Grotesk;color:{{ c.accText }}">{{ accName }}</span></div>
+<div style="display:grid;grid-template-columns:repeat(6,1fr);gap:10px;margin-top:14px">
+<sc-for list="{{ swatches }}" as="s" hint-placeholder-count="6">
+<div onClick="{{ s.pick }}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:7px">
+<span style="width:44px;height:44px;border-radius:50%;display:block;background:{{ s.base }};box-shadow:{{ s.ring }}"></span>
+<span style="font:500 9px JetBrains Mono,monospace;letter-spacing:.04em;color:{{ s.label }};text-align:center">{{ s.short }}</span></div>
+</sc-for>
+</div>
+<div style="margin-top:16px;background:{{ c.card }};border-radius:14px;padding:13px 14px;display:flex;align-items:center;justify-content:space-between">
+<div><div style="font:600 13.5px Space Grotesk">Tint charts &amp; rings</div>
+<div style="font:400 11.5px Space Grotesk;color:{{ c.dim }};margin-top:4px">Use accent tints for progress graphics</div></div>
+<span style="width:44px;height:26px;border-radius:20px;background:{{ acc }};display:flex;align-items:center;justify-content:flex-end;padding:0 3px"><span style="width:20px;height:20px;border-radius:50%;background:#fff;display:block"></span></span></div>
+</div>
+
+<div style="padding:26px 20px 0">
+<div style="font:500 10px JetBrains Mono,monospace;letter-spacing:.14em;color:{{ c.faint }}">LIVE PREVIEW — WORKOUT LOGGING</div>
+<div style="margin-top:12px;border-radius:16px;overflow:hidden;border:1px solid {{ c.border }};background:{{ c.bg }}">
+<div style="padding:13px 14px;display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:7px"><span style="width:6px;height:6px;border-radius:50%;background:{{ acc }};display:block"></span><span style="font:500 9.5px JetBrains Mono,monospace;letter-spacing:.12em;color:{{ c.accText }}">SESSION LIVE</span></div>
+<span style="font:500 15px JetBrains Mono,monospace;letter-spacing:-.03em">42:16</span></div>
+<div style="padding:0 14px 14px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;background:{{ c.card }};border-radius:8px;padding:8px 11px;font:500 12.5px JetBrains Mono,monospace;color:{{ c.dim }}">185 lb × 8</span><span style="width:22px;height:22px;border-radius:50%;background:{{ c.accSoft }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 11px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:8px"><span style="flex:1;background:{{ c.bg }};border:1.5px solid {{ acc }};border-radius:8px;padding:7px 11px;font:500 13.5px JetBrains Mono,monospace">190 lb × 8</span><span style="width:22px;height:22px;border-radius:50%;border:1.5px solid {{ c.border }};display:block"></span></div>
+<div style="background:{{ acc }};color:{{ accOn }};border-radius:9px;text-align:center;padding:10px 0;font:600 12px Space Grotesk;margin-top:4px">Finish session</div>
+</div></div>
+<div style="font:400 11.5px/1.5 Space Grotesk;color:{{ c.dim }};margin-top:12px;padding-bottom:26px">Layout, spacing and type are fixed — only these color tokens change.</div>
+</div>
+</div></div>
+
+<div style="display:flex;flex-direction:column;gap:9px">
+<div style="font:400 11px system-ui,sans-serif;color:rgba(0,0,0,.55)">Workout logging — rendered in the selected theme</div>
+<div style="width:376px;border-radius:26px;overflow:hidden;box-shadow:0 2px 14px rgba(0,0,0,.1);background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 20px 6px;font:500 12px JetBrains Mono,monospace;color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:14px 20px 0">
+<div style="display:flex;justify-content:space-between;align-items:center">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:7px;height:7px;border-radius:50%;background:{{ acc }};display:block"></span><span style="font:500 10.5px JetBrains Mono,monospace;letter-spacing:.14em;color:{{ c.accText }}">SESSION LIVE</span></div>
+<span style="font:400 11px JetBrains Mono,monospace;color:{{ c.faint }}">W4 · D1</span></div>
+<div style="display:flex;align-items:flex-end;justify-content:space-between;margin-top:14px">
+<div style="font:700 26px/1.1 Space Grotesk;letter-spacing:-.025em">Push Day A</div>
+<div style="font:500 30px/1 JetBrains Mono,monospace;letter-spacing:-.04em">42:16</div></div>
+<div style="display:flex;gap:8px;margin-top:18px">
+<div style="flex:1;background:{{ c.card }};border-radius:12px;padding:11px 13px;border:1px solid {{ c.cardEdge }}"><div style="font:500 9.5px JetBrains Mono,monospace;letter-spacing:.1em;color:{{ c.faint }}">VOLUME</div><div style="font:500 18px/1 JetBrains Mono,monospace;margin-top:8px">8240</div></div>
+<div style="flex:1;background:{{ c.card }};border-radius:12px;padding:11px 13px;border:1px solid {{ c.cardEdge }}"><div style="font:500 9.5px JetBrains Mono,monospace;letter-spacing:.1em;color:{{ c.faint }}">SETS</div><div style="font:500 18px/1 JetBrains Mono,monospace;margin-top:8px">11<span style="color:{{ c.faint }}">/14</span></div></div>
+<div style="flex:1;background:{{ c.card }};border-radius:12px;padding:11px 13px;border:1px solid {{ c.cardEdge }}"><div style="font:500 9.5px JetBrains Mono,monospace;letter-spacing:.1em;color:{{ c.faint }}">e1RM</div><div style="font:500 18px/1 JetBrains Mono,monospace;margin-top:8px;color:{{ c.accText }}">238</div></div></div></div>
+<div style="padding:18px 20px 0">
+<div style="background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:16px;overflow:hidden">
+<div style="padding:14px 15px 12px;display:flex;justify-content:space-between;align-items:flex-start">
+<div><div style="font:600 16px/1.2 Space Grotesk;letter-spacing:-.01em">Barbell Bench Press</div><div style="font:400 11px JetBrains Mono,monospace;color:{{ c.faint }};margin-top:7px">PREV 185×8·8·7 · TGT 190</div></div>
+<div style="font:500 10.5px JetBrains Mono,monospace;color:{{ c.accText }};background:{{ c.accSoft }};border-radius:6px;padding:4px 7px">3/4</div></div>
+<div style="padding:0 15px 13px;display:flex;flex-direction:column;gap:6px">
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px JetBrains Mono,monospace;color:{{ c.faint }}">01</span><span style="flex:1;background:{{ c.inset }};border-radius:9px;padding:9px 12px;font:500 14px JetBrains Mono,monospace;color:{{ c.dim }}">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ c.accSoft }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px JetBrains Mono,monospace;color:{{ c.faint }}">02</span><span style="flex:1;background:{{ c.inset }};border-radius:9px;padding:9px 12px;font:500 14px JetBrains Mono,monospace;color:{{ c.dim }}">185 lb &nbsp;×&nbsp; 8</span><span style="width:25px;height:25px;border-radius:50%;background:{{ c.accSoft }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:9px"><span style="width:20px;font:500 11px JetBrains Mono,monospace;color:{{ c.accText }}">03</span><span style="flex:1;display:flex;gap:7px"><span style="flex:1;background:{{ c.bg }};border:1.5px solid {{ acc }};border-radius:9px;padding:8px 11px;font:500 15px JetBrains Mono,monospace">190 <span style="font-size:11px;color:{{ c.faint }}">lb</span></span><span style="width:78px;background:{{ c.bg }};border:1px solid {{ c.border }};border-radius:9px;padding:8px 11px;font:500 15px JetBrains Mono,monospace">8 <span style="font-size:11px;color:{{ c.faint }}">rp</span></span></span><span style="width:25px;height:25px;border-radius:50%;border:1.5px solid {{ c.border }};display:block"></span></div>
+<div style="display:flex;align-items:center;gap:9px;opacity:.35"><span style="width:20px;font:500 11px JetBrains Mono,monospace">04</span><span style="flex:1;padding:9px 12px;font:500 14px JetBrains Mono,monospace">190 lb &nbsp;×&nbsp; 8</span><span style="width:25px"></span></div></div>
+<div style="display:flex;gap:1px;background:{{ c.border }}">
+<div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px JetBrains Mono,monospace;color:{{ c.dim }}">+ SET</div>
+<div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px JetBrains Mono,monospace;color:{{ c.accText }}">REST 2:00</div>
+<div style="flex:1;background:{{ c.card }};text-align:center;padding:12px 0;font:500 11.5px JetBrains Mono,monospace;color:{{ c.dim }}">NOTE</div></div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:14px;padding:14px 15px;margin-top:12px;display:flex;justify-content:space-between;align-items:center"><div><div style="font:600 15px Space Grotesk;color:{{ c.dim }}">Incline DB Press</div><div style="font:400 11px JetBrains Mono,monospace;color:{{ c.faint }};margin-top:6px">QUEUED · 3 SETS</div></div><span style="color:{{ c.faint }};font-size:17px">›</span></div>
+<div style="border:1px dashed {{ c.accDash }};border-radius:14px;padding:13px;margin-top:12px;text-align:center;font:500 11.5px JetBrains Mono,monospace;letter-spacing:.06em;color:{{ c.accText }}">+ ADD EXERCISE</div></div>
+<div style="padding:20px;display:flex;gap:10px"><div style="flex:1;background:{{ acc }};color:{{ accOn }};border-radius:13px;text-align:center;padding:15px 0;font:600 14px Space Grotesk">Finish session</div><div style="width:50px;background:{{ c.card }};border:1px solid {{ c.cardEdge }};border-radius:13px;display:flex;align-items:center;justify-content:center;color:{{ c.dim }}">⋯</div></div>
+</div></div>
+
+</div>
+
+<div id="gm-matrix" style="display:flex;flex-direction:column;gap:14px;padding:16px;background:#dedbd4">
+<div style="font:400 11px system-ui,sans-serif;color:rgba(0,0,0,.55)">All six presets · dark base (left) and light base (right) · identical layout</div>
+<div style="display:flex;flex-wrap:wrap;gap:18px">
+<sc-for list="{{ matrix }}" as="m" hint-placeholder-count="6">
+<div style="display:flex;flex-direction:column;gap:8px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:11px;height:11px;border-radius:50%;background:{{ m.base }};display:block"></span><span style="font:600 11.5px Space Grotesk;color:#1a1a1a">{{ m.name }}</span><span style="font:400 10px JetBrains Mono,monospace;color:rgba(0,0,0,.4)">{{ m.base }}</span></div>
+<div style="display:flex;gap:10px">
+<div style="width:180px;border-radius:14px;overflow:hidden;background:#0A0F1A;color:#F0F3F8;padding:12px;box-shadow:0 1px 5px rgba(0,0,0,.12)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 8px JetBrains Mono,monospace;letter-spacing:.12em;color:{{ m.base }}">SESSION LIVE</span><span style="font:500 11px JetBrains Mono,monospace">42:16</span></div>
+<div style="background:#131B2B;border-radius:8px;padding:8px 9px;margin-top:9px">
+<div style="font:600 10.5px Space Grotesk">Barbell Bench Press</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="flex:1;background:rgba(255,255,255,.05);border-radius:5px;padding:5px 7px;font:500 9px JetBrains Mono,monospace;color:rgba(240,243,248,.7)">185 × 8</span><span style="width:14px;height:14px;border-radius:50%;background:{{ m.soft }};color:{{ m.base }};display:flex;align-items:center;justify-content:center;font:600 8px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:5px"><span style="flex:1;background:#0A0F1A;border:1px solid {{ m.base }};border-radius:5px;padding:5px 7px;font:500 9px JetBrains Mono,monospace">190 × 8</span><span style="width:14px;height:14px;border-radius:50%;border:1px solid rgba(255,255,255,.2);display:block"></span></div></div>
+<div style="background:{{ m.base }};color:{{ m.on }};border-radius:8px;text-align:center;padding:7px 0;font:600 9.5px Space Grotesk;margin-top:9px">Finish session</div></div>
+<div style="width:180px;border-radius:14px;overflow:hidden;background:#F4F5F7;color:#10141C;padding:12px;box-shadow:0 1px 5px rgba(0,0,0,.12)">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 8px JetBrains Mono,monospace;letter-spacing:.12em;color:{{ m.deep }}">SESSION LIVE</span><span style="font:500 11px JetBrains Mono,monospace">42:16</span></div>
+<div style="background:#fff;border:1px solid rgba(16,20,28,.08);border-radius:8px;padding:8px 9px;margin-top:9px">
+<div style="font:600 10.5px Space Grotesk">Barbell Bench Press</div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:8px"><span style="flex:1;background:#F4F5F7;border-radius:5px;padding:5px 7px;font:500 9px JetBrains Mono,monospace;color:rgba(16,20,28,.65)">185 × 8</span><span style="width:14px;height:14px;border-radius:50%;background:{{ m.softL }};color:{{ m.deep }};display:flex;align-items:center;justify-content:center;font:600 8px Space Grotesk">✓</span></div>
+<div style="display:flex;align-items:center;gap:6px;margin-top:5px"><span style="flex:1;background:#fff;border:1px solid {{ m.base }};border-radius:5px;padding:5px 7px;font:500 9px JetBrains Mono,monospace">190 × 8</span><span style="width:14px;height:14px;border-radius:50%;border:1px solid rgba(16,20,28,.2);display:block"></span></div></div>
+<div style="background:{{ m.base }};color:{{ m.on }};border-radius:8px;text-align:center;padding:7px 0;font:600 9.5px Space Grotesk;margin-top:9px">Finish session</div></div>
+</div></div>
+</sc-for>
+</div></div>
+
+<div id="gm-tokens" style="display:flex;flex-wrap:wrap;gap:26px;padding:22px 24px;background:#fff;border:1px solid rgba(0,0,0,.08);border-radius:10px;max-width:1020px">
+<div style="flex:1;min-width:240px">
+<div style="font:600 12px Space Grotesk;color:#1a1a1a">Base tokens — dark</div>
+<div style="font:400 11px/1.9 JetBrains Mono,monospace;color:rgba(0,0,0,.6);margin-top:8px">bg.base #0A0F1A<br>bg.card #131B2B<br>bg.inset rgba(255,255,255,.045)<br>border rgba(255,255,255,.14)<br>text.primary #F0F3F8<br>text.dim 72% · text.faint 42%</div></div>
+<div style="flex:1;min-width:240px">
+<div style="font:600 12px Space Grotesk;color:#1a1a1a">Base tokens — light</div>
+<div style="font:400 11px/1.9 JetBrains Mono,monospace;color:rgba(0,0,0,.6);margin-top:8px">bg.base #F4F5F7<br>bg.card #FFFFFF<br>bg.inset #F4F5F7<br>border rgba(16,20,28,.14)<br>text.primary #10141C<br>text.dim 68% · text.faint 42%</div></div>
+<div style="flex:1;min-width:240px">
+<div style="font:600 12px Space Grotesk;color:#1a1a1a">Accent contract</div>
+<div style="font:400 11px/1.9 JetBrains Mono,monospace;color:rgba(0,0,0,.6);margin-top:8px">accent — fills, active borders<br>accent.tint2 — dark-mode text/icons<br>accent.tint3 — charts, rings<br>accent.deep — light-mode text<br>accent.on — text on accent fill<br>accent.soft — 16% wash</div></div>
+</div>
+
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;defaultMode&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;dark&quot;,&quot;light&quot;],&quot;default&quot;:&quot;dark&quot;,&quot;tsType&quot;:&quot;'dark'|'light'&quot;},&quot;defaultAccent&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;Ember&quot;,&quot;Signal&quot;,&quot;Volt&quot;,&quot;Violet&quot;,&quot;Amber&quot;,&quot;Teal&quot;],&quot;default&quot;:&quot;Ember&quot;,&quot;tsType&quot;:&quot;string&quot;}}">
+const ACCENTS = [
+  {name:'Ember',   short:'EMBER', base:'#FF6B1F', t2:'#FF9A5E', t3:'#FFD2B3', deep:'#C4470D', on:'#170800'},
+  {name:'Signal',  short:'SIGNL', base:'#3FC4FF', t2:'#7ED8FF', t3:'#B7EBFF', deep:'#0A6E9E', on:'#001622'},
+  {name:'Volt',    short:'VOLT',  base:'#3FE07A', t2:'#7DEBA6', t3:'#BAF5CE', deep:'#12813F', on:'#04240F'},
+  {name:'Violet',  short:'VIOLT', base:'#A78BFA', t2:'#C4B2FC', t3:'#E2D9FE', deep:'#6D45D9', on:'#170634'},
+  {name:'Amber',   short:'AMBER', base:'#FFD23F', t2:'#FFE07A', t3:'#FFEFBC', deep:'#A6740A', on:'#241A00'},
+  {name:'Teal',    short:'TEAL',  base:'#17C3B2', t2:'#5FDBCF', t3:'#B0EEE7', deep:'#0B7F74', on:'#02201D'}
+];
+const hex2rgb = h => [1,3,5].map(i => parseInt(h.slice(i,i+2),16));
+const soft = (h,a) => `rgba(${hex2rgb(h).join(',')},${a})`;
+
+class Component extends DCLogic {
+  state = { mode: null, accent: null };
+  renderVals() {
+    const mode = this.state.mode ?? this.props.defaultMode ?? 'dark';
+    const idx = this.state.accent ?? ACCENTS.findIndex(a => a.name === (this.props.defaultAccent ?? 'Ember'));
+    const i = idx < 0 ? 0 : idx;
+    const a = ACCENTS[i];
+    const dark = mode === 'dark';
+    const c = dark ? {
+      bg:'#0A0F1A', card:'#131B2B', cardEdge:'rgba(255,255,255,.06)', inset:'rgba(255,255,255,.045)',
+      border:'rgba(255,255,255,.14)', text:'#F0F3F8', dim:'rgba(240,243,248,.72)', faint:'rgba(240,243,248,.42)',
+      accText:a.t2, accSoft:soft(a.base,.18), accDash:soft(a.base,.4)
+    } : {
+      bg:'#F4F5F7', card:'#FFFFFF', cardEdge:'rgba(16,20,28,.09)', inset:'#F4F5F7',
+      border:'rgba(16,20,28,.14)', text:'#10141C', dim:'rgba(16,20,28,.68)', faint:'rgba(16,20,28,.42)',
+      accText:a.deep, accSoft:soft(a.base,.18), accDash:soft(a.base,.45)
+    };
+    const selRing = `0 0 0 3px ${c.bg}, 0 0 0 5px ${a.base}`;
+    return {
+      c, acc:a.base, accOn:a.on, accName:a.name,
+      darkRing: dark ? `1.5px solid ${a.base}` : `1.5px solid ${c.cardEdge}`,
+      lightRing: dark ? `1.5px solid ${c.cardEdge}` : `1.5px solid ${a.base}`,
+      darkDot: dark ? '● Selected' : '○', lightDot: dark ? '○' : '● Selected',
+      darkMark: dark ? a.t2 : c.faint, lightMark: dark ? c.faint : a.deep,
+      setDark: () => this.setState({mode:'dark'}),
+      setLight: () => this.setState({mode:'light'}),
+      swatches: ACCENTS.map((s,n) => ({
+        base:s.base, short:s.short,
+        ring: n === i ? selRing : `0 0 0 1px ${c.border}`,
+        label: n === i ? c.text : c.faint,
+        pick: () => this.setState({accent:n})
+      })),
+      matrix: ACCENTS.map(s => ({
+        name:s.name, base:s.base, on:s.on, deep:s.deep,
+        soft:soft(s.base,.2), softL:soft(s.base,.22)
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:12px 18px 14px;border-bottom:1px solid {{ c.border }};display:flex;align-items:center;gap:12px">
+<span style="font:500 22px Sora;color:{{ c.dim }}">‹</span>
+<span style="width:36px;height:36px;border-radius:10px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 15px Sora">AI</span>
+<div style="flex:1"><div style="display:flex;align-items:center;gap:7px"><span style="font:700 17px Sora;letter-spacing:-.01em">Coach</span><span style="font:500 8.5px {{ c.mono }};letter-spacing:.1em;background:{{ c.accSoftStrong }};color:{{ c.accText }};border-radius:4px;padding:2px 6px">PREVIEW</span></div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">Learning from your training</div></div>
+<span style="font:500 18px Sora;color:{{ c.dim }}">⋯</span></div>
+
+<div style="flex:1;overflow:hidden;padding:18px 18px 0;display:flex;flex-direction:column;gap:14px">
+<div style="text-align:center;font:400 10.5px Sora;color:{{ c.faint }}">Today · 8:02 AM</div>
+<div style="max-width:86%;align-self:flex-start;background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:4px 16px 16px 16px;padding:13px 15px">
+<div style="display:flex;align-items:center;gap:7px"><span style="width:20px;height:20px;border-radius:6px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 9px Sora">AI</span><span style="font:600 11px Sora;color:{{ c.accText }}">Coach</span></div>
+<div style="font:400 13.5px/1.55 Sora;color:{{ c.text }};margin-top:8px">Morning, Alex. <span style="font-weight:600">Push Day A</span> is due today. You're a session ahead of last week, so bench is ready for a +5 lb bump — I've set 190 lb on your working sets.</div></div>
+<div style="max-width:80%;align-self:flex-end;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px 16px 4px 16px;padding:12px 15px"><div style="font:400 13.5px/1.5 Sora;color:{{ c.text }}">Why 190 and not 195?</div></div>
+<div style="max-width:86%;align-self:flex-start;background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:4px 16px 16px 16px;padding:13px 15px">
+<div style="display:flex;align-items:center;gap:7px"><span style="width:20px;height:20px;border-radius:6px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 9px Sora">AI</span><span style="font:600 11px Sora;color:{{ c.accText }}">Coach</span></div>
+<div style="font:400 13.5px/1.55 Sora;color:{{ c.text }};margin-top:8px">Your last three bench sessions ended <span style="color:{{ c.accText }};font-weight:600">185×8, 8, 7</span> — the dropped rep on set 3 means 185 is near your ceiling. A 5 lb jump keeps all four sets in the 6–8 range you've been growing in. 195 would likely cost reps and add fatigue before incline work.</div>
+<div style="font:400 12.5px/1.55 Sora;color:{{ c.dim }};margin-top:9px">If today's 190 moves at RPE 8 or lower, we'll try 195 next week.</div></div>
+<div style="align-self:flex-start;display:flex;align-items:center;gap:5px;padding:2px 6px"><span style="width:5px;height:5px;border-radius:50%;background:{{ c.faint }};display:block"></span><span style="width:5px;height:5px;border-radius:50%;background:{{ c.faint }};display:block"></span><span style="width:5px;height:5px;border-radius:50%;background:{{ c.faint }};display:block"></span></div>
+</div>
+
+<div style="padding:10px 0 0">
+<div style="display:flex;flex-wrap:wrap;gap:8px;padding:0 18px 12px">
+<sc-for list="{{ prompts }}" as="p" hint-placeholder-count="3">
+<span style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:20px;padding:9px 14px;font:500 12px Sora;color:{{ c.accText }}">{{ p }}</span>
+</sc-for>
+</div>
+<div style="padding:0 18px 14px;display:flex;gap:10px;align-items:center">
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:22px;padding:13px 16px;font:400 13.5px Sora;color:{{ c.faint }}">Ask your coach…</div>
+<span style="width:44px;height:44px;border-radius:50%;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 17px Sora">↑</span></div>
+</div>
+<dc-import name="TabBar" c="{{ c }}" active="Coach" hint-size="368px,74px"></dc-import>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:820px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Coach" hint-size="240px,820px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:18px 34px;border-bottom:1px solid {{ c.border }}">
+<div style="display:flex;align-items:center;gap:13px"><span style="font:500 13px Sora;color:{{ c.dim }}">‹ Home</span><span style="width:38px;height:38px;border-radius:11px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 16px Sora">AI</span><div><div style="display:flex;align-items:center;gap:8px"><span style="font:700 19px Sora;letter-spacing:-.01em">Coach</span><span style="font:500 8.5px {{ c.mono }};letter-spacing:.1em;background:{{ c.accSoftStrong }};color:{{ c.accText }};border-radius:4px;padding:2px 6px">PREVIEW</span></div><div style="font:400 11.5px Sora;color:{{ c.dim }};margin-top:2px">Early access · learning from your training</div></div></div>
+</div>
+<div style="flex:1;display:flex">
+<div style="flex:1;display:flex;flex-direction:column;border-right:1px solid {{ c.border }}">
+<div style="flex:1;padding:28px 40px;display:flex;flex-direction:column;gap:16px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box">
+<div style="text-align:center;font:400 11px Sora;color:{{ c.faint }}">Today · 8:02 AM</div>
+<div style="max-width:76%;align-self:flex-start;background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:4px 16px 16px 16px;padding:15px 18px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:7px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 10px Sora">AI</span><span style="font:600 12px Sora;color:{{ c.accText }}">Coach</span></div>
+<div style="font:400 14px/1.6 Sora;color:{{ c.text }};margin-top:9px">Morning, Alex. <span style="font-weight:600">Push Day A</span> is due today. You're a session ahead of last week, so bench is ready for a +5 lb bump — I've set 190 lb on your working sets.</div></div>
+<div style="max-width:70%;align-self:flex-end;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px 16px 4px 16px;padding:14px 18px"><div style="font:400 14px/1.55 Sora;color:{{ c.text }}">Why 190 and not 195?</div></div>
+<div style="max-width:76%;align-self:flex-start;background:{{ c.accSoft }};border:1px solid {{ c.accDash }};border-radius:4px 16px 16px 16px;padding:15px 18px">
+<div style="display:flex;align-items:center;gap:8px"><span style="width:22px;height:22px;border-radius:7px;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 10px Sora">AI</span><span style="font:600 12px Sora;color:{{ c.accText }}">Coach</span></div>
+<div style="font:400 14px/1.6 Sora;color:{{ c.text }};margin-top:9px">Your last three bench sessions ended <span style="color:{{ c.accText }};font-weight:600">185×8, 8, 7</span> — the dropped rep on set 3 means 185 is near your ceiling. A 5 lb jump keeps all four sets in the 6–8 range you've been growing in. 195 would likely cost reps and add fatigue before your incline work.</div>
+<div style="font:400 13px/1.6 Sora;color:{{ c.dim }};margin-top:10px">If today's 190 moves at RPE 8 or lower, we'll try 195 next week.</div></div>
+</div>
+<div style="padding:0 40px 8px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box;display:flex;gap:10px;flex-wrap:wrap">
+<sc-for list="{{ prompts }}" as="p" hint-placeholder-count="3">
+<span style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:20px;padding:9px 15px;font:500 12.5px Sora;color:{{ c.accText }}">{{ p }}</span>
+</sc-for>
+</div>
+<div style="padding:14px 40px 26px;max-width:760px;width:100%;margin:0 auto;box-sizing:border-box;display:flex;gap:12px;align-items:center">
+<div style="flex:1;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:22px;padding:14px 18px;font:400 14px Sora;color:{{ c.faint }}">Ask your coach anything about your training…</div>
+<span style="width:46px;height:46px;border-radius:50%;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:700 18px Sora">↑</span></div>
+</div>
+<div style="width:300px;padding:28px 24px">
+<div style="font:500 10px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }}">WHAT I'M LOOKING AT</div>
+<div style="margin-top:16px;display:flex;flex-direction:column;gap:12px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px"><div style="font:400 10.5px Sora;color:{{ c.dim }}">Today's plan</div><div style="font:600 14px Sora;margin-top:4px">Push Day A · 6 exercises</div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px"><div style="font:400 10.5px Sora;color:{{ c.dim }}">Bench, last 3 sessions</div><div style="font:600 14px {{ c.mono }};margin-top:4px;font-variant-numeric:tabular-nums">185×8 · 8 · 7</div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px"><div style="font:400 10.5px Sora;color:{{ c.dim }}">Volume trend</div><div style="font:600 14px Sora;margin-top:4px;color:{{ c.accText }}">+8% this week</div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 14px"><div style="font:400 10.5px Sora;color:{{ c.dim }}">Bench e1RM</div><div style="font:600 14px {{ c.mono }};margin-top:4px;font-variant-numeric:tabular-nums">238 lb</div></div>
+</div>
+<div style="margin-top:18px;font:400 11px/1.6 Sora;color:{{ c.faint }}">Preview feature — the coach can read your data but can't change your program yet.</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const prompts = ["Adjust today's plan", "How's my progress this month?", "Suggest a meal for my remaining macros"];
+    return { m: p==='mobile', w: p==='web', c: this.props.c || {}, prompts };
+  }
+}
+</script>
+</body>
+</html>

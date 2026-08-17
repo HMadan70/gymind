@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="flex:1;padding:14px 22px 0">
+<div style="font:700 24px Sora;letter-spacing:-.02em">Settings</div>
+<div style="margin-top:16px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:15px 16px;display:flex;align-items:center;gap:14px"><span style="width:50px;height:50px;border-radius:50%;background:{{ c.inset }};border:1px solid {{ c.border }};display:block"></span><div style="flex:1"><div style="font:700 16px Sora">Alex Mercer</div><div style="font:400 12px Sora;color:{{ c.dim }};margin-top:2px">alex.mercer@email.com</div></div><span style="font:500 12px Sora;color:{{ c.accText }}">Edit</span></div>
+
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:24px">APPEARANCE</div>
+<div style="margin-top:12px;display:flex;gap:12px">
+<div onClick="{{ pickDark }}" style="flex:1;cursor:pointer;border-radius:16px;padding:11px;background:{{ c.card }};border:{{ darkRing }}"><div style="border-radius:9px;background:#0A0F1A;padding:9px"><div style="height:6px;width:52%;border-radius:4px;background:{{ c.acc }}"></div><div style="height:5px;width:76%;border-radius:4px;background:rgba(240,243,248,.25);margin-top:6px"></div><div style="height:14px;border-radius:5px;background:#131B2B;margin-top:7px"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font:600 13px Sora">Dark</span><span style="font:600 11px Sora;color:{{ darkMark }}">{{ darkDot }}</span></div></div>
+<div onClick="{{ pickLight }}" style="flex:1;cursor:pointer;border-radius:16px;padding:11px;background:{{ c.card }};border:{{ lightRing }}"><div style="border-radius:9px;background:#F4F5F7;padding:9px"><div style="height:6px;width:52%;border-radius:4px;background:{{ c.acc }}"></div><div style="height:5px;width:76%;border-radius:4px;background:rgba(16,20,28,.2);margin-top:6px"></div><div style="height:14px;border-radius:5px;background:#fff;border:1px solid rgba(16,20,28,.08);margin-top:7px"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:10px"><span style="font:600 13px Sora">Light</span><span style="font:600 11px Sora;color:{{ lightMark }}">{{ lightDot }}</span></div></div>
+</div>
+<div style="margin-top:14px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:16px 17px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 13.5px Sora">Accent color</span><span style="font:500 12px Sora;color:{{ c.accText }}">{{ accentName }}</span></div>
+<div style="display:flex;justify-content:space-between;margin-top:16px">
+<sc-for list="{{ accents }}" as="a" hint-placeholder-count="6">
+<span onClick="{{ a.pick }}" style="cursor:pointer;width:40px;height:40px;border-radius:50%;background:{{ a.base }};box-shadow:{{ a.ring }};display:block"></span>
+</sc-for>
+</div></div>
+
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:24px">PREFERENCES</div>
+<div style="margin-top:12px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid {{ c.border }}"><span style="font:500 14px Sora">Units</span><span style="font:400 13px Sora;color:{{ c.dim }}">lb · imperial ›</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid {{ c.border }}"><span style="font:500 14px Sora">Default rest timer</span><span style="font:400 13px Sora;color:{{ c.dim }}">2:00 ›</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px"><span style="font:500 14px Sora">Workout reminders</span><span style="width:42px;height:25px;border-radius:20px;background:{{ c.acc }};display:flex;align-items:center;justify-content:flex-end;padding:0 3px"><span style="width:19px;height:19px;border-radius:50%;background:#fff;display:block"></span></span></div>
+</div>
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:24px">ACCOUNT</div>
+<div style="margin-top:12px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;overflow:hidden">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid {{ c.border }}"><span style="font:500 14px Sora">Subscription</span><span style="font:400 13px Sora;color:{{ c.accText }}">Pro ›</span></div>
+<div style="display:flex;justify-content:space-between;align-items:center;padding:14px 16px;border-bottom:1px solid {{ c.border }}"><span style="font:500 14px Sora">Export data</span><span style="font:400 13px Sora;color:{{ c.dim }}">›</span></div>
+<div style="padding:14px 16px"><span style="font:500 14px Sora;color:#e5484d">Sign out</span></div>
+</div>
+<div style="height:14px"></div>
+<dc-import name="TabBar" c="{{ c }}" active="Profile" hint-size="368px,74px"></dc-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:820px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Settings" hint-size="240px,820px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="padding:22px 34px;border-bottom:1px solid {{ c.border }}"><div style="font:700 22px/1.1 Sora;letter-spacing:-.02em">Settings</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:3px">Manage your account and how Gymind looks</div></div>
+<div style="flex:1;display:flex">
+<div style="width:210px;border-right:1px solid {{ c.border }};padding:22px 16px;display:flex;flex-direction:column;gap:3px">
+<span style="padding:10px 13px;border-radius:9px;font:500 13.5px Sora;color:{{ c.dim }}">Profile</span>
+<span style="padding:10px 13px;border-radius:9px;font:600 13.5px Sora;background:{{ c.accSoft }};color:{{ c.text }}">Appearance</span>
+<span style="padding:10px 13px;border-radius:9px;font:500 13.5px Sora;color:{{ c.dim }}">Units &amp; timers</span>
+<span style="padding:10px 13px;border-radius:9px;font:500 13.5px Sora;color:{{ c.dim }}">Notifications</span>
+<span style="padding:10px 13px;border-radius:9px;font:500 13.5px Sora;color:{{ c.dim }}">Account &amp; billing</span></div>
+<div style="flex:1;padding:30px 40px">
+<div style="font:700 20px Sora;letter-spacing:-.01em">Appearance</div>
+<div style="font:400 13px Sora;color:{{ c.dim }};margin-top:6px">Pick a mode and accent. Every screen updates instantly.</div>
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:26px">MODE</div>
+<div style="display:flex;gap:16px;margin-top:14px;max-width:520px">
+<div onClick="{{ pickDark }}" style="flex:1;cursor:pointer;border-radius:16px;padding:13px;background:{{ c.card }};border:{{ darkRing }}"><div style="border-radius:10px;background:#0A0F1A;padding:12px"><div style="height:7px;width:50%;border-radius:5px;background:{{ c.acc }}"></div><div style="height:6px;width:78%;border-radius:5px;background:rgba(240,243,248,.25);margin-top:8px"></div><div style="height:20px;border-radius:6px;background:#131B2B;margin-top:9px"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font:600 14px Sora">Dark</span><span style="font:600 11.5px Sora;color:{{ darkMark }}">{{ darkDot }}</span></div></div>
+<div onClick="{{ pickLight }}" style="flex:1;cursor:pointer;border-radius:16px;padding:13px;background:{{ c.card }};border:{{ lightRing }}"><div style="border-radius:10px;background:#F4F5F7;padding:12px"><div style="height:7px;width:50%;border-radius:5px;background:{{ c.acc }}"></div><div style="height:6px;width:78%;border-radius:5px;background:rgba(16,20,28,.2);margin-top:8px"></div><div style="height:20px;border-radius:6px;background:#fff;border:1px solid rgba(16,20,28,.08);margin-top:9px"></div></div><div style="display:flex;justify-content:space-between;align-items:center;margin-top:12px"><span style="font:600 14px Sora">Light</span><span style="font:600 11.5px Sora;color:{{ lightMark }}">{{ lightDot }}</span></div></div>
+</div>
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:28px">ACCENT COLOR</div>
+<div style="display:flex;gap:18px;margin-top:16px">
+<sc-for list="{{ accents }}" as="a" hint-placeholder-count="6">
+<div onClick="{{ a.pick }}" style="cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:9px"><span style="width:48px;height:48px;border-radius:50%;background:{{ a.base }};box-shadow:{{ a.ring }};display:block"></span><span style="font:500 11px Sora;color:{{ a.labelColor }}">{{ a.name }}</span></div>
+</sc-for>
+</div>
+<div style="margin-top:30px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:18px 20px;max-width:520px">
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }}">PREVIEW</div>
+<div style="display:flex;gap:12px;align-items:center;margin-top:14px">
+<div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:11px;padding:12px 22px;font:600 13.5px Sora">Start session</div>
+<div style="background:{{ c.accSoft }};color:{{ c.accText }};border-radius:11px;padding:12px 18px;font:600 13px Sora">Rest 2:00</div>
+<div style="flex:1;height:8px;border-radius:5px;background:{{ c.inset }};overflow:hidden"><div style="width:66%;height:8px;background:{{ c.acc }};border-radius:5px"></div></div></div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const dark = (this.props.mode || c.mode) === 'dark';
+    const setMode = this.props.onSetMode || (()=>{});
+    const setAccent = this.props.onSetAccent || (()=>{});
+    const list = this.props.accentList || [];
+    const accentName = this.props.accentName || '';
+    const accents = list.map(a => {
+      const sel = a.name === accentName;
+      return { name:a.name, base:a.base,
+        ring: sel ? `0 0 0 3px ${c.card}, 0 0 0 5px ${a.base}` : `0 0 0 1px ${c.border}`,
+        labelColor: sel ? c.text : c.faint,
+        pick: () => setAccent(a.name) };
+    });
+    return { m:p==='mobile', w:p==='web', c, accentName, accents,
+      pickDark:()=>setMode('dark'), pickLight:()=>setMode('light'),
+      darkRing: dark?`1.5px solid ${c.acc}`:`1.5px solid ${c.cardEdge}`,
+      lightRing: dark?`1.5px solid ${c.cardEdge}`:`1.5px solid ${c.acc}`,
+      darkDot: dark?'● Selected':'○', lightDot: dark?'○':'● Selected',
+      darkMark: dark?c.accText:c.faint, lightMark: dark?c.faint:c.accText };
+  }
+}
+</script>
+</body>
+</html>

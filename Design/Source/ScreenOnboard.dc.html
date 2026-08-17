@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 26px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="padding:14px 26px 0">
+<div style="display:flex;align-items:center;justify-content:space-between"><span style="font:500 22px Sora;color:{{ c.dim }}">‹</span><span style="font:500 11px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }}">STEP 1 OF 5</span><span style="font:500 12.5px Sora;color:{{ c.dim }}">Skip</span></div>
+<div style="display:flex;gap:6px;margin-top:14px"><span style="flex:1;height:4px;border-radius:3px;background:{{ c.acc }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span><span style="flex:1;height:4px;border-radius:3px;background:{{ c.border }}"></span></div>
+</div>
+<div style="flex:1;padding:26px 26px 0">
+<div style="font:700 26px/1.15 Sora;letter-spacing:-.02em">What's your main goal?</div>
+<div style="font:400 14px/1.5 Sora;color:{{ c.dim }};margin-top:8px">This shapes your plan. You can change it anytime.</div>
+<div style="margin-top:24px;display:flex;flex-direction:column;gap:12px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:16px 17px;display:flex;align-items:center;gap:14px">
+<span style="width:44px;height:44px;border-radius:12px;background:{{ c.inset }};display:flex;align-items:center;justify-content:center;font:600 18px Sora;color:{{ c.dim }}">↓</span>
+<div style="flex:1"><div style="font:600 15.5px Sora">Lose weight</div><div style="font:400 12px Sora;color:{{ c.dim }};margin-top:3px">Fat loss with muscle retention</div></div>
+<span style="width:22px;height:22px;border-radius:50%;border:2px solid {{ c.border }};display:block"></span></div>
+<div style="background:{{ c.accSoft }};border:1.5px solid {{ c.acc }};border-radius:16px;padding:16px 17px;display:flex;align-items:center;gap:14px">
+<span style="width:44px;height:44px;border-radius:12px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:600 18px Sora;color:{{ c.accOn }}">↑</span>
+<div style="flex:1"><div style="font:600 15.5px Sora">Build muscle</div><div style="font:400 12px Sora;color:{{ c.dim }};margin-top:3px">Hypertrophy &amp; progressive overload</div></div>
+<span style="width:22px;height:22px;border-radius:50%;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:16px 17px;display:flex;align-items:center;gap:14px">
+<span style="width:44px;height:44px;border-radius:12px;background:{{ c.inset }};display:flex;align-items:center;justify-content:center;font:600 18px Sora;color:{{ c.dim }}">≈</span>
+<div style="flex:1"><div style="font:600 15.5px Sora">Maintain</div><div style="font:400 12px Sora;color:{{ c.dim }};margin-top:3px">Stay consistent &amp; healthy</div></div>
+<span style="width:22px;height:22px;border-radius:50%;border:2px solid {{ c.border }};display:block"></span></div>
+</div>
+</div>
+<div style="padding:16px 26px 30px;border-top:1px solid {{ c.border }};display:flex;gap:12px;align-items:center">
+<div style="width:52px;height:52px;border:1px solid {{ c.border }};border-radius:13px;display:flex;align-items:center;justify-content:center;font:500 20px Sora;color:{{ c.dim }}">‹</div>
+<div style="flex:1;background:{{ c.acc }};color:{{ c.accOn }};border-radius:13px;text-align:center;padding:16px 0;font:600 15px Sora">Continue</div></div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:720px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<div style="width:300px;background:{{ c.sidebar }};border-right:1px solid {{ c.border }};padding:36px 30px;display:flex;flex-direction:column">
+<div style="display:flex;align-items:center;gap:11px"><span style="width:34px;height:34px;border-radius:10px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:700 18px Sora;color:{{ c.accOn }}">G</span><span style="font:700 19px Sora">Gymind</span></div>
+<div style="font:500 10.5px {{ c.mono }};letter-spacing:.12em;color:{{ c.faint }};margin-top:40px">SET-UP · 4 OF 5</div>
+<div style="margin-top:20px;display:flex;flex-direction:column;gap:4px">
+<div style="display:flex;align-items:center;gap:13px;padding:11px 0"><span style="width:26px;height:26px;border-radius:50%;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span><span style="font:500 14px Sora;color:{{ c.dim }}">Goal</span></div>
+<div style="display:flex;align-items:center;gap:13px;padding:11px 0"><span style="width:26px;height:26px;border-radius:50%;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span><span style="font:500 14px Sora;color:{{ c.dim }}">Experience level</span></div>
+<div style="display:flex;align-items:center;gap:13px;padding:11px 0"><span style="width:26px;height:26px;border-radius:50%;background:{{ c.accSoftStrong }};color:{{ c.accText }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">✓</span><span style="font:500 14px Sora;color:{{ c.dim }}">Injuries &amp; limits</span></div>
+<div style="display:flex;align-items:center;gap:13px;padding:11px 0"><span style="width:26px;height:26px;border-radius:50%;background:{{ c.acc }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 12px Sora">4</span><span style="font:600 14px Sora">Equipment access</span></div>
+<div style="display:flex;align-items:center;gap:13px;padding:11px 0"><span style="width:26px;height:26px;border-radius:50%;border:1.5px solid {{ c.border }};display:flex;align-items:center;justify-content:center;font:500 12px Sora;color:{{ c.faint }}">5</span><span style="font:500 14px Sora;color:{{ c.faint }}">Dietary restrictions</span></div>
+</div>
+<div style="margin-top:auto;font:400 12px/1.5 Sora;color:{{ c.faint }}">Takes about two minutes. Everything here can be edited later in Settings.</div>
+</div>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="flex:1;padding:56px 60px">
+<div style="font:500 11px {{ c.mono }};letter-spacing:.12em;color:{{ c.accText }}">STEP 4 — EQUIPMENT</div>
+<div style="font:700 32px/1.1 Sora;letter-spacing:-.02em;margin-top:14px">What can you train with?</div>
+<div style="font:400 15px/1.5 Sora;color:{{ c.dim }};margin-top:10px;max-width:520px">Select everything you have regular access to. We'll only program exercises you can actually do.</div>
+<div style="margin-top:32px;display:grid;grid-template-columns:repeat(3,1fr);gap:14px;max-width:640px">
+<sc-for list="{{ equip }}" as="e" hint-placeholder-count="9">
+<div style="background:{{ e.bg }};border:{{ e.border }};border-radius:14px;padding:16px;display:flex;flex-direction:column;gap:10px">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="width:34px;height:34px;border-radius:10px;background:{{ e.iconBg }};display:flex;align-items:center;justify-content:center;font:600 15px Sora;color:{{ e.iconFg }}">{{ e.g }}</span><span style="width:20px;height:20px;border-radius:6px;background:{{ e.markBg }};border:{{ e.markBorder }};color:{{ c.accOn }};display:flex;align-items:center;justify-content:center;font:600 11px Sora">{{ e.mark }}</span></div>
+<span style="font:600 13.5px Sora;color:{{ c.text }}">{{ e.name }}</span></div>
+</sc-for>
+</div>
+</div>
+<div style="padding:22px 60px;border-top:1px solid {{ c.border }};display:flex;justify-content:space-between;align-items:center">
+<span style="font:500 14px Sora;color:{{ c.dim }}">‹ Back</span>
+<div style="display:flex;gap:12px"><div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:13px 22px;font:600 13.5px Sora">Skip</div><div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:12px;padding:13px 34px;font:600 13.5px Sora">Continue</div></div>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const EQ = [
+      ['Full gym','⌂',1],['Dumbbells','◼',1],['Barbell','▬',1],
+      ['Kettlebells','◗',0],['Resistance bands','∿',1],['Pull-up bar','⊓',0],
+      ['Machines','▣',0],['Cables','⋔',0],['Bodyweight only','☺',0]
+    ];
+    const equip = EQ.map(([name,g,sel]) => sel ? {
+      name, g, mark:'✓',
+      bg:c.accSoft, border:`1.5px solid ${c.acc}`, iconBg:c.acc, iconFg:c.accOn,
+      markBg:c.acc, markBorder:'none'
+    } : {
+      name, g, mark:'',
+      bg:c.card, border:`1px solid ${c.border}`, iconBg:c.inset, iconFg:c.dim,
+      markBg:'transparent', markBorder:`1.5px solid ${c.border}`
+    });
+    return { m: p==='mobile', w: p==='web', c, equip };
+  }
+}
+</script>
+</body>
+</html>

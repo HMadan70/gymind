@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<sc-if value="{{ m }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:798px;display:flex;flex-direction:column;background:{{ c.bg }};color:{{ c.text }}">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:12px 22px 6px;font:500 12px {{ c.mono }};color:{{ c.dim }}"><span>9:41</span><span style="letter-spacing:2px">▮▮▮ ▮</span></div>
+<div style="flex:1;padding:14px 22px 0">
+<div style="display:flex;justify-content:space-between;align-items:center"><span style="font:500 18px Sora;color:{{ c.dim }}">‹</span><div style="text-align:center"><div style="font:700 18px Sora">Today</div><div style="font:400 11.5px Sora;color:{{ c.dim }}">Tue, 17 Aug</div></div><span style="font:500 18px Sora;color:{{ c.dim }}">›</span></div>
+<div style="margin-top:18px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:20px;display:flex;align-items:center;gap:20px">
+<div style="width:126px;height:126px;border-radius:50%;background:conic-gradient({{ c.acc }} 0 76%, {{ c.inset }} 76% 100%);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:100px;height:100px;border-radius:50%;background:{{ c.card }};display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:600 22px {{ c.mono }};font-variant-numeric:tabular-nums">1840</div><div style="font:400 10px Sora;color:{{ c.dim }};margin-top:2px">of 2400</div></div></div>
+<div style="flex:1"><div style="font:400 11px Sora;color:{{ c.dim }}">Remaining</div><div style="font:700 30px/1 Sora;margin-top:5px;font-variant-numeric:tabular-nums">560</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:3px">kcal · on track</div>
+<div style="margin-top:14px;font:500 12px Sora;color:{{ c.accText }}">Adjust target</div></div></div>
+<div style="margin-top:14px;display:flex;flex-direction:column;gap:13px;background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:16px 17px">
+<sc-for list="{{ macros }}" as="mac" hint-placeholder-count="3">
+<div><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 12.5px Sora">{{ mac.name }}</span><span style="font:400 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ mac.have }} / {{ mac.goal }}g</span></div><div style="height:7px;border-radius:5px;background:{{ c.inset }};margin-top:8px;overflow:hidden"><div style="width:{{ mac.pct }};height:7px;background:{{ c.acc }};border-radius:5px"></div></div></div>
+</sc-for>
+</div>
+<div style="margin-top:20px;display:flex;flex-direction:column;gap:14px">
+<sc-for list="{{ meals }}" as="ml" hint-placeholder-count="3">
+<div>
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px Sora">{{ ml.name }}</span><span style="font:400 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ ml.kcal }} kcal</span></div>
+<div style="margin-top:9px;display:flex;flex-direction:column;gap:8px">
+<sc-for list="{{ ml.items }}" as="it" hint-placeholder-count="2">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:12px;padding:11px 13px;display:flex;align-items:center;gap:12px"><span style="width:34px;height:34px;border-radius:9px;background:{{ c.inset }};display:block"></span><div style="flex:1"><div style="font:600 13px Sora">{{ it.name }}</div><div style="font:400 10.5px Sora;color:{{ c.dim }};margin-top:2px">{{ it.serving }} · P{{ it.p }} C{{ it.cb }} F{{ it.f }}</div></div><span style="font:500 12.5px {{ c.mono }};font-variant-numeric:tabular-nums">{{ it.kcal }}</span></div>
+</sc-for>
+</div>
+<div style="margin-top:9px;border:1px dashed {{ c.accDash }};border-radius:12px;padding:11px;text-align:center;font:500 12px Sora;color:{{ c.accText }}">+ Add to {{ ml.name }}</div>
+</div>
+</sc-for>
+</div>
+<div style="height:14px"></div>
+<dc-import name="TabBar" c="{{ c }}" active="Nutrition" hint-size="368px,74px"></dc-import>
+</div>
+</div>
+</sc-if>
+
+<sc-if value="{{ w }}" hint-placeholder-val="{{ true }}">
+<div style="min-height:840px;display:flex;background:{{ c.bg }};color:{{ c.text }}">
+<dc-import name="WebNav" c="{{ c }}" active="Nutrition" hint-size="240px,840px"></dc-import>
+<div style="flex:1;display:flex;flex-direction:column">
+<div style="display:flex;justify-content:space-between;align-items:center;padding:22px 34px;border-bottom:1px solid {{ c.border }}"><div><div style="font:700 22px/1.1 Sora;letter-spacing:-.02em">Nutrition</div><div style="font:400 12.5px Sora;color:{{ c.dim }};margin-top:3px">Tuesday, 17 August · macros</div></div><div style="display:flex;align-items:center;gap:12px"><div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:10px;padding:9px 14px;font:500 12.5px Sora;color:{{ c.dim }}">‹ Today ›</div><div style="background:{{ c.acc }};color:{{ c.accOn }};border-radius:10px;padding:11px 20px;font:600 13px Sora">Log food</div></div></div>
+<div style="flex:1;padding:26px 34px;display:flex;gap:24px">
+<div style="flex:1.7;display:flex;flex-direction:column;gap:18px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:18px;padding:22px 24px;display:flex;align-items:center;gap:28px;box-shadow:{{ c.shadow }}">
+<div style="width:140px;height:140px;border-radius:50%;background:conic-gradient({{ c.acc }} 0 76%, {{ c.inset }} 76% 100%);display:flex;align-items:center;justify-content:center;flex:none"><div style="width:110px;height:110px;border-radius:50%;background:{{ c.card }};display:flex;flex-direction:column;align-items:center;justify-content:center"><div style="font:600 26px {{ c.mono }};font-variant-numeric:tabular-nums">1,840</div><div style="font:400 11px Sora;color:{{ c.dim }};margin-top:2px">of 2,400 kcal</div></div></div>
+<div style="flex:1;display:flex;flex-direction:column;gap:15px">
+<sc-for list="{{ macros }}" as="mac" hint-placeholder-count="3">
+<div><div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 13px Sora">{{ mac.name }}</span><span style="font:400 12px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ mac.have }} / {{ mac.goal }}g</span></div><div style="height:8px;border-radius:5px;background:{{ c.inset }};margin-top:8px;overflow:hidden"><div style="width:{{ mac.pct }};height:8px;background:{{ c.acc }};border-radius:5px"></div></div></div>
+</sc-for>
+</div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;overflow:hidden">
+<div style="display:flex;padding:13px 20px;font:500 9.5px {{ c.mono }};letter-spacing:.1em;color:{{ c.faint }};border-bottom:1px solid {{ c.border }}"><span style="flex:2">FOOD</span><span style="flex:1">SERVING</span><span style="width:70px;text-align:right">P / C / F</span><span style="width:70px;text-align:right">KCAL</span></div>
+<sc-for list="{{ rows }}" as="r" hint-placeholder-count="6">
+<div style="{{ r.head }}">
+<sc-if value="{{ r.isMeal }}" hint-placeholder-val="{{ true }}"><div style="padding:12px 20px 8px;display:flex;justify-content:space-between;align-items:baseline;background:{{ c.inset }}"><span style="font:600 12.5px Sora">{{ r.name }}</span><span style="font:400 11px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ r.kcal }} kcal</span></div></sc-if>
+<sc-if value="{{ r.isItem }}" hint-placeholder-val="{{ true }}"><div style="display:flex;align-items:center;padding:11px 20px;border-top:1px solid {{ c.border }}"><span style="flex:2;font:500 13px Sora">{{ r.name }}</span><span style="flex:1;font:400 12px Sora;color:{{ c.dim }}">{{ r.serving }}</span><span style="width:70px;text-align:right;font:400 11.5px {{ c.mono }};color:{{ c.dim }};font-variant-numeric:tabular-nums">{{ r.macro }}</span><span style="width:70px;text-align:right;font:500 12.5px {{ c.mono }};font-variant-numeric:tabular-nums">{{ r.kcal }}</span></div></sc-if>
+</div>
+</sc-for>
+</div>
+</div>
+<div style="width:320px;display:flex;flex-direction:column;gap:18px">
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:18px 19px">
+<div style="display:flex;justify-content:space-between;align-items:baseline"><span style="font:600 14px Sora">Daily targets</span><span style="font:500 11.5px Sora;color:{{ c.accText }}">Edit</span></div>
+<div style="margin-top:14px;display:flex;flex-direction:column;gap:11px">
+<div style="display:flex;justify-content:space-between;font:400 12.5px Sora;color:{{ c.dim }}"><span>Calories</span><span style="color:{{ c.text }};font-weight:600;font-variant-numeric:tabular-nums">2,400 kcal</span></div>
+<div style="display:flex;justify-content:space-between;font:400 12.5px Sora;color:{{ c.dim }}"><span>Protein</span><span style="color:{{ c.text }};font-weight:600">195 g</span></div>
+<div style="display:flex;justify-content:space-between;font:400 12.5px Sora;color:{{ c.dim }}"><span>Carbs</span><span style="color:{{ c.text }};font-weight:600">250 g</span></div>
+<div style="display:flex;justify-content:space-between;font:400 12.5px Sora;color:{{ c.dim }}"><span>Fat</span><span style="color:{{ c.text }};font-weight:600">70 g</span></div></div></div>
+<div style="background:{{ c.card }};border:1px solid {{ c.border }};border-radius:16px;padding:18px 19px">
+<div style="font:600 14px Sora">This week</div>
+<div style="display:flex;align-items:flex-end;gap:6px;height:70px;margin-top:16px">
+<sc-for list="{{ week }}" as="d" hint-placeholder-count="7">
+<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:6px"><div style="width:100%;height:{{ d.h }};background:{{ d.color }};border-radius:4px"></div><span style="font:400 9px Sora;color:{{ c.faint }}">{{ d.day }}</span></div>
+</sc-for>
+</div>
+<div style="font:400 11.5px Sora;color:{{ c.dim }};margin-top:12px">6 of 7 days on target</div></div>
+</div>
+</div>
+</div>
+</div>
+</sc-if>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const p = this.props.platform || 'mobile';
+    const c = this.props.c || {};
+    const macros = [
+      {name:'Protein', have:148, goal:195, pct:'76%'},
+      {name:'Carbs', have:190, goal:250, pct:'76%'},
+      {name:'Fat', have:52, goal:70, pct:'74%'}
+    ];
+    const meals = [
+      {name:'Breakfast', kcal:520, items:[
+        {name:'Greek yogurt bowl', serving:'300 g', p:'28', cb:'34', f:'9', kcal:310},
+        {name:'Black coffee', serving:'1 cup', p:'0', cb:'0', f:'0', kcal:5},
+        {name:'Banana', serving:'1 medium', p:'1', cb:'27', f:'0', kcal:105}
+      ]},
+      {name:'Lunch', kcal:720, items:[
+        {name:'Chicken & rice', serving:'1 bowl', p:'52', cb:'68', f:'12', kcal:610},
+        {name:'Mixed greens', serving:'80 g', p:'2', cb:'6', f:'7', kcal:110}
+      ]},
+      {name:'Snack', kcal:600, items:[
+        {name:'Whey shake', serving:'1 scoop', p:'25', cb:'4', f:'2', kcal:130}
+      ]}
+    ];
+    const rows = [];
+    meals.forEach(ml => {
+      rows.push({isMeal:true, isItem:false, name:ml.name, kcal:ml.kcal, head:''});
+      ml.items.forEach(it => rows.push({isMeal:false, isItem:true, name:it.name, serving:it.serving, macro:`${it.p}/${it.cb}/${it.f}`, kcal:it.kcal, head:''}));
+    });
+    const wk = [70,90,55,80,95,40,76];
+    const week = ['M','T','W','T','F','S','S'].map((day,i)=>({day, h:wk[i]+'%', color:i===5?c.inset:c.acc}));
+    return { m: p==='mobile', w: p==='web', c, macros, meals, rows, week };
+  }
+}
+</script>
+</body>
+</html>

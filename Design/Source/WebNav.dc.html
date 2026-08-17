@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<div style="width:240px;box-sizing:border-box;background:{{ c.sidebar }};border-right:1px solid {{ c.border }};padding:26px 18px;display:flex;flex-direction:column;min-height:100%">
+<div style="display:flex;align-items:center;gap:11px;padding:0 8px 0"><span style="width:34px;height:34px;border-radius:10px;background:{{ c.acc }};display:flex;align-items:center;justify-content:center;font:700 18px Sora;color:{{ c.accOn }}">G</span><span style="font:700 19px Sora;color:{{ c.text }}">Gymind</span></div>
+<div style="margin-top:30px;display:flex;flex-direction:column;gap:4px">
+<sc-for list="{{ items }}" as="it" hint-placeholder-count="6">
+<div style="display:flex;align-items:center;gap:12px;padding:11px 12px;border-radius:11px;background:{{ it.bg }}">
+<span style="width:22px;height:22px;border-radius:7px;background:{{ it.icon }};display:flex;align-items:center;justify-content:center;font:700 12px Sora;color:{{ it.glyphColor }}">{{ it.glyph }}</span>
+<span style="font:{{ it.weight }} 14px Sora;color:{{ it.fg }}">{{ it.name }}</span></div>
+</sc-for>
+</div>
+<div style="margin-top:auto;padding-top:20px;border-top:1px solid {{ c.border }};display:flex;align-items:center;gap:11px">
+<span style="width:36px;height:36px;border-radius:50%;background:{{ c.inset }};border:1px solid {{ c.border }};display:block"></span>
+<div style="flex:1"><div style="font:600 13px Sora;color:{{ c.text }}">Alex Mercer</div><div style="font:400 11px Sora;color:{{ c.faint }}">Pro · Push/Pull/Legs</div></div>
+<span style="font:500 16px Sora;color:{{ c.faint }}">⋯</span></div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+class Component extends DCLogic {
+  renderVals() {
+    const c = this.props.c || {};
+    const active = this.props.active || 'Home';
+    const items = ['Home','Coach','Workout','Nutrition','Progress','Settings'].map(name => {
+      const on = name === active;
+      return { name, bg: on ? c.accSoft : 'transparent',
+        icon: on ? c.acc : c.inset,
+        glyph: name==='Coach' ? '✦' : '',
+        glyphColor: on ? c.accOn : c.dim,
+        fg: on ? c.text : c.dim,
+        weight: on ? 600 : 500 };
+    });
+    return { c, items };
+  }
+}
+</script>
+</body>
+</html>
