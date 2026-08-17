@@ -58,11 +58,16 @@ Everything runs via `docker-compose.yml` on the home server. Ports are remapped 
 
 ```
 gymind/
-├── backend/        # FastAPI app
-│   ├── ...
-├── mobile/         # React Native app (not built yet)
-├── Design/          # Exported design screens + design source files
-│   └── exports/    # PNG/image exports of final screens
+├── backend/               # FastAPI app
+│   └── ...
+├── mobile/                # React Native app (not built yet)
+├── Design/
+│   ├── exports/           # Final screen images
+│   │   ├── mobile/        # 9 mobile screens
+│   │   ├── web/           # 9 web screens
+│   │   ├── base-token-reference.png
+│   │   └── theming-comparison-grid.png
+│   └── Source/            # Claude Design source files (.dc, support.js)
 ├── docker-compose.yml
 └── PROJECT_STATUS.md
 ```
@@ -142,7 +147,7 @@ Draft fields (to be finalized):
 | `created_at` | timestamp | Default now() |
 | `updated_at` | timestamp | Update on edit |
 
-### `user_preferences` — planned, not built (new — from design phase)
+### `user_preferences` — planned, not built
 Needed to support the theming system (Section 14):
 | Column | Type (draft) | Notes |
 |---|---|---|
@@ -158,7 +163,7 @@ Will need at minimum: workout sessions, exercises performed, sets/reps/weight pe
 ### `nutrition_logs` — not designed yet
 Will need at minimum: meal entries, food items, macros (protein/carbs/fat), timestamps. Design screens show a daily calorie ring + macro bars against a target, so we'll also need a per-user daily calorie/macro target (likely lives in `user_profiles` or its own targets table).
 
-### `body_weight_logs` — not designed yet (new — from design phase)
+### `body_weight_logs` — not designed yet
 Needed for the Progress screen's body weight chart. At minimum: user_id, weight, unit (lb/kg), logged_at timestamp.
 
 ---
@@ -247,7 +252,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [ ] `GET /progress` endpoint(s) returning this data, shaped for the charts already designed
 
 ### Phase 3 — Mobile App
-- [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Section 12–16)
+- [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Sections 14–16)
 - [ ] Scaffold React Native + React Native Web project in `/mobile`
 - [ ] Set up shared navigation (React Navigation or similar) — nav structure already decided: Home, Coach, Workout, Nutrition, Progress, Settings
 - [ ] Implement theme system as a single context/provider (dark/light + 6 accent presets), matching the token contract in Section 14
@@ -272,7 +277,6 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - [ ] Add basic input validation/error handling conventions (see Section 13)
 - [ ] Add at least minimal tests for auth endpoints before building more on top
 - [ ] Decide on a migration tool (e.g. Alembic) before the schema grows much further, so schema changes are tracked rather than manual
-- [ ] Finish organizing exported design screens in `/Design/exports` and reference them properly from this doc
 
 ---
 
@@ -302,7 +306,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 ## 14. Design System — Direction & Theming
 
-Design work was done collaboratively in Claude Design (claude.ai/design). Full screen exports live in `/Design/exports` in the repo.
+Design work was done collaboratively in Claude Design (claude.ai/design). Full screen exports live in `Design/exports/` (source files in `Design/Source/`).
 
 ### Design Direction
 - **Style:** "5c" direction — dark base, geometric sans typography, warm accent
@@ -313,6 +317,8 @@ Design work was done collaboratively in Claude Design (claude.ai/design). Full s
 
 ### Theming System
 Users can change the **accent color** and **light/dark mode** — layout, spacing, and typography stay fixed; only color tokens change.
+
+![Theming comparison grid](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/theming-comparison-grid.png)
 
 **Accent presets (final shortlist of 6):**
 | Preset | Hex |
@@ -325,6 +331,8 @@ Users can change the **accent color** and **light/dark mode** — layout, spacin
 | Volt | `#3FE07A` |
 
 _(Explored but not shortlisted: Coral, Indigo, Crimson)_
+
+![Base token reference](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/base-token-reference.png)
 
 **Base tokens — dark mode:**
 | Token | Value | Use |
@@ -362,41 +370,65 @@ _(Explored but not shortlisted: Coral, Indigo, Crimson)_
 
 ## 15. Design System — Screens
 
-| Screen | Status | Notes |
-|---|---|---|
-| Login | ✅ Designed | Email/username + password |
-| Register | ✅ Designed | Create account |
-| Onboarding | ✅ Designed | Grouped steps: goal, experience, injuries, equipment, dietary restrictions |
-| Home | ✅ Designed | Order: greeting → week streak strip → AI Coach card → Nutrition card (ring + macros + recent food) → Workout card (today's plan + recent workouts) |
-| Workout (logging) | ✅ Designed | Session header, set-by-set logging, add exercise, finish session |
-| Nutrition | ✅ Designed | Calorie ring, macro bars, recent food logged |
-| Progress | ✅ Designed | Simplified: body weight line chart, drillable strength-by-muscle-group chart (muscle group → specific exercise → e1RM trend line), simple consistency line |
-| Settings | ✅ Designed | Includes theme picker (dark/light + 6 accent swatches) |
-| AI Coach (chat) | ✅ Designed | Accessed via nav tab; example thread, quick-prompt chips, input field, "Beta" label |
-
 **Bottom nav (mobile) / sidebar (web):** Home, Coach, Workout, Nutrition, Progress, Settings — Profile moved out of the bottom bar to keep the nav from overcrowding at 6 items (see open question, Section 17).
 
-### Home Screen — Section Order (finalized)
-1. Greeting header (date + "Good morning, [name]")
-2. **This week** — 7-day streak strip (dot/check per day), streak count label — lightweight, no card border
-3. **AI Coach card** — standalone, contextual tip referencing today's workout/nutrition, "Preview coaching →" link into the Coach chat screen
-4. **Nutrition card** — one combined card: today's calorie ring + macro bars, then "Recent food logged" list below it in the same card
-5. **Workout card** — one combined card: today's plan (name, quick stats, Start button), then "Recent workouts" list below it in the same card
+### Login
+| Mobile | Web |
+|---|---|
+| ![Login - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-login.png) | ![Login - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-login.png) |
 
-### Progress Screen — Finalized Structure
-Simplified from an earlier, denser draft (4-stat header row + separate lift list + volume-by-muscle bars) down to:
-1. Time range selector (4 weeks / 3 months / 1 year)
-2. **Body weight chart** — line chart, current weight + change vs. period, goal marker
-3. **Strength by muscle group** — interactive: default bar chart by muscle group (kg improvement) → tap a group → select a specific exercise → drills into an e1RM trend line chart for that exercise, same time range
-4. **Consistency** — single line ("18 of 28 days trained"), not a full calendar heatmap
+### Register
+| Mobile | Web |
+|---|---|
+| ![Register - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-register.png) | ![Register - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-register.png) |
+
+### Onboarding
+Grouped steps: goal, experience, injuries, equipment, dietary restrictions.
+| Mobile | Web |
+|---|---|
+| ![Onboarding - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-onboarding.png) | ![Onboarding - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-onboarding.png) |
+
+### Home
+Section order (finalized): greeting header → **This week** streak strip (7-day dot/check row, no card border) → **AI Coach card** (contextual tip, links to Coach chat) → **Nutrition card** (calorie ring + macro bars + recent food logged, one combined card) → **Workout card** (today's plan + recent workouts, one combined card).
+| Mobile | Web |
+|---|---|
+| ![Home - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-home.png) | ![Home - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-home.png) |
+
+### Workout (logging)
+Session header, set-by-set logging, add exercise, finish session.
+| Mobile | Web |
+|---|---|
+| ![Workout - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-workout.png) | ![Workout - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-workout.png) |
+
+### Nutrition
+Calorie ring, macro bars, recent food logged.
+| Mobile | Web |
+|---|---|
+| ![Nutrition - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-nutrition.png) | ![Nutrition - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-nutrition.png) |
+
+### Progress
+Finalized structure: time range selector (4 weeks/3 months/1 year) → **body weight chart** (line chart, goal marker) → **strength by muscle group** (drillable: muscle group → specific exercise → e1RM trend line) → **consistency** (single line, e.g. "18 of 28 days trained").
+| Mobile | Web |
+|---|---|
+| ![Progress - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-progress.png) | ![Progress - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-progress.png) |
+
+### Settings
+Includes the theme picker (dark/light mode + 6 accent swatches).
+| Mobile | Web |
+|---|---|
+| ![Settings - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-settings.png) | ![Settings - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-settings.png) |
 
 ---
 
 ## 16. Design System — AI Coach
 
-- Referenced contextually on Home (workout-specific tips) and has its own dedicated chat screen
-- Chat screen: header with back nav, message thread (coach messages in accent-tinted cards), quick-prompt chips (e.g. "Adjust today's plan," "How's my progress this month?"), text input, "Beta"/"Preview" label
-- **Not yet built on the backend** — this is UI/UX design only. Actual LLM integration is Phase 4 (Section 11) and hasn't been started
+Accessed via its own nav tab (Coach). Referenced contextually on Home (workout-specific tips) and has its own dedicated chat screen: header with back nav, message thread (coach messages in accent-tinted cards), quick-prompt chips (e.g. "Adjust today's plan," "How's my progress this month?"), text input, "Beta"/"Preview" label.
+
+| Mobile | Web |
+|---|---|
+| ![Coach - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-coach.png) | ![Coach - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-coach.png) |
+
+**Not yet built on the backend** — this is UI/UX design only. Actual LLM integration is Phase 4 (Section 11) and hasn't been started.
 
 ---
 
