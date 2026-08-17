@@ -81,3 +81,38 @@ def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
 @app.get("/users/me", response_model=schemas.UserResponse)
 def read_current_user(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
+
+
+@app.get("/users/profile", response_model=schemas.UserProfileOut)
+def get_profile(
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = db.query(models.UserProfile).filter(
+        models.UserProfile.user_id == current_user.id
+    ).first()
+    if not profile:
+        raise HTTPException(status_code=404, detail="Profile not found")
+    return profile
+
+
+@app.post("/users/profile", response_model=schemas.UserProfileOut)
+def upsert_profile(
+    profile_in: schemas.UserProfileIn,
+    current_user: models.User = Depends(auth.get_current_user),
+    db: Session = Depends(get_db),
+):
+    profile = db.query(models.UserProfile).filter(
+        models.UserProfile.user_id == current_user.id
+    ).first()
+
+    if profile:
+        for field, value in profile_in.dict(exclude_unset=True).items():
+            setattr(profile, field, value)
+    else:
+        profile = models.UserProfile(user_id=current_user.id, **profile_in.dict())
+        db.add(profile)
+
+    db.commit()
+    db.refresh(profile)
+    return profile

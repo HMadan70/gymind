@@ -1,4 +1,6 @@
 from pydantic import BaseModel, EmailStr
+from typing import Optional, List
+from datetime import datetime
 
 
 class UserCreate(BaseModel):
@@ -31,3 +33,20 @@ class Token(BaseModel):
     """What we send back after a successful login."""
     access_token: str
     token_type: str = "bearer"
+
+
+class UserProfileIn(BaseModel):
+    goal: Optional[str] = None
+    experience_level: Optional[str] = None
+    injuries: Optional[str] = None
+    equipment: Optional[List[str]] = None
+    dietary_restrictions: Optional[List[str]] = None
+
+class UserProfileOut(UserProfileIn):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
