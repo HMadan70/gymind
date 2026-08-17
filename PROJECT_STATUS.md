@@ -175,7 +175,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 |---|---|---|---|
 | POST | `/auth/register` | ✅ Built | Creates a user, hashes password with bcrypt |
 | POST | `/auth/login` | ✅ Built | Login by email or username, returns signed JWT |
-| — | `get_current_user` dependency | 🔧 In progress | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — **today's task, not yet started** |
+| — | `get_current_user` dependency | ✅ Built | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — tested and working, verified both locally and on the deployed server |
+| GET | `/users/me` | ✅ Built | Protected test route confirming `get_current_user` works end-to-end |
 
 ### Health
 | Method | Path | Status | Description |
@@ -204,6 +205,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Git & OneDrive** — repo clones are intentionally kept outside OneDrive sync folders to avoid `.git` corruption/conflicts from cloud sync.
 - **Server never commits** — treat the server as a deploy target only, not a place to edit code.
 - **Theming is presentation-only** — theme/accent changes affect color tokens only; layout, spacing, and typography never change per theme. Worth keeping this discipline in the actual React Native implementation (e.g. a single theme context object, not per-component conditional styling).
+- **`psycopg` (v3), not `psycopg2-binary`** — `psycopg2-binary` failed to build locally (no prebuilt package available for the Python version in use). `requirements.txt` now uses `psycopg[binary]`. Critically: any `DATABASE_URL` must explicitly use the `postgresql+psycopg://` prefix, not plain `postgresql://` — otherwise SQLAlchemy defaults to the old psycopg2 driver and crashes with `ModuleNotFoundError`. This caused a real production crash on the server until `docker-compose.yml`'s `DATABASE_URL` was fixed to match.
+- **Local dev needs its own `backend/.env`** (gitignored, never committed), with `load_dotenv()` added to `database.py` — Docker doesn't need this since `docker-compose.yml` injects env vars directly, but running `uvicorn` locally does. Local `DATABASE_URL` points directly at the server's Postgres (`192.168.0.241:5433`) rather than a separate local database.
 
 ---
 
@@ -213,12 +216,12 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - [x] `users` table
 - [x] Register / login endpoints
 - [x] JWT issuing on login
-- [ ] **JWT route protection** — today's task
-  - [ ] Write `get_current_user` dependency: extract `Authorization: Bearer <token>` header
-  - [ ] Decode/verify JWT signature and expiry
-  - [ ] Look up user by id from token payload; raise `401` if invalid/missing/expired
-  - [ ] Apply `Depends(get_current_user)` to a test route to confirm it works end-to-end
-  - [ ] Decide token expiry length and whether refresh tokens are needed later
+- [x] **JWT route protection**
+  - [x] Write `get_current_user` dependency: extract `Authorization: Bearer <token>` header
+  - [x] Decode/verify JWT signature and expiry
+  - [x] Look up user by id from token payload; raise `401` if invalid/missing/expired
+  - [x] Apply `Depends(get_current_user)` to a test route to confirm it works end-to-end
+  - [ ] Decide token expiry length and whether refresh tokens are needed later — current expiry is 7 days
 - [ ] **`user_profiles` table**
   - [ ] Finalize schema (see open question on injuries/equipment structure, Section 17)
   - [ ] Write migration (or manual `CREATE TABLE` if not using a migration tool yet)
