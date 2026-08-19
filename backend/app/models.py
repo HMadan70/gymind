@@ -26,3 +26,14 @@ class UserProfile(Base):
     dietary_restrictions = Column(ARRAY(Text), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class UserPreference(Base):
+    __tablename__ = "user_preferences"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), unique=True, nullable=False)
+    theme_mode = Column(Text, nullable=True)      # "dark" or "light"
+    accent_preset = Column(Text, nullable=True)   # e.g. "ember", "blue", etc.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
