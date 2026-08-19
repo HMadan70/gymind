@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-17_
+_Last updated: 2026-08-19_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -120,6 +120,8 @@ Two laptops (MSI and Dell), each with its own independent clone:
 - Server: SSH in, `git pull`, restart containers if needed (`docker compose up -d --build`)
 - Both laptops now have the repo open in VS Code
 
+**Current setup note:** two-device workflow — Dell as primary, MSI as secondary — each cloning independently from GitHub. There is no device-to-device syncing; GitHub is the sole source of truth, so `git pull`/`git push` is the only way changes move between machines.
+
 ---
 
 ## 8. Database Schema
@@ -133,29 +135,29 @@ Two laptops (MSI and Dell), each with its own independent clone:
 | `password_hash` | text | bcrypt hash via passlib |
 | `created_at` | timestamp | Default now() |
 
-### `user_profiles` — planned, not built
-Draft fields (to be finalized):
-| Column | Type (draft) | Notes |
+### `user_profiles` — ✅ built
+| Column | Type | Notes |
 |---|---|---|
-| `id` | int/serial | Primary key |
-| `user_id` | int (FK → users.id) | One profile per user |
-| `goal` | text or enum | e.g. "lose weight", "build muscle", "maintain" |
-| `experience_level` | text or enum | beginner / intermediate / advanced |
-| `injuries` | text (free-form) or a related table | Needs design decision — see Section 17 |
-| `equipment` | text[] or related table | e.g. "dumbbells", "barbell", "none" |
-| `dietary_restrictions` | text[] or related table | e.g. "vegetarian", "gluten-free" |
-| `created_at` | timestamp | Default now() |
-| `updated_at` | timestamp | Update on edit |
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Unique — one profile per user |
+| `goal` | text, nullable | e.g. "lose weight", "build muscle", "maintain" |
+| `experience_level` | text, nullable | beginner / intermediate / advanced |
+| `injuries` | text, nullable | Free-form |
+| `equipment` | text[], nullable | e.g. "dumbbells", "barbell", "none" |
+| `dietary_restrictions` | text[], nullable | e.g. "vegetarian", "gluten-free" |
+| `created_at` | timestamptz | Default now() |
+| `updated_at` | timestamptz | Default now(), updates on change |
 
-### `user_preferences` — planned, not built
-Needed to support the theming system (Section 14):
-| Column | Type (draft) | Notes |
+### `user_preferences` — ✅ built
+Supports the theming system (Section 14):
+| Column | Type | Notes |
 |---|---|---|
-| `id` | int/serial | Primary key |
-| `user_id` | int (FK → users.id) | One row per user |
-| `theme_mode` | text/enum | "dark" or "light" |
-| `accent_preset` | text/enum | One of: Ember, Signal, Amber, Violet, Teal, Volt |
-| `updated_at` | timestamp | Update on edit |
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Unique — one row per user |
+| `theme_mode` | text, nullable | "dark" or "light" |
+| `accent_preset` | text, nullable | One of: Ember, Signal, Amber, Violet, Teal, Volt |
+| `created_at` | timestamptz | Default now() |
+| `updated_at` | timestamptz | Default now(), updates on change |
 
 ### `workouts` — not designed yet
 Will need at minimum: workout sessions, exercises performed, sets/reps/weight per exercise, timestamps. Design screens imply we'll also need: session duration, target vs. actual weight per set (for the "TGT 190" style previous/target display), and a way to compute e1RM (estimated 1-rep max) per exercise for Progress charts.
@@ -178,6 +180,12 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 | — | `get_current_user` dependency | ✅ Built | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — tested and working, verified both locally and on the deployed server |
 | GET | `/users/me` | ✅ Built | Protected test route confirming `get_current_user` works end-to-end |
 
+### User
+| Method | Path | Status | Description |
+|---|---|---|---|
+| GET/POST | `/users/profile` | ✅ Built | Read/create/update `user_profiles` |
+| GET/POST | `/users/preferences` | ✅ Built | Theme mode + accent color, to support the theming system |
+
 ### Health
 | Method | Path | Status | Description |
 |---|---|---|---|
@@ -187,8 +195,6 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 ### Planned
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/users/profile` | ❌ Not built | Read/create/update `user_profiles` |
-| GET/POST | `/users/preferences` | ❌ Not built | Theme mode + accent color, to support the theming system |
 | GET/POST | `/workouts` | ❌ Not built | List/create workout sessions |
 | GET/PUT/DELETE | `/workouts/{id}` | ❌ Not built | Get/update/delete a specific workout |
 | GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries |
@@ -222,15 +228,15 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [x] Look up user by id from token payload; raise `401` if invalid/missing/expired
   - [x] Apply `Depends(get_current_user)` to a test route to confirm it works end-to-end
   - [ ] Decide token expiry length and whether refresh tokens are needed later — current expiry is 7 days
-- [ ] **`user_profiles` table**
-  - [ ] Finalize schema (see open question on injuries/equipment structure, Section 17)
-  - [ ] Write migration (or manual `CREATE TABLE` if not using a migration tool yet)
-  - [ ] Build `POST /users/profile` (create/update, requires auth)
-  - [ ] Build `GET /users/profile` (requires auth, returns current user's profile)
+- [x] **`user_profiles` table**
+  - [x] Finalize schema (see open question on injuries/equipment structure, Section 17)
+  - [x] Write migration (or manual `CREATE TABLE` if not using a migration tool yet)
+  - [x] Build `POST /users/profile` (create/update, requires auth)
+  - [x] Build `GET /users/profile` (requires auth, returns current user's profile)
   - [ ] Decide: is profile creation mandatory before using the rest of the app (onboarding gate)?
-- [ ] **`user_preferences` table**
-  - [ ] Design schema (theme_mode, accent_preset)
-  - [ ] Build `GET/POST /users/preferences`
+- [x] **`user_preferences` table**
+  - [x] Design schema (theme_mode, accent_preset)
+  - [x] Build `GET/POST /users/preferences`
 
 ### Phase 2 — Core Tracking
 - [ ] **Workouts**
