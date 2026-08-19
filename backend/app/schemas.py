@@ -50,3 +50,19 @@ class UserProfileOut(UserProfileIn):
 
     class Config:
         from_attributes = True
+
+
+class UserPreferenceIn(BaseModel):
+    theme_mode: Optional[str] = None
+    accent_preset: Optional[str] = None
+
+class UserPreferenceOut(UserPreferenceIn):
+    id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+        
