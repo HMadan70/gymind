@@ -65,4 +65,23 @@ class UserPreferenceOut(UserPreferenceIn):
     class Config:
         from_attributes = True
 
+class UserWorkoutIn(BaseModel):
+    ended_at: Optional[datetime] = None
+
+
+class UserWorkoutOut(UserWorkoutIn):
+    id: int
+    user_id: int
+
+
+class WorkoutSetIn(BaseModel):
+    exercise_name: str
+    set_number: int
+    weight: float
+    reps: int
+
+class WorkoutSetOut(WorkoutSetIn):
+    id: int
+    workout_id: int
+
         
