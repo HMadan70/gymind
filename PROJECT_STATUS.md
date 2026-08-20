@@ -171,8 +171,27 @@ Supports the theming system (Section 14):
 | `created_at` | timestamptz | Default now() |
 | `updated_at` | timestamptz | Default now(), updates on change |
 
-### `workouts` — not designed yet
-Will need at minimum: workout sessions, exercises performed, sets/reps/weight per exercise, timestamps. Design screens imply we'll also need: session duration, target vs. actual weight per set (for the "TGT 190" style previous/target display), and a way to compute e1RM (estimated 1-rep max) per exercise for Progress charts.
+### `user_workouts` — ✅ built (models/schemas only — no routes yet)
+One row per workout session.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Owning user |
+| `started_at` | timestamptz | Default now() |
+| `ended_at` | timestamptz, nullable | Set when the session is finished |
+
+### `workout_sets` — ✅ built (models/schemas only — no routes yet)
+One row per logged set — see Section 10 for why sets aren't grouped/collapsed.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `workout_id` | int (FK → user_workouts.id) | Parent workout session |
+| `exercise_name` | text | Not null |
+| `set_number` | int | Not null — this set's position within the exercise |
+| `weight` | float, nullable | |
+| `reps` | int, nullable | |
+
+Still open: `exercises` as a seeded reference table vs. user-defined only, session duration/target-weight display, and e1RM computed on write vs. on read (see Section 17).
 
 ### `nutrition_logs` — not designed yet
 Will need at minimum: meal entries, food items, macros (protein/carbs/fat), timestamps. Design screens show a daily calorie ring + macro bars against a target, so we'll also need a per-user daily calorie/macro target (likely lives in `user_profiles` or its own targets table).
@@ -229,6 +248,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Local dev needs its own `backend/.env`** (gitignored, never committed), with `load_dotenv()` added to `database.py` — Docker doesn't need this since `docker-compose.yml` injects env vars directly, but running `uvicorn` locally does. Local `DATABASE_URL` points directly at the server's Postgres (`192.168.0.241:5433`) rather than a separate local database. **A missing `.env` on a newly set-up machine shows up as `sqlalchemy.exc.ArgumentError: Expected string or URL object, got None`** at `create_engine()` — that's the signal to go create it, not a code bug.
 - **Onboarding gate (decided):** profile creation is now mandatory before accessing the rest of the app, enforced on both frontend (later, Phase 3) and backend (now). Backend enforcement is the `require_profile` dependency in `auth.py` — it wraps `get_current_user` and additionally checks for a `user_profiles` row, raising `403 Profile setup required before accessing this feature.` if missing. `/users/preferences` was also brought under this gate (a user must finish onboarding before setting theme/accent). `/users/profile` itself deliberately stays on plain `get_current_user`, since gating it would make onboarding impossible. Apply `require_profile` to `/workouts`, `/nutrition`, `/body-weight`, and `/progress` as they're built in Phase 2.
 - **PowerShell/curl quoting** — see Section 7 for the working pattern (`-d "@file.json"`) after several failed attempts at inline `-d '{"..."}'` bodies.
+- **`workout_sets` stores one row per set, not a text blob** — weight/reps are normalized numeric columns rather than crammed into a free-form field, specifically so the Progress screen's e1RM chart (Section 15) can query numeric weight/reps per set directly.
 
 ---
 
@@ -263,7 +283,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 ### Phase 2 — Core Tracking
 - [ ] **Workouts**
-  - [ ] Design `workouts`, `exercises`, and `workout_sets` tables (or similar normalized structure)
+  - [x] Design `workouts`, `exercises`, and `workout_sets` tables (or similar normalized structure) — **implemented as a two-table design: `user_workouts` for sessions, `workout_sets` for individual sets, normalized so each set is its own row for the Progress screen's e1RM chart (Section 15). See Section 8. Models/schemas only — routes not built yet.**
   - [ ] `POST /workouts` — create a workout session
   - [ ] `GET /workouts` — list past workouts for current user
   - [ ] `GET /workouts/{id}` — workout detail
