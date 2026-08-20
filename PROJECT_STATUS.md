@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-19_
+_Last updated: 2026-08-20_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -89,6 +89,8 @@ _(Fill in exact commands as you formalize this — placeholder based on stack so
 
 **Also decided:** while actively developing (e.g. JWT work), run FastAPI locally with `uvicorn --reload` for fast iteration, rather than push → SSH → rebuild each change. Push to the server only once a feature is tested and working.
 
+**Reminder — `.env` is per-machine, not per-repo:** since `backend/.env` is gitignored, every device (including a freshly set-up MSI) needs it created manually before `uvicorn` will run locally — a missing `.env` shows up as `DATABASE_URL` being `None` at `create_engine()` time. See Section 10 for the full gotcha and Section 12 for the required variables.
+
 ---
 
 ## 6. Deployment & Server Access
@@ -97,11 +99,13 @@ _(Fill in exact commands as you formalize this — placeholder based on stack so
 - **SSH access:** `ssh root@192.168.0.241`
 - **Repo path on server:** `/DATA/gymind`
 - **Containers:**
-  - `db` — Postgres 16, `5433:5432`
-  - `backend` — FastAPI, `8001:8000`
+  - `db` — Postgres 16, `5433:5432` (container name: `gymind-db`)
+  - `backend` — FastAPI, `8001:8000` (container name: `gymind-backend`)
+  - _Note: a separate, unrelated `postgres:17.4` container also runs on this server on the default `5432` port — not part of Gymind, don't confuse the two when running `docker ps`._
 - **DB GUI access:** TablePlus → host `192.168.0.241`, port `5433`
 - **Server git policy:** server only ever runs `git pull` — never commits or pushes. All code changes happen on dev laptops.
 - **Restart after a pull:** `docker compose up -d --build` (rebuilds the backend image if code changed; not needed for doc-only changes)
+- **Resetting the `gymind` DB user's password (if needed):** `docker exec -it gymind-db psql -U gymind -d gymind`, then `ALTER USER gymind WITH PASSWORD 'newpassword';`
 
 ---
 
@@ -120,7 +124,13 @@ Two laptops (MSI and Dell), each with its own independent clone:
 - Server: SSH in, `git pull`, restart containers if needed (`docker compose up -d --build`)
 - Both laptops now have the repo open in VS Code
 
-**Current setup note:** two-device workflow — Dell as primary, MSI as secondary — each cloning independently from GitHub. There is no device-to-device syncing; GitHub is the sole source of truth, so `git pull`/`git push` is the only way changes move between machines.
+**Current setup note:** two-device workflow — Dell as primary, MSI as secondary — each cloning independently from GitHub. There is no device-to-device syncing; GitHub is the sole source of truth, so `git pull`/`git push` is the only way changes move between machines. Both folders currently still sit inside OneDrive paths on both machines (known risk — not urgent, but see Section 10's OneDrive gotcha for why the clone path was originally meant to avoid this).
+
+**PowerShell + curl gotcha:** on Windows, plain `curl` is aliased to `Invoke-WebRequest`, which parses `-H`/`-d` differently and breaks on JSON bodies. Use `curl.exe` to get real curl — but even then, inline `-d '{"json": "here"}'` bodies can get mangled by PowerShell's own quote handling. The reliable fix: write the JSON to a file and pass it with `-d "@filename.json"`, e.g.:
+```powershell
+'{"identifier": "test", "password": "testpass123"}' | Out-File -Encoding utf8 login_test.json
+curl.exe -X POST http://localhost:8000/auth/login -H "Content-Type: application/json" -d "@login_test.json"
+```
 
 ---
 
@@ -147,6 +157,8 @@ Two laptops (MSI and Dell), each with its own independent clone:
 | `dietary_restrictions` | text[], nullable | e.g. "vegetarian", "gluten-free" |
 | `created_at` | timestamptz | Default now() |
 | `updated_at` | timestamptz | Default now(), updates on change |
+
+**This table is now the gate for onboarding completion** — see Section 10, "Onboarding gate."
 
 ### `user_preferences` — ✅ built
 Supports the theming system (Section 14):
@@ -177,14 +189,16 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 |---|---|---|---|
 | POST | `/auth/register` | ✅ Built | Creates a user, hashes password with bcrypt |
 | POST | `/auth/login` | ✅ Built | Login by email or username, returns signed JWT |
-| — | `get_current_user` dependency | ✅ Built | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — tested and working, verified both locally and on the deployed server |
+| — | `get_current_user` dependency (`auth.py`) | ✅ Built | Reads JWT from `Authorization` header, validates it, returns the current `User` for protected routes — tested and working, verified both locally and on the deployed server |
+| — | `require_profile` dependency (`auth.py`) | ✅ Built | Wraps `get_current_user`: also requires a `user_profiles` row to exist for the current user, raising `403` if not. Use on any route that assumes profile data exists. See Section 10, "Onboarding gate." |
 | GET | `/users/me` | ✅ Built | Protected test route confirming `get_current_user` works end-to-end |
+| GET | `/users/onboarding-check` | ✅ Built | Uses `require_profile`. Returns `{"status": "profile complete", "user_id": ...}` on success, or `403` if the user hasn't completed onboarding. Kept as a real route (not just a test) — intended for the frontend to call after login to decide whether to route to Onboarding or Home. |
 
 ### User
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/users/profile` | ✅ Built | Read/create/update `user_profiles` |
-| GET/POST | `/users/preferences` | ✅ Built | Theme mode + accent color, to support the theming system |
+| GET/POST | `/users/profile` | ✅ Built | Read/create/update `user_profiles`. Uses `get_current_user` (not `require_profile`) — this is the route that creates the profile, so it can't require one to already exist. |
+| GET/POST | `/users/preferences` | ✅ Built | Theme mode + accent color. **Now uses `require_profile`, not `get_current_user`** — a user must complete onboarding before setting theme/accent preferences. |
 
 ### Health
 | Method | Path | Status | Description |
@@ -195,9 +209,9 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 ### Planned
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/workouts` | ❌ Not built | List/create workout sessions |
+| GET/POST | `/workouts` | ❌ Not built | List/create workout sessions. Will use `require_profile` once built. |
 | GET/PUT/DELETE | `/workouts/{id}` | ❌ Not built | Get/update/delete a specific workout |
-| GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries |
+| GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries. Will use `require_profile` once built. |
 | GET/POST | `/body-weight` | ❌ Not built | Log/list body weight entries for Progress chart |
 | GET | `/progress` | ❌ Not built | Aggregated stats/trends — scoped per design: body weight trend, e1RM trend per exercise, muscle-group strength summary |
 | POST | `/coach` | ❌ Not built | AI coach interaction endpoint — chat UI is fully designed, backend/LLM integration not started |
@@ -208,11 +222,13 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 - **bcrypt pinned to `4.0.1`** — needed for compatibility with `passlib==1.7.4`. If either is upgraded later, re-verify password hashing still works before deploying.
 - **Non-default ports** (`5433` for Postgres, `8001` for backend) — because other containers on the home server already occupy the defaults. Keep this in mind in `.env` files, TablePlus configs, and any new service that needs to talk to these.
-- **Git & OneDrive** — repo clones are intentionally kept outside OneDrive sync folders to avoid `.git` corruption/conflicts from cloud sync.
+- **Git & OneDrive** — repo clones were originally intended to be kept outside OneDrive sync folders to avoid `.git` corruption/conflicts from cloud sync. In practice both current devices still have their clones inside OneDrive paths — not urgent to fix, but a known risk worth revisiting.
 - **Server never commits** — treat the server as a deploy target only, not a place to edit code.
 - **Theming is presentation-only** — theme/accent changes affect color tokens only; layout, spacing, and typography never change per theme. Worth keeping this discipline in the actual React Native implementation (e.g. a single theme context object, not per-component conditional styling).
 - **`psycopg` (v3), not `psycopg2-binary`** — `psycopg2-binary` failed to build locally (no prebuilt package available for the Python version in use). `requirements.txt` now uses `psycopg[binary]`. Critically: any `DATABASE_URL` must explicitly use the `postgresql+psycopg://` prefix, not plain `postgresql://` — otherwise SQLAlchemy defaults to the old psycopg2 driver and crashes with `ModuleNotFoundError`. This caused a real production crash on the server until `docker-compose.yml`'s `DATABASE_URL` was fixed to match.
-- **Local dev needs its own `backend/.env`** (gitignored, never committed), with `load_dotenv()` added to `database.py` — Docker doesn't need this since `docker-compose.yml` injects env vars directly, but running `uvicorn` locally does. Local `DATABASE_URL` points directly at the server's Postgres (`192.168.0.241:5433`) rather than a separate local database.
+- **Local dev needs its own `backend/.env`** (gitignored, never committed), with `load_dotenv()` added to `database.py` — Docker doesn't need this since `docker-compose.yml` injects env vars directly, but running `uvicorn` locally does. Local `DATABASE_URL` points directly at the server's Postgres (`192.168.0.241:5433`) rather than a separate local database. **A missing `.env` on a newly set-up machine shows up as `sqlalchemy.exc.ArgumentError: Expected string or URL object, got None`** at `create_engine()` — that's the signal to go create it, not a code bug.
+- **Onboarding gate (decided):** profile creation is now mandatory before accessing the rest of the app, enforced on both frontend (later, Phase 3) and backend (now). Backend enforcement is the `require_profile` dependency in `auth.py` — it wraps `get_current_user` and additionally checks for a `user_profiles` row, raising `403 Profile setup required before accessing this feature.` if missing. `/users/preferences` was also brought under this gate (a user must finish onboarding before setting theme/accent). `/users/profile` itself deliberately stays on plain `get_current_user`, since gating it would make onboarding impossible. Apply `require_profile` to `/workouts`, `/nutrition`, `/body-weight`, and `/progress` as they're built in Phase 2.
+- **PowerShell/curl quoting** — see Section 7 for the working pattern (`-d "@file.json"`) after several failed attempts at inline `-d '{"..."}'` bodies.
 
 ---
 
@@ -233,10 +249,17 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [x] Write migration (or manual `CREATE TABLE` if not using a migration tool yet)
   - [x] Build `POST /users/profile` (create/update, requires auth)
   - [x] Build `GET /users/profile` (requires auth, returns current user's profile)
-  - [ ] Decide: is profile creation mandatory before using the rest of the app (onboarding gate)?
+  - [x] Decide: is profile creation mandatory before using the rest of the app (onboarding gate)? **Yes — decided and implemented (backend). See Section 10.**
 - [x] **`user_preferences` table**
   - [x] Design schema (theme_mode, accent_preset)
   - [x] Build `GET/POST /users/preferences`
+- [x] **Onboarding gate (backend)**
+  - [x] Write `require_profile` dependency in `auth.py`
+  - [x] Apply to `/users/preferences` (GET and POST)
+  - [x] Build `GET /users/onboarding-check` for the frontend to query post-login
+  - [x] Tested end-to-end: registered a fresh user with no profile, confirmed `403` on gated routes, confirmed `200` after profile exists
+  - [ ] Apply `require_profile` to Phase 2 routes as they're built (`/workouts`, `/nutrition`, `/body-weight`, `/progress`)
+  - [ ] Implement the frontend half of the gate once `/mobile` exists (Phase 3)
 
 ### Phase 2 — Core Tracking
 - [ ] **Workouts**
@@ -266,7 +289,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - [ ] Set up shared navigation (React Navigation or similar) — nav structure already decided: Home, Coach, Workout, Nutrition, Progress, Settings
 - [ ] Implement theme system as a single context/provider (dark/light + 6 accent presets), matching the token contract in Section 14
 - [ ] Build register/login screens wired to `/auth/*`
-- [ ] Build onboarding screen wired to `/users/profile`
+- [ ] Build onboarding screen wired to `/users/profile`, with post-login redirect logic based on `GET /users/onboarding-check`
 - [ ] Build core workout logging UI
 - [ ] Build Home screen (streak strip, AI Coach card, Nutrition card, Workout card)
 - [ ] Build Progress screen with drillable muscle-group → exercise → e1RM chart
@@ -293,8 +316,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 | Variable | Purpose | Notes |
 |---|---|---|
-| `DATABASE_URL` | Postgres connection string | Should point at `db:5432` inside Docker network, not `localhost:5433` |
-| `JWT_SECRET_KEY` | Signing key for JWTs | Keep out of git; confirm it's in `.env`, not hardcoded |
+| `DATABASE_URL` | Postgres connection string | Must use `postgresql+psycopg://` prefix (see Section 10). Local dev points directly at `192.168.0.241:5433`, not `localhost`. |
+| `JWT_SECRET` | Signing key for JWTs | Keep out of git; confirm it's in `.env`, not hardcoded. **Note: the actual variable name used in code is `JWT_SECRET`, not `JWT_SECRET_KEY`.** |
 | `JWT_ALGORITHM` | e.g. `HS256` | Confirm what's actually used |
 | `JWT_EXPIRE_MINUTES` | Token lifetime | Confirm current value |
 
@@ -304,7 +327,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 ## 13. Conventions & Practices (to establish)
 
-- **Error handling:** decide on a consistent pattern for returning errors (FastAPI `HTTPException` with consistent status codes/messages)
+- **Error handling:** decide on a consistent pattern for returning errors (FastAPI `HTTPException` with consistent status codes/messages). One convention now in place: `401` = not authenticated (bad/missing/expired JWT), `403` = authenticated but not allowed yet (e.g. `require_profile` gate). Keep this distinction for future routes.
 - **Validation:** use Pydantic models for all request/response bodies (likely already doing this for register/login — extend the pattern going forward)
 - **Testing:** no test suite yet — consider `pytest` + FastAPI's `TestClient` starting with auth endpoints
 - **Migrations:** no migration tool yet — consider Alembic before schema grows further, so changes are tracked and repeatable across devices/server instead of manual SQL
