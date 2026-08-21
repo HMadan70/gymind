@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-20_
+_Last updated: 2026-08-21_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -171,7 +171,7 @@ Supports the theming system (Section 14):
 | `created_at` | timestamptz | Default now() |
 | `updated_at` | timestamptz | Default now(), updates on change |
 
-### `user_workouts` — ✅ built (models/schemas only — no routes yet)
+### `user_workouts` — ✅ Built (models, schemas, and routes)
 One row per workout session.
 | Column | Type | Notes |
 |---|---|---|
@@ -180,7 +180,7 @@ One row per workout session.
 | `started_at` | timestamptz | Default now() |
 | `ended_at` | timestamptz, nullable | Set when the session is finished |
 
-### `workout_sets` — ✅ built (models/schemas only — no routes yet)
+### `workout_sets` — ✅ Built (models, schemas, and routes)
 One row per logged set — see Section 10 for why sets aren't grouped/collapsed.
 | Column | Type | Notes |
 |---|---|---|
@@ -225,11 +225,18 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 | GET | `/health` | ✅ Built | Basic liveness check |
 | GET | `/health/db` | ✅ Built | Checks DB connectivity |
 
+### Workouts
+| Method | Path | Status | Description |
+|---|---|---|---|
+| POST | `/workouts` | ✅ Built | Creates a new workout session for the current user. Uses `require_profile`. |
+| GET | `/workouts` | ✅ Built | Lists workout sessions for the current user. Uses `require_profile`. |
+| PUT | `/workouts/{id}` | ✅ Built | Marks a workout session finished by setting `ended_at`. Uses `require_profile`; checks `user_id` ownership before modifying. |
+| POST | `/workouts/{id}/sets` | ✅ Built | Logs a set against a workout session. Uses `require_profile`; checks `user_id` ownership before modifying. |
+| GET | `/workouts/{id}` | ✅ Built | Workout detail with nested `sets`. Uses `require_profile`; checks `user_id` ownership before returning. |
+
 ### Planned
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/workouts` | ❌ Not built | List/create workout sessions. Will use `require_profile` once built. |
-| GET/PUT/DELETE | `/workouts/{id}` | ❌ Not built | Get/update/delete a specific workout |
 | GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries. Will use `require_profile` once built. |
 | GET/POST | `/body-weight` | ❌ Not built | Log/list body weight entries for Progress chart |
 | GET | `/progress` | ❌ Not built | Aggregated stats/trends — scoped per design: body weight trend, e1RM trend per exercise, muscle-group strength summary |
@@ -249,6 +256,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Onboarding gate (decided):** profile creation is now mandatory before accessing the rest of the app, enforced on both frontend (later, Phase 3) and backend (now). Backend enforcement is the `require_profile` dependency in `auth.py` — it wraps `get_current_user` and additionally checks for a `user_profiles` row, raising `403 Profile setup required before accessing this feature.` if missing. `/users/preferences` was also brought under this gate (a user must finish onboarding before setting theme/accent). `/users/profile` itself deliberately stays on plain `get_current_user`, since gating it would make onboarding impossible. Apply `require_profile` to `/workouts`, `/nutrition`, `/body-weight`, and `/progress` as they're built in Phase 2.
 - **PowerShell/curl quoting** — see Section 7 for the working pattern (`-d "@file.json"`) after several failed attempts at inline `-d '{"..."}'` bodies.
 - **`workout_sets` stores one row per set, not a text blob** — weight/reps are normalized numeric columns rather than crammed into a free-form field, specifically so the Progress screen's e1RM chart (Section 15) can query numeric weight/reps per set directly.
+- **Pydantic `from_attributes = True` is required for ORM-returning schemas** — any `Out` schema constructed from a raw SQLAlchemy object (especially nested ones, like `WorkoutSetOut` inside `UserWorkoutDetail`) needs this config, or you get `pydantic_core.ValidationError` expecting a dict instead of a model instance. Found and fixed on `WorkoutSetOut`/`UserWorkoutOut` while building the workout routes.
+- **Known gap:** `POST /workouts/{id}/sets` currently allows logging a set into an already-finished workout (i.e. `ended_at` is already set) — nothing blocks it. Not fixed yet, just documented here.
 
 ---
 
@@ -283,11 +292,12 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 ### Phase 2 — Core Tracking
 - [ ] **Workouts**
-  - [x] Design `workouts`, `exercises`, and `workout_sets` tables (or similar normalized structure) — **implemented as a two-table design: `user_workouts` for sessions, `workout_sets` for individual sets, normalized so each set is its own row for the Progress screen's e1RM chart (Section 15). See Section 8. Models/schemas only — routes not built yet.**
-  - [ ] `POST /workouts` — create a workout session
-  - [ ] `GET /workouts` — list past workouts for current user
-  - [ ] `GET /workouts/{id}` — workout detail
-  - [ ] `PUT /workouts/{id}` — edit
+  - [x] Design `workouts`, `exercises`, and `workout_sets` tables (or similar normalized structure) — **implemented as a two-table design: `user_workouts` for sessions, `workout_sets` for individual sets, normalized so each set is its own row for the Progress screen's e1RM chart (Section 15). See Section 8.**
+  - [x] `POST /workouts` — create a workout session
+  - [x] `GET /workouts` — list past workouts for current user
+  - [x] `PUT /workouts/{id}` — implemented as finish-a-session (sets `ended_at`), not a general edit route — a broader edit endpoint may still be needed later
+  - [x] `POST /workouts/{id}/sets` — log a set against a workout session
+  - [x] `GET /workouts/{id}` — workout detail with nested sets
   - [ ] `DELETE /workouts/{id}` — delete
   - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
   - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
