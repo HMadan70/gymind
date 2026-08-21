@@ -73,6 +73,9 @@ class UserWorkoutOut(UserWorkoutIn):
     id: int
     user_id: int
 
+    class Config:
+        from_attributes = True
+
 
 class WorkoutSetIn(BaseModel):
     exercise_name: str
@@ -83,5 +86,12 @@ class WorkoutSetIn(BaseModel):
 class WorkoutSetOut(WorkoutSetIn):
     id: int
     workout_id: int
+
+    class Config:
+        from_attributes = True
+
+
+class UserWorkoutDetail(UserWorkoutOut):
+    sets: list[WorkoutSetOut] = []
 
         

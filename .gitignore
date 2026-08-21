@@ -3,3 +3,9 @@ __pycache__/
 *.pyc
 node_modules/
 .expo/
+login_test.json
+register_test.json
+set_test.json
+profile_test.json
+token.txt
+login_response.json

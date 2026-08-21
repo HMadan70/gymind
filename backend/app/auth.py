@@ -59,3 +59,23 @@ def get_current_user(
         raise credentials_exception
 
     return user
+
+
+def require_profile(
+    current_user: models.User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+) -> models.User:
+    """
+    Builds on get_current_user: also requires the user to have completed
+    onboarding (i.e. a row exists in user_profiles). Use this instead of
+    get_current_user on any route that assumes profile data exists.
+    """
+    profile = db.query(models.UserProfile).filter(
+        models.UserProfile.user_id == current_user.id
+    ).first()
+    if not profile:
+        raise HTTPException(
+            status_code=403,
+            detail="Profile setup required before accessing this feature.",
+        )
+    return current_user
