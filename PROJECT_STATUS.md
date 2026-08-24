@@ -257,7 +257,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **PowerShell/curl quoting** — see Section 7 for the working pattern (`-d "@file.json"`) after several failed attempts at inline `-d '{"..."}'` bodies.
 - **`workout_sets` stores one row per set, not a text blob** — weight/reps are normalized numeric columns rather than crammed into a free-form field, specifically so the Progress screen's e1RM chart (Section 15) can query numeric weight/reps per set directly.
 - **Pydantic `from_attributes = True` is required for ORM-returning schemas** — any `Out` schema constructed from a raw SQLAlchemy object (especially nested ones, like `WorkoutSetOut` inside `UserWorkoutDetail`) needs this config, or you get `pydantic_core.ValidationError` expecting a dict instead of a model instance. Found and fixed on `WorkoutSetOut`/`UserWorkoutOut` while building the workout routes.
-- **Known gap:** `POST /workouts/{id}/sets` currently allows logging a set into an already-finished workout (i.e. `ended_at` is already set) — nothing blocks it. Not fixed yet, just documented here.
+- **Fixed:** `POST /workouts/{id}/sets` previously allowed logging a set into an already-finished workout (i.e. `ended_at` already set) — nothing blocked it. A `409` guard was added that checks `workout.ended_at` before allowing a new set. Tested end-to-end: blocked on finished workouts, allowed on in-progress ones. Deployed.
 
 ---
 
@@ -298,6 +298,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [x] `PUT /workouts/{id}` — implemented as finish-a-session (sets `ended_at`), not a general edit route — a broader edit endpoint may still be needed later
   - [x] `POST /workouts/{id}/sets` — log a set against a workout session
   - [x] `GET /workouts/{id}` — workout detail with nested sets
+  - [x] Fixed: `POST /workouts/{id}/sets` no longer allows logging sets on a finished workout — `409` guard on `ended_at`, tested end-to-end, deployed. See Section 10.
   - [ ] `DELETE /workouts/{id}` — delete
   - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
   - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
@@ -368,129 +369,27 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 ## 14. Design System — Direction & Theming
 
-Design work was done collaboratively in Claude Design (claude.ai/design). Full screen exports live in `Design/exports/` (source files in `Design/Source/`).
+Design work was done collaboratively in Claude Design (claude.ai/design).
 
-### Design Direction
-- **Style:** "5c" direction — dark base, geometric sans typography, warm accent
-- **Typeface:** Sora (throughout — headings, body, and numerals; tabular figures used for aligned data)
-- **Default accent:** Ember (`#FF6B1F`)
-- **Base mode:** Dark (default), Light mode available
-- **Tone:** Clean, modern, slightly energetic — data-forward without feeling clinical
+Direction is a "5c" style: dark base with a light mode available, geometric sans typography (Sora throughout — headings, body, and numerals), and a warm default accent, with 6 accent presets users can switch between. Layout, spacing, and typography stay fixed across themes — only color tokens change.
 
-### Theming System
-Users can change the **accent color** and **light/dark mode** — layout, spacing, and typography stay fixed; only color tokens change.
-
-![Theming comparison grid](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/theming-comparison-grid.png)
-
-**Accent presets (final shortlist of 6):**
-| Preset | Hex |
-|---|---|
-| Ember (default) | `#FF6B1F` |
-| Signal | `#3FC4FF` |
-| Amber | `#FFD023` |
-| Violet | `#A788FA` |
-| Teal | `#17C382` |
-| Volt | `#3FE07A` |
-
-_(Explored but not shortlisted: Coral, Indigo, Crimson)_
-
-![Base token reference](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/base-token-reference.png)
-
-**Base tokens — dark mode:**
-| Token | Value | Use |
-|---|---|---|
-| `bg.base` | `#0A0F1A` | Screen background |
-| `bg.card` | `#131B2B` | Card / input fill |
-| `bg.inset` | `rgba(255,255,255,.045)` | Subtle inset surfaces |
-| `border` | `rgba(255,255,255,.14)` | Card/input borders |
-| `text.primary` | `#F0F3F8` | Headings, body |
-| `text.dim` | 72% opacity | Secondary text |
-| `text.faint` | 42% opacity | Tertiary/placeholder text |
-
-**Base tokens — light mode:**
-| Token | Value | Use |
-|---|---|---|
-| `bg.base` | `#F4F5F7` | Screen background |
-| `bg.card` | `#FFFFFF` | Card / input fill |
-| `bg.inset` | `#F4F5F7` | Subtle inset surfaces |
-| `border` | `rgba(16,20,28,.14)` | Card/input borders |
-| `text.primary` | `#10141C` | Headings, body |
-| `text.dim` | 68% opacity | Secondary text |
-| `text.faint` | 42% opacity | Tertiary/placeholder text |
-
-**Accent contract (applies per-preset, both modes):**
-| Token | Use |
-|---|---|
-| `accent` | Fills, active borders |
-| `accent.tint2` | Dark-mode text/icons on accent-tinted surfaces |
-| `accent.tint3` | Charts, rings, data visualization |
-| `accent.deep` | Light-mode text on accent-tinted surfaces |
-| `accent.on` | Text rendered on top of a solid accent fill |
-| `accent.soft` | 16% wash — subtle accent backgrounds |
+> Full design system (tokens, components, logo, brand guide) is maintained privately, not in this public repo.
 
 ---
 
 ## 15. Design System — Screens
 
-**Bottom nav (mobile) / sidebar (web):** Home, Coach, Workout, Nutrition, Progress, Settings — Profile moved out of the bottom bar to keep the nav from overcrowding at 6 items (see open question, Section 17).
+Screens designed (mobile + web) so far: Login, Register, Onboarding, Home, Workout, Nutrition, Progress, Settings.
 
-### Login
-| Mobile | Web |
-|---|---|
-| ![Login - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-login.png) | ![Login - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-login.png) |
-
-### Register
-| Mobile | Web |
-|---|---|
-| ![Register - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-register.png) | ![Register - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-register.png) |
-
-### Onboarding
-Grouped steps: goal, experience, injuries, equipment, dietary restrictions.
-| Mobile | Web |
-|---|---|
-| ![Onboarding - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-onboarding.png) | ![Onboarding - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-onboarding.png) |
-
-### Home
-Section order (finalized): greeting header → **This week** streak strip (7-day dot/check row, no card border) → **AI Coach card** (contextual tip, links to Coach chat) → **Nutrition card** (calorie ring + macro bars + recent food logged, one combined card) → **Workout card** (today's plan + recent workouts, one combined card).
-| Mobile | Web |
-|---|---|
-| ![Home - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-home.png) | ![Home - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-home.png) |
-
-### Workout (logging)
-Session header, set-by-set logging, add exercise, finish session.
-| Mobile | Web |
-|---|---|
-| ![Workout - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-workout.png) | ![Workout - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-workout.png) |
-
-### Nutrition
-Calorie ring, macro bars, recent food logged.
-| Mobile | Web |
-|---|---|
-| ![Nutrition - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-nutrition.png) | ![Nutrition - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-nutrition.png) |
-
-### Progress
-Finalized structure: time range selector (4 weeks/3 months/1 year) → **body weight chart** (line chart, goal marker) → **strength by muscle group** (drillable: muscle group → specific exercise → e1RM trend line) → **consistency** (single line, e.g. "18 of 28 days trained").
-| Mobile | Web |
-|---|---|
-| ![Progress - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-progress.png) | ![Progress - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-progress.png) |
-
-### Settings
-Includes the theme picker (dark/light mode + 6 accent swatches).
-| Mobile | Web |
-|---|---|
-| ![Settings - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-settings.png) | ![Settings - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-settings.png) |
+> Full design system (tokens, components, logo, brand guide) is maintained privately, not in this public repo.
 
 ---
 
 ## 16. Design System — AI Coach
 
-Accessed via its own nav tab (Coach). Referenced contextually on Home (workout-specific tips) and has its own dedicated chat screen: header with back nav, message thread (coach messages in accent-tinted cards), quick-prompt chips (e.g. "Adjust today's plan," "How's my progress this month?"), text input, "Beta"/"Preview" label.
+A dedicated Coach screen/chat exists in the design, referenced contextually from Home. Not yet built on the backend — this is UI/UX design only. Actual LLM integration is Phase 4 (Section 11) and hasn't been started.
 
-| Mobile | Web |
-|---|---|
-| ![Coach - mobile](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/mobile/mobile-coach.png) | ![Coach - web](https://raw.githubusercontent.com/HMadan70/gymind/main/Design/exports/web/web-coach.png) |
-
-**Not yet built on the backend** — this is UI/UX design only. Actual LLM integration is Phase 4 (Section 11) and hasn't been started.
+> Full design system (tokens, components, logo, brand guide) is maintained privately, not in this public repo.
 
 ---
 
