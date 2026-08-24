@@ -217,6 +217,12 @@ def add_set(
     if not workout:
         raise HTTPException(status_code=404, detail="Workout not found")
 
+    if workout.ended_at is not None:
+        raise HTTPException(
+            status_code=409,
+            detail="Cannot add a set to a finished workout session",
+        )
+
     new_set = models.WorkoutSet(workout_id=workout_id, **set_in.dict())
     db.add(new_set)
     db.commit()
