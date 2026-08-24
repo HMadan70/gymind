@@ -1,14 +1,32 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
- 
+from slowapi import Limiter
+from slowapi.util import get_remote_address
+from slowapi.errors import RateLimitExceeded
+
 from app.database import Base, engine, get_db
 from app import models, schemas, auth
- 
+
 app = FastAPI(title="Gymind API")
- 
+
+# Rate limiting, keyed by client IP. Only applied to /auth/login and
+# /auth/register (below) — these are the routes most exposed to
+# brute-force credential guessing, so they're the ones that need it.
+limiter = Limiter(key_func=get_remote_address)
+app.state.limiter = limiter
+
+
+@app.exception_handler(RateLimitExceeded)
+def rate_limit_exceeded_handler(request: Request, exc: RateLimitExceeded):
+    return JSONResponse(
+        status_code=429,
+        content={"detail": "Too many requests. Please wait a minute and try again."},
+    )
+
 # Creates any tables defined in models.py that don't already exist yet.
 # This is fine for early development - once the schema stabilizes and
 # you have real data you care about, you'd switch to a migration tool
@@ -43,7 +61,8 @@ def db_health_check():
  
  
 @app.post("/auth/register", response_model=schemas.UserResponse)
-def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def register(request: Request, user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check nothing already uses this email or username.
     existing = db.query(models.User).filter(
         or_(models.User.email == user_in.email, models.User.username == user_in.username)
@@ -63,7 +82,8 @@ def register(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
  
  
 @app.post("/auth/login", response_model=schemas.Token)
-def login(credentials: schemas.UserLogin, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+def login(request: Request, credentials: schemas.UserLogin, db: Session = Depends(get_db)):
     user = db.query(models.User).filter(
         or_(models.User.email == credentials.identifier, models.User.username == credentials.identifier)
     ).first()
