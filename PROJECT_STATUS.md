@@ -258,6 +258,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **`workout_sets` stores one row per set, not a text blob** — weight/reps are normalized numeric columns rather than crammed into a free-form field, specifically so the Progress screen's e1RM chart (Section 15) can query numeric weight/reps per set directly.
 - **Pydantic `from_attributes = True` is required for ORM-returning schemas** — any `Out` schema constructed from a raw SQLAlchemy object (especially nested ones, like `WorkoutSetOut` inside `UserWorkoutDetail`) needs this config, or you get `pydantic_core.ValidationError` expecting a dict instead of a model instance. Found and fixed on `WorkoutSetOut`/`UserWorkoutOut` while building the workout routes.
 - **Fixed:** `POST /workouts/{id}/sets` previously allowed logging a set into an already-finished workout (i.e. `ended_at` already set) — nothing blocked it. A `409` guard was added that checks `workout.ended_at` before allowing a new set. Tested end-to-end: blocked on finished workouts, allowed on in-progress ones. Deployed.
+- **Rate limiting on auth routes:** added `slowapi`, with a `Limiter` keyed by client IP. Applied to `POST /auth/login` and `POST /auth/register`, 5 requests/minute each, returning `429` with a clear message when the limit is hit. **Gotcha:** after adding `slowapi` to `requirements.txt`, a normal `docker compose up -d --build` did not actually install the new dependency in the running container — a cache-busting rebuild (`docker compose build --no-cache`) was required to pick it up. Worth remembering for future dependency additions.
+- **`.gitignore` hardened:** broadened from specific known filenames to pattern-based exclusions (`*.env`, `token.txt`, `*_secret*`, `*credentials*`, `*_test.json`, `test_*.json`) as a safety net against future accidental commits of scratch/secret files, not just files remembered to name individually.
 
 ---
 
@@ -364,6 +366,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Migrations:** no migration tool yet — consider Alembic before schema grows further, so changes are tracked and repeatable across devices/server instead of manual SQL
 - **Dependency pinning:** pin versions in `requirements.txt` to avoid surprises like the bcrypt/passlib issue recurring elsewhere
 - **Theming discipline:** color tokens only change per theme — never layout/spacing/typography (see Section 10)
+- **Rate limiting:** auth routes are rate-limited (5/min per IP) as of 2026-08-25 (see Section 10) — extend this pattern to other write-heavy routes if abuse becomes a concern.
 
 ---
 
