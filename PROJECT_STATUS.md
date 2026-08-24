@@ -167,7 +167,7 @@ Supports the theming system (Section 14):
 | `id` | serial | Primary key |
 | `user_id` | int (FK → users.id) | Unique — one row per user |
 | `theme_mode` | text, nullable | "dark" or "light" |
-| `accent_preset` | text, nullable | One of: Ember, Signal, Amber, Violet, Teal, Volt |
+| `accent_preset` | text, nullable | One of: Ember, Signal, Amber, Violet, Volt |
 | `created_at` | timestamptz | Default now() |
 | `updated_at` | timestamptz | Default now(), updates on change |
 
@@ -318,7 +318,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Sections 14–16)
 - [ ] Scaffold React Native + React Native Web project in `/mobile`
 - [ ] Set up shared navigation (React Navigation or similar) — nav structure already decided: Home, Coach, Workout, Nutrition, Progress, Settings
-- [ ] Implement theme system as a single context/provider (dark/light + 6 accent presets), matching the token contract in Section 14
+- [ ] Implement theme system as a single context/provider (dark/light + 5 accent presets), matching the token contract in Section 14
 - [ ] Build register/login screens wired to `/auth/*`
 - [ ] Build onboarding screen wired to `/users/profile`, with post-login redirect logic based on `GET /users/onboarding-check`
 - [ ] Build core workout logging UI
@@ -371,7 +371,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 
 Design work was done collaboratively in Claude Design (claude.ai/design).
 
-Direction is a "5c" style: dark base with a light mode available, geometric sans typography (Sora throughout — headings, body, and numerals), and a warm default accent, with 6 accent presets users can switch between. Layout, spacing, and typography stay fixed across themes — only color tokens change.
+Direction is a "5c" style: dark base with a light mode available, geometric sans typography (Sora throughout — headings, body, and numerals), and a warm default accent, with 5 accent presets users can switch between. Layout, spacing, and typography stay fixed across themes — only color tokens change.
 
 > Full design system (tokens, components, logo, brand guide) is maintained privately, not in this public repo.
 
