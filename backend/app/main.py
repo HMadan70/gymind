@@ -1,5 +1,5 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Request
+from fastapi import FastAPI, Depends, HTTPException, Request, status
 from fastapi.responses import JSONResponse
 from sqlalchemy import create_engine, func, text
 from sqlalchemy.orm import Session
@@ -275,3 +275,23 @@ def get_workout(
         ended_at=workout.ended_at,
         sets=sets,
     )
+
+
+@app.delete("/workouts/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)
+def delete_workout(
+    workout_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+
+):
+    workout = (
+        db.query(models.UserWorkout)
+        .filter(models.UserWorkout.id == workout_id, models.UserWorkout.user_id == current_user.id)
+        .first()
+    )
+
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    db.delete(workout)
+    db.commit()
