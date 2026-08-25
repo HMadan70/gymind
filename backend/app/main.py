@@ -1,7 +1,7 @@
 import os
-from fastapi import FastAPI, Depends, HTTPException, Request, status
+from fastapi import FastAPI, Depends, HTTPException, Request
 from fastapi.responses import JSONResponse
-from sqlalchemy import create_engine, func, text
+from sqlalchemy import create_engine, text
 from sqlalchemy.orm import Session
 from sqlalchemy import or_
 from slowapi import Limiter
@@ -10,8 +10,10 @@ from slowapi.errors import RateLimitExceeded
 
 from app.database import Base, engine, get_db
 from app import models, schemas, auth
+from app.routes.workout_routes import router as workout_router
 
 app = FastAPI(title="Gymind API")
+app.include_router(workout_router)
 
 # Rate limiting, keyed by client IP. Only applied to /auth/login and
 # /auth/register (below) — these are the routes most exposed to
@@ -180,118 +182,3 @@ def upsert_preferences(
 @app.get("/users/onboarding-check")
 def onboarding_check(current_user: models.User = Depends(auth.require_profile)):
     return {"status": "profile complete", "user_id": current_user.id}
-
-
-@app.post("/workouts", response_model=schemas.UserWorkoutOut)
-def create_workout(
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-):
-    new_workout = models.UserWorkout(user_id=current_user.id)
-    db.add(new_workout)
-    db.commit()
-    db.refresh(new_workout)
-    return new_workout
-
-@app.get("/workouts", response_model=list[schemas.UserWorkoutOut])
-def list_workouts(
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-):
-    workouts = db.query(models.UserWorkout).filter(
-        models.UserWorkout.user_id == current_user.id
-    ).all()
-    return workouts
-
-@app.put("/workouts/{workout_id}", response_model=schemas.UserWorkoutOut)
-def finish_workout(
-    workout_id: int,
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-):
-    workout = db.query(models.UserWorkout).filter(
-        models.UserWorkout.id == workout_id,
-        models.UserWorkout.user_id == current_user.id,
-    ).first()
-
-    if not workout:
-        raise HTTPException(status_code=404, detail="Workout not found")
-
-    workout.ended_at = func.now()
-    db.commit()
-    db.refresh(workout)
-    return workout
-
-@app.post("/workouts/{workout_id}/sets", response_model=schemas.WorkoutSetOut)
-def add_set(
-    workout_id: int,
-    set_in: schemas.WorkoutSetIn,
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-):
-    workout = db.query(models.UserWorkout).filter(
-        models.UserWorkout.id == workout_id,
-        models.UserWorkout.user_id == current_user.id,
-    ).first()
-
-    if not workout:
-        raise HTTPException(status_code=404, detail="Workout not found")
-
-    if workout.ended_at is not None:
-        raise HTTPException(
-            status_code=409,
-            detail="Cannot add a set to a finished workout session",
-        )
-
-    new_set = models.WorkoutSet(workout_id=workout_id, **set_in.dict())
-    db.add(new_set)
-    db.commit()
-    db.refresh(new_set)
-    return new_set
-
-
-@app.get("/workouts/{workout_id}", response_model=schemas.UserWorkoutDetail)
-def get_workout(
-    workout_id: int,
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-):
-    workout = db.query(models.UserWorkout).filter(
-        models.UserWorkout.id == workout_id,
-        models.UserWorkout.user_id == current_user.id,
-    ).first()
-
-    if not workout:
-        raise HTTPException(status_code=404, detail="Workout not found")
-
-    sets = db.query(models.WorkoutSet).filter(
-        models.WorkoutSet.workout_id == workout_id
-    ).all()
-
-    return schemas.UserWorkoutDetail(
-        id=workout.id,
-        user_id=workout.user_id,
-        started_at=workout.started_at,
-        ended_at=workout.ended_at,
-        sets=sets,
-    )
-
-
-@app.delete("/workouts/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)
-def delete_workout(
-    workout_id: int,
-    current_user: models.User = Depends(auth.require_profile),
-    db: Session = Depends(get_db),
-
-):
-    workout = (
-        db.query(models.UserWorkout)
-        .filter(models.UserWorkout.id == workout_id, models.UserWorkout.user_id == current_user.id)
-        .first()
-    )
-
-    if not workout:
-        raise HTTPException(status_code=404, detail="Workout not found")
-
-    db.delete(workout)
-    db.commit()
