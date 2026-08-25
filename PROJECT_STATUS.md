@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-21_
+_Last updated: 2026-08-25_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -233,6 +233,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 | PUT | `/workouts/{id}` | ✅ Built | Marks a workout session finished by setting `ended_at`. Uses `require_profile`; checks `user_id` ownership before modifying. |
 | POST | `/workouts/{id}/sets` | ✅ Built | Logs a set against a workout session. Uses `require_profile`; checks `user_id` ownership before modifying. |
 | GET | `/workouts/{id}` | ✅ Built | Workout detail with nested `sets`. Uses `require_profile`; checks `user_id` ownership before returning. |
+| DELETE | `/workouts/{id}` | ✅ Built | Deletes a workout. Uses `require_profile`; checks `user_id` ownership before deleting. Cascade-deletes its sets via `ON DELETE CASCADE` on `workout_sets.workout_id`. |
 
 ### Planned
 | Method | Path | Status | Description |
@@ -260,6 +261,8 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Fixed:** `POST /workouts/{id}/sets` previously allowed logging a set into an already-finished workout (i.e. `ended_at` already set) — nothing blocked it. A `409` guard was added that checks `workout.ended_at` before allowing a new set. Tested end-to-end: blocked on finished workouts, allowed on in-progress ones. Deployed.
 - **Rate limiting on auth routes:** added `slowapi`, with a `Limiter` keyed by client IP. Applied to `POST /auth/login` and `POST /auth/register`, 5 requests/minute each, returning `429` with a clear message when the limit is hit. **Gotcha:** after adding `slowapi` to `requirements.txt`, a normal `docker compose up -d --build` did not actually install the new dependency in the running container — a cache-busting rebuild (`docker compose build --no-cache`) was required to pick it up. Worth remembering for future dependency additions.
 - **`.gitignore` hardened:** broadened from specific known filenames to pattern-based exclusions (`*.env`, `token.txt`, `*_secret*`, `*credentials*`, `*_test.json`, `test_*.json`) as a safety net against future accidental commits of scratch/secret files, not just files remembered to name individually.
+- **`workout_sets.workout_id` uses `ON DELETE CASCADE`** — deleting a `user_workouts` row automatically deletes its associated `workout_sets` rows at the database level. Verified via `pg_constraint` (`confdeltype = 'c'`). No manual cleanup needed in the `DELETE /workouts/{id}` route.
+- **Local uvicorn invocation:** since `main.py` lives inside `backend/app/`, not `backend/` directly, run `python -m uvicorn app.main:app --reload` from `backend/` — not `uvicorn main:app`.
 
 ---
 
@@ -301,7 +304,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [x] `POST /workouts/{id}/sets` — log a set against a workout session
   - [x] `GET /workouts/{id}` — workout detail with nested sets
   - [x] Fixed: `POST /workouts/{id}/sets` no longer allows logging sets on a finished workout — `409` guard on `ended_at`, tested end-to-end, deployed. See Section 10.
-  - [ ] `DELETE /workouts/{id}` — delete
+  - [x] `DELETE /workouts/{id}` — delete (cascade-deletes associated workout_sets via ON DELETE CASCADE)
   - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
   - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
 - [ ] **Nutrition**
