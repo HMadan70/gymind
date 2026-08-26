@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-25_
+_Last updated: 2026-08-27_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -193,8 +193,27 @@ One row per logged set — see Section 10 for why sets aren't grouped/collapsed.
 
 Still open: `exercises` as a seeded reference table vs. user-defined only, session duration/target-weight display, and e1RM computed on write vs. on read (see Section 17).
 
-### `nutrition_logs` — not designed yet
-Will need at minimum: meal entries, food items, macros (protein/carbs/fat), timestamps. Design screens show a daily calorie ring + macro bars against a target, so we'll also need a per-user daily calorie/macro target (likely lives in `user_profiles` or its own targets table).
+### `foods` — ✅ built
+Shared USDA reference foods and private user-created foods live in the same table.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `fdc_id` | int, nullable, unique | USDA FoodData Central id — NULL for user-created foods |
+| `name` | text | Not null |
+| `calories` | float, nullable | Per 100g |
+| `protein` | float, nullable | Per 100g |
+| `carbs` | float, nullable | Per 100g |
+| `fat` | float, nullable | Per 100g |
+| `user_id` | int (FK → users.id), nullable | NULL = shared USDA reference food; set = a private user-created food |
+
+### `nutrition_logs` — ✅ built
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Not null |
+| `food_id` | int (FK → foods.id) | Not null |
+| `quantity_grams` | float | Not null |
+| `logged_at` | timestamptz | Default now(), optionally overridable by the client to backdate an entry |
 
 ### `body_weight_logs` — not designed yet
 Needed for the Progress screen's body weight chart. At minimum: user_id, weight, unit (lb/kg), logged_at timestamp.
@@ -235,10 +254,20 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 | GET | `/workouts/{id}` | ✅ Built | Workout detail with nested `sets`. Uses `require_profile`; checks `user_id` ownership before returning. |
 | DELETE | `/workouts/{id}` | ✅ Built | Deletes a workout. Uses `require_profile`; checks `user_id` ownership before deleting. Cascade-deletes its sets via `ON DELETE CASCADE` on `workout_sets.workout_id`. |
 
+### Nutrition
+| Method | Path | Status | Description |
+|---|---|---|---|
+| POST | `/foods` | ✅ Built | Creates a user-owned custom food. Uses `require_profile`. |
+| GET | `/foods` | ✅ Built | Search by name (`?search=`). Returns shared USDA foods (`user_id IS NULL`) OR the current user's own foods. Uses `require_profile`. |
+| POST | `/nutrition` | ✅ Built | Logs a meal (`food_id` + `quantity_grams`, optional `logged_at`). Validates `food_id` exists first, `404` if not. Uses `require_profile`. |
+| GET | `/nutrition` | ✅ Built | Lists the current user's own logs, optional `?search=` by food name. Uses `require_profile`. |
+| PUT | `/nutrition/{id}` | ✅ Built | Edits a log. Ownership-checked (`404` if not found or not theirs), re-validates `food_id`. Uses `require_profile`. |
+| DELETE | `/nutrition/{id}` | ✅ Built | Deletes a log. Same ownership check as PUT. Uses `require_profile`. |
+| GET | `/nutrition/summary` | ✅ Built | Aggregated totals (calories/protein/carbs/fat) across the user's logs. Joins `NutritionLog`+`Food` in one query. Uses `require_profile`. |
+
 ### Planned
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/nutrition` | ❌ Not built | List/create nutrition log entries. Will use `require_profile` once built. |
 | GET/POST | `/body-weight` | ❌ Not built | Log/list body weight entries for Progress chart |
 | GET | `/progress` | ❌ Not built | Aggregated stats/trends — scoped per design: body weight trend, e1RM trend per exercise, muscle-group strength summary |
 | POST | `/coach` | ❌ Not built | AI coach interaction endpoint — chat UI is fully designed, backend/LLM integration not started |
@@ -263,6 +292,10 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **`.gitignore` hardened:** broadened from specific known filenames to pattern-based exclusions (`*.env`, `token.txt`, `*_secret*`, `*credentials*`, `*_test.json`, `test_*.json`) as a safety net against future accidental commits of scratch/secret files, not just files remembered to name individually.
 - **`workout_sets.workout_id` uses `ON DELETE CASCADE`** — deleting a `user_workouts` row automatically deletes its associated `workout_sets` rows at the database level. Verified via `pg_constraint` (`confdeltype = 'c'`). No manual cleanup needed in the `DELETE /workouts/{id}` route.
 - **Local uvicorn invocation:** since `main.py` lives inside `backend/app/`, not `backend/` directly, run `python -m uvicorn app.main:app --reload` from `backend/` — not `uvicorn main:app`.
+- **Shared vs. private foods, one table:** USDA reference foods and user-created foods both live in `foods`. Privacy is enforced entirely by the query filter (`or_(Food.user_id.is_(None), Food.user_id == current_user.id)`), not by separate tables. Any route that queries `Food` without this filter would leak other users' private foods.
+- **`datetime.now()` as a Pydantic field default is a trap:** used as a class-level default (`field: datetime = datetime.now()`), it evaluates once at class-definition/import time, not per-request — every request would get the same stale timestamp. Fixed by defaulting the field to `Optional[datetime] = None` and resolving `field or datetime.now()` inside the route body instead, so it's evaluated fresh on each request.
+- **N+1 fix in `GET /nutrition/summary`:** originally risked querying `Food` once per `NutritionLog` in a loop. Fixed with a single `db.query(NutritionLog, Food).join(Food, NutritionLog.food_id == Food.id)` query, then summing in Python.
+- **`GET /nutrition` returns `food_id` only, not nested food details** (name/macros) — unlike the nested pattern used in `GET /workouts/{id}` with its `sets`. Noted as an open item, not a bug — a frontend will need a follow-up lookup per log until/unless `NutritionLogOut` is extended with a nested `food` field.
 
 ---
 
@@ -308,9 +341,9 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
   - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
 - [ ] **Nutrition**
-  - [ ] Design `nutrition_logs` schema
-  - [ ] Decide: manual macro entry vs. food database API lookup
-  - [ ] CRUD endpoints mirroring the workouts pattern
+  - [x] Design `foods` and `nutrition_logs` schema — see Section 8
+  - [x] Decide: manual macro entry vs. food database API lookup — **decided: USDA SR Legacy import for shared reference foods, plus manual user-created foods in the same `foods` table (see Section 10)**
+  - [x] CRUD endpoints — `POST/GET /foods`, `POST/GET /nutrition`, `PUT/DELETE /nutrition/{id}`, `GET /nutrition/summary`, all built and tested. See Section 9.
   - [ ] Decide where daily calorie/macro targets live (per-user setting)
 - [ ] **Body weight tracking**
   - [ ] Design `body_weight_logs` schema
@@ -413,6 +446,7 @@ A dedicated Coach screen/chat exists in the design, referenced contextually from
 - Exact icon set for nav items not finalized
 - Empty states (no workouts logged yet, no food logged yet) not yet designed
 - Error/loading states not yet designed
+- `GET /nutrition` returns `food_id` only, not nested food details (see Section 10) — revisit before frontend work, since the Nutrition screen will need name/macros per log
 
 ---
 
