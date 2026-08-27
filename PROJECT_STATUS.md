@@ -180,18 +180,29 @@ One row per workout session.
 | `started_at` | timestamptz | Default now() |
 | `ended_at` | timestamptz, nullable | Set when the session is finished |
 
+### `exercises` — ✅ built
+Shared seeded reference exercises and private user-created exercises live in the same table, same pattern as `foods`.
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `name` | text | Not null |
+| `muscle_group` | text | Not null — e.g. "chest", "back", "legs", "shoulders", "arms", "core" |
+| `user_id` | int (FK → users.id), nullable | NULL = shared/seeded exercise; set = a private user-created exercise |
+
+Seeded with ~37 common exercises across all six muscle groups via manual SQL (see Section 10).
+
 ### `workout_sets` — ✅ Built (models, schemas, and routes)
 One row per logged set — see Section 10 for why sets aren't grouped/collapsed.
 | Column | Type | Notes |
 |---|---|---|
 | `id` | serial | Primary key |
 | `workout_id` | int (FK → user_workouts.id) | Parent workout session |
-| `exercise_name` | text | Not null |
+| `exercise_id` | int (FK → exercises.id) | Not null — which exercise this set was performed for |
 | `set_number` | int | Not null — this set's position within the exercise |
 | `weight` | float, nullable | |
 | `reps` | int, nullable | |
 
-Still open: `exercises` as a seeded reference table vs. user-defined only, session duration/target-weight display, and e1RM computed on write vs. on read (see Section 17).
+Still open: session duration/target-weight display (see Section 17).
 
 ### `foods` — ✅ built
 Shared USDA reference foods and private user-created foods live in the same table.
@@ -215,8 +226,27 @@ Shared USDA reference foods and private user-created foods live in the same tabl
 | `quantity_grams` | float | Not null |
 | `logged_at` | timestamptz | Default now(), optionally overridable by the client to backdate an entry |
 
-### `body_weight_logs` — not designed yet
-Needed for the Progress screen's body weight chart. At minimum: user_id, weight, unit (lb/kg), logged_at timestamp.
+### `nutrition_targets` — ✅ built
+One row per user — targets are calculated by default and can be manually overridden (see Section 10).
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Unique — one row per user |
+| `target_calories` | float, nullable | |
+| `target_protein` | float, nullable | |
+| `target_carbs` | float, nullable | |
+| `target_fat` | float, nullable | |
+| `is_manual` | boolean | Not null, default `false` — `false` = recalculated from profile/bodyweight data; `true` = user-entered values, preserved until reset |
+| `updated_at` | timestamptz | Default now(), updates on change |
+
+### `body_weight_logs` — ✅ built
+| Column | Type | Notes |
+|---|---|---|
+| `id` | serial | Primary key |
+| `user_id` | int (FK → users.id) | Not null |
+| `weight` | float | Not null |
+| `unit` | text | Not null — `"lb"` or `"kg"` |
+| `logged_at` | timestamptz | Default now(), optionally overridable by the client to backdate an entry |
 
 ---
 
@@ -247,11 +277,13 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 ### Workouts
 | Method | Path | Status | Description |
 |---|---|---|---|
+| POST | `/exercises` | ✅ Built | Creates a user-owned custom exercise (`name` + `muscle_group`). Uses `require_profile`. |
+| GET | `/exercises` | ✅ Built | Search by name (`?search=`). Returns shared/seeded exercises (`user_id IS NULL`) OR the current user's own, same filter pattern as `/foods`. Uses `require_profile`. |
 | POST | `/workouts` | ✅ Built | Creates a new workout session for the current user. Uses `require_profile`. |
 | GET | `/workouts` | ✅ Built | Lists workout sessions for the current user. Uses `require_profile`. |
 | PUT | `/workouts/{id}` | ✅ Built | Marks a workout session finished by setting `ended_at`. Uses `require_profile`; checks `user_id` ownership before modifying. |
-| POST | `/workouts/{id}/sets` | ✅ Built | Logs a set against a workout session. Uses `require_profile`; checks `user_id` ownership before modifying. |
-| GET | `/workouts/{id}` | ✅ Built | Workout detail with nested `sets`. Uses `require_profile`; checks `user_id` ownership before returning. |
+| POST | `/workouts/{id}/sets` | ✅ Built | Logs a set against a workout session (`exercise_id`, not free-text). Validates `exercise_id` exists, `404` if not. Uses `require_profile`; checks `user_id` ownership before modifying. Returns the set with a nested `exercise` object (name + muscle_group), not just the raw id. |
+| GET | `/workouts/{id}` | ✅ Built | Workout detail with nested `sets`, each with a nested `exercise` object (name + muscle_group), not just `exercise_id`. Uses `require_profile`; checks `user_id` ownership before returning. |
 | DELETE | `/workouts/{id}` | ✅ Built | Deletes a workout. Uses `require_profile`; checks `user_id` ownership before deleting. Cascade-deletes its sets via `ON DELETE CASCADE` on `workout_sets.workout_id`. |
 
 ### Nutrition
@@ -259,17 +291,35 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 |---|---|---|---|
 | POST | `/foods` | ✅ Built | Creates a user-owned custom food. Uses `require_profile`. |
 | GET | `/foods` | ✅ Built | Search by name (`?search=`). Returns shared USDA foods (`user_id IS NULL`) OR the current user's own foods. Uses `require_profile`. |
-| POST | `/nutrition` | ✅ Built | Logs a meal (`food_id` + `quantity_grams`, optional `logged_at`). Validates `food_id` exists first, `404` if not. Uses `require_profile`. |
-| GET | `/nutrition` | ✅ Built | Lists the current user's own logs, optional `?search=` by food name. Uses `require_profile`. |
-| PUT | `/nutrition/{id}` | ✅ Built | Edits a log. Ownership-checked (`404` if not found or not theirs), re-validates `food_id`. Uses `require_profile`. |
+| POST | `/nutrition` | ✅ Built | Logs a meal (`food_id` + `quantity_grams`, optional `logged_at`). Validates `food_id` exists first, `404` if not. Uses `require_profile`. Returns the log with a nested `food` object (name/calories/protein/carbs/fat), not just `food_id`. |
+| GET | `/nutrition` | ✅ Built | Lists the current user's own logs, optional `?search=` by food name. Uses `require_profile`. Each log includes a nested `food` object (name/calories/protein/carbs/fat), not just `food_id` — joins `NutritionLog`+`Food` in one query, no N+1. |
+| PUT | `/nutrition/{id}` | ✅ Built | Edits a log. Ownership-checked (`404` if not found or not theirs), re-validates `food_id`. Uses `require_profile`. Returns the log with a nested `food` object, same as POST/GET. |
 | DELETE | `/nutrition/{id}` | ✅ Built | Deletes a log. Same ownership check as PUT. Uses `require_profile`. |
 | GET | `/nutrition/summary` | ✅ Built | Aggregated totals (calories/protein/carbs/fat) across the user's logs. Joins `NutritionLog`+`Food` in one query. Uses `require_profile`. |
+| GET | `/nutrition/targets` | ✅ Built | Returns the current user's daily calorie/macro targets. If no row exists yet, calculates fresh values from profile/bodyweight data and creates it with `is_manual=false`. Uses `require_profile`. |
+| PUT | `/nutrition/targets` | ✅ Built | Manually sets `target_calories`/`target_protein`/`target_carbs`/`target_fat`; sets `is_manual=true` so `GET` stops recalculating. Uses `require_profile`. |
+| POST | `/nutrition/targets/reset` | ✅ Built | Resets `is_manual` back to `false` and recalculates targets fresh from current profile/bodyweight data. Uses `require_profile`. |
+
+### Body Weight
+| Method | Path | Status | Description |
+|---|---|---|---|
+| POST | `/body-weight` | ✅ Built | Creates a body weight log entry (`weight`, `unit`, optional `logged_at`). Uses `require_profile`. |
+| GET | `/body-weight` | ✅ Built | Lists the current user's own logs, ordered by `logged_at` descending. Uses `require_profile`. |
+| PUT | `/body-weight/{id}` | ✅ Built | Edits a log. Ownership-checked (`404` if not found or not theirs). Uses `require_profile`. |
+| DELETE | `/body-weight/{id}` | ✅ Built | Deletes a log. Same ownership check as PUT. Uses `require_profile`. |
+
+### Progress
+Four focused read-only aggregation endpoints rather than one mega-route, matching the rest of the API's style (see `/nutrition/summary`, `/nutrition/targets`). All scoped to the current user only, all use `require_profile`.
+| Method | Path | Status | Description |
+|---|---|---|---|
+| GET | `/progress/body-weight` | ✅ Built | Body weight trend, oldest → newest. Optional `?days=` to limit to a trailing window. Normalizes mixed lb/kg entries to a single unit (the most recent log's unit) so the trend never silently mixes units. |
+| GET | `/progress/e1rm` | ✅ Built | e1RM trend for one exercise (`?exercise_id=`, required), oldest → newest. e1RM calculated on read via the Epley formula, one entry per logged set. |
+| GET | `/progress/muscle-groups` | ✅ Built | Muscle-group strength summary — best (highest) e1RM per muscle group across all its exercises, one grouped SQL query. |
+| GET | `/progress/consistency` | ✅ Built | "X of Y days trained" over a trailing window (`?days=`, default 28) — distinct days with at least one finished (`ended_at` set) workout session. |
 
 ### Planned
 | Method | Path | Status | Description |
 |---|---|---|---|
-| GET/POST | `/body-weight` | ❌ Not built | Log/list body weight entries for Progress chart |
-| GET | `/progress` | ❌ Not built | Aggregated stats/trends — scoped per design: body weight trend, e1RM trend per exercise, muscle-group strength summary |
 | POST | `/coach` | ❌ Not built | AI coach interaction endpoint — chat UI is fully designed, backend/LLM integration not started |
 
 ---
@@ -295,7 +345,10 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
 - **Shared vs. private foods, one table:** USDA reference foods and user-created foods both live in `foods`. Privacy is enforced entirely by the query filter (`or_(Food.user_id.is_(None), Food.user_id == current_user.id)`), not by separate tables. Any route that queries `Food` without this filter would leak other users' private foods.
 - **`datetime.now()` as a Pydantic field default is a trap:** used as a class-level default (`field: datetime = datetime.now()`), it evaluates once at class-definition/import time, not per-request — every request would get the same stale timestamp. Fixed by defaulting the field to `Optional[datetime] = None` and resolving `field or datetime.now()` inside the route body instead, so it's evaluated fresh on each request.
 - **N+1 fix in `GET /nutrition/summary`:** originally risked querying `Food` once per `NutritionLog` in a loop. Fixed with a single `db.query(NutritionLog, Food).join(Food, NutritionLog.food_id == Food.id)` query, then summing in Python.
-- **`GET /nutrition` returns `food_id` only, not nested food details** (name/macros) — unlike the nested pattern used in `GET /workouts/{id}` with its `sets`. Noted as an open item, not a bug — a frontend will need a follow-up lookup per log until/unless `NutritionLogOut` is extended with a nested `food` field.
+- **`Base.metadata.create_all()` discovered and removed:** present since the second commit ever (`e6f06a8`, before any real routes existed), it ran unconditionally on every app import/startup — no environment gate. Investigation found it had silently created 5 tables (`users`, `user_workouts`, `workout_sets`, `body_weight_logs`, `nutrition_targets`) alongside the documented "manual psql only" policy, identifiable by SQLAlchemy's auto-named indexes/constraints (e.g. `ix_users_id`) that a human wouldn't hand-write. No functional schema drift was found — columns, types, and foreign keys all matched what's documented — only cosmetic differences (`varchar` vs. documented `text` on `users`, auto-generated index names). The call has been removed from `main.py`; the schema now has exactly one source of truth (manual psql DDL) going forward.
+- **`workout_sets.exercise_name` → `exercise_id` migration:** done entirely by hand via psql, in the order the "manual SQL only" policy requires: add `exercise_id` as a nullable column → backfill every existing row → set it `NOT NULL` → drop the old `exercise_name` column. No migration tool involved.
+- **e1RM computed on read, never stored (Epley: `weight * (1 + reps / 30)`):** chosen over storing/recomputing-on-write because there's no user-override case for e1RM the way there is for calorie targets — it's a pure function of `weight`/`reps` that already exist on `workout_sets`. Computing on read also means changing the formula later needs no backfill of historical data.
+- **Daily nutrition targets: calculate-by-default, manual-override pattern:** `nutrition_targets.is_manual` — `false` means the row is recalculated from profile/bodyweight data on read; `true` means the user's own entered values are preserved until they explicitly call `POST /nutrition/targets/reset`. Same shape as any "smart default the user can override" setting.
 
 ---
 
@@ -329,7 +382,7 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [ ] Implement the frontend half of the gate once `/mobile` exists (Phase 3)
 
 ### Phase 2 — Core Tracking
-- [ ] **Workouts**
+- [x] **Workouts**
   - [x] Design `workouts`, `exercises`, and `workout_sets` tables (or similar normalized structure) — **implemented as a two-table design: `user_workouts` for sessions, `workout_sets` for individual sets, normalized so each set is its own row for the Progress screen's e1RM chart (Section 15). See Section 8.**
   - [x] `POST /workouts` — create a workout session
   - [x] `GET /workouts` — list past workouts for current user
@@ -338,19 +391,19 @@ Needed for the Progress screen's body weight chart. At minimum: user_id, weight,
   - [x] `GET /workouts/{id}` — workout detail with nested sets
   - [x] Fixed: `POST /workouts/{id}/sets` no longer allows logging sets on a finished workout — `409` guard on `ended_at`, tested end-to-end, deployed. See Section 10.
   - [x] `DELETE /workouts/{id}` — delete (cascade-deletes associated workout_sets via ON DELETE CASCADE)
-  - [ ] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises?
-  - [ ] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read
-- [ ] **Nutrition**
+  - [x] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises? — **decided: seeded reference table (`exercises`, ~37 common exercises) plus user-added custom exercises, both muscle-group tagged, same shared/private pattern as `foods`. See Section 8/10.**
+  - [x] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read — **decided: Epley formula, computed on read, never stored. See Section 10.**
+- [x] **Nutrition**
   - [x] Design `foods` and `nutrition_logs` schema — see Section 8
   - [x] Decide: manual macro entry vs. food database API lookup — **decided: USDA SR Legacy import for shared reference foods, plus manual user-created foods in the same `foods` table (see Section 10)**
   - [x] CRUD endpoints — `POST/GET /foods`, `POST/GET /nutrition`, `PUT/DELETE /nutrition/{id}`, `GET /nutrition/summary`, all built and tested. See Section 9.
-  - [ ] Decide where daily calorie/macro targets live (per-user setting)
-- [ ] **Body weight tracking**
-  - [ ] Design `body_weight_logs` schema
-  - [ ] CRUD endpoints
-- [ ] **Progress**
-  - [ ] Design aggregation queries: body weight trend, e1RM trend per exercise, muscle-group strength summary, simple consistency count
-  - [ ] `GET /progress` endpoint(s) returning this data, shaped for the charts already designed
+  - [x] Decide where daily calorie/macro targets live (per-user setting) — **decided: own table (`nutrition_targets`), calculate-by-default with manual override via `is_manual`. See Section 8/10.**
+- [x] **Body weight tracking**
+  - [x] Design `body_weight_logs` schema — see Section 8
+  - [x] CRUD endpoints — `POST/GET/PUT/DELETE /body-weight`, all built. See Section 9.
+- [x] **Progress**
+  - [x] Design aggregation queries: body weight trend, e1RM trend per exercise, muscle-group strength summary, simple consistency count
+  - [x] `GET /progress` endpoint(s) returning this data, shaped for the charts already designed — **built as 4 focused endpoints (`/progress/body-weight`, `/progress/e1rm`, `/progress/muscle-groups`, `/progress/consistency`) rather than one route. See Section 9.**
 
 ### Phase 3 — Mobile App
 - [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Sections 14–16)
@@ -437,16 +490,12 @@ A dedicated Coach screen/chat exists in the design, referenced contextually from
 - Should `injuries` and `equipment` in `user_profiles` be free-text, arrays, or their own related tables (more structured, more work upfront)?
 - Should nutrition tracking use a food database API, or manual entry only, to start?
 - What does "AI coach" mean concretely, technically — chat interface via an LLM API, wired to real logged data? (UI is designed; backend approach not decided)
-- Should exercises come from a seeded reference table, or be entirely user-defined?
 - When to introduce a migration tool (Alembic) — now, or once the schema stabilizes a bit more?
 - Is a full test suite worth setting up now, or after the API surface is bigger?
-- Which e1RM formula to use (Epley, Brzycki, etc.) — needs a decision before Progress charts can be built
-- Where do daily nutrition targets (calories/macros) get set — onboarding, a settings screen, or calculated from profile data (goal/weight/activity)?
 - Where does Profile live on mobile now that it's off the bottom nav?
 - Exact icon set for nav items not finalized
 - Empty states (no workouts logged yet, no food logged yet) not yet designed
 - Error/loading states not yet designed
-- `GET /nutrition` returns `food_id` only, not nested food details (see Section 10) — revisit before frontend work, since the Nutrition screen will need name/macros per log
 
 ---
 
