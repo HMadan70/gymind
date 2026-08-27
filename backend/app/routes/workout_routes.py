@@ -1,11 +1,48 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy import func
+from sqlalchemy import func, or_
 from sqlalchemy.orm import Session
 
 from app.database import get_db
 from app import models, schemas, auth
 
 router = APIRouter()
+
+
+@router.post("/exercises", response_model=schemas.ExerciseOut)
+def add_exercise(
+    exercise: schemas.ExerciseIn,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    new_exercise = models.Exercise(
+        name=exercise.name,
+        muscle_group=exercise.muscle_group,
+        user_id=current_user.id,
+    )
+    db.add(new_exercise)
+    db.commit()
+    db.refresh(new_exercise)
+    return new_exercise
+
+
+@router.get("/exercises", response_model=list[schemas.ExerciseOut])
+def get_exercises(
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+    search: str = None,
+):
+    query = db.query(models.Exercise).filter(
+        or_(
+            models.Exercise.user_id.is_(None),
+            models.Exercise.user_id == current_user.id,
+        )
+    )
+
+    if search:
+        query = query.filter(models.Exercise.name.ilike(f"%{search}%"))
+
+    exercises = query.all()
+    return exercises
 
 
 @router.post("/workouts", response_model=schemas.UserWorkoutOut)
@@ -69,11 +106,29 @@ def add_set(
             detail="Cannot add a set to a finished workout session",
         )
 
+    exercise = db.query(models.Exercise).filter(
+        models.Exercise.id == set_in.exercise_id
+    ).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+
     new_set = models.WorkoutSet(workout_id=workout_id, **set_in.dict())
     db.add(new_set)
     db.commit()
     db.refresh(new_set)
-    return new_set
+
+    return schemas.WorkoutSetOut(
+        id=new_set.id,
+        workout_id=new_set.workout_id,
+        exercise_id=new_set.exercise_id,
+        set_number=new_set.set_number,
+        weight=new_set.weight,
+        reps=new_set.reps,
+        exercise=schemas.WorkoutSetExerciseOut(
+            name=exercise.name,
+            muscle_group=exercise.muscle_group,
+        ),
+    )
 
 
 @router.get("/workouts/{workout_id}", response_model=schemas.UserWorkoutDetail)
@@ -90,9 +145,28 @@ def get_workout(
     if not workout:
         raise HTTPException(status_code=404, detail="Workout not found")
 
-    sets = db.query(models.WorkoutSet).filter(
-        models.WorkoutSet.workout_id == workout_id
-    ).all()
+    sets_with_exercise = (
+        db.query(models.WorkoutSet, models.Exercise)
+        .join(models.Exercise, models.WorkoutSet.exercise_id == models.Exercise.id)
+        .filter(models.WorkoutSet.workout_id == workout_id)
+        .all()
+    )
+
+    sets = [
+        schemas.WorkoutSetOut(
+            id=workout_set.id,
+            workout_id=workout_set.workout_id,
+            exercise_id=workout_set.exercise_id,
+            set_number=workout_set.set_number,
+            weight=workout_set.weight,
+            reps=workout_set.reps,
+            exercise=schemas.WorkoutSetExerciseOut(
+                name=exercise.name,
+                muscle_group=exercise.muscle_group,
+            ),
+        )
+        for workout_set, exercise in sets_with_exercise
+    ]
 
     return schemas.UserWorkoutDetail(
         id=workout.id,

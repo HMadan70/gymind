@@ -14,3 +14,5 @@ login_response.json
 *credentials*
 *_test.json
 test_*.json
+
+backend/data/

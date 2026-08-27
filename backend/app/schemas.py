@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr
+from pydantic import BaseModel, EmailStr, ConfigDict
 from typing import Optional, List
 from datetime import datetime
 
@@ -78,14 +78,22 @@ class UserWorkoutOut(UserWorkoutIn):
 
 
 class WorkoutSetIn(BaseModel):
-    exercise_name: str
+    exercise_id: int
     set_number: int
     weight: float
     reps: int
 
+
+class WorkoutSetExerciseOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    name: str
+    muscle_group: str
+
+
 class WorkoutSetOut(WorkoutSetIn):
     id: int
     workout_id: int
+    exercise: Optional[WorkoutSetExerciseOut] = None
 
     class Config:
         from_attributes = True
@@ -94,4 +102,76 @@ class WorkoutSetOut(WorkoutSetIn):
 class UserWorkoutDetail(UserWorkoutOut):
     sets: list[WorkoutSetOut] = []
 
-        
+
+class FoodIn(BaseModel):
+    name: str
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class FoodOut(FoodIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    fdc_id: Optional[int] = None
+    user_id: Optional[int] = None
+
+
+
+class NutritionLogIn(BaseModel):
+    food_id: int
+    quantity_grams: float
+    logged_at: Optional[datetime] = None
+
+
+class NutritionLogFoodOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    name: str
+    calories: float
+    protein: float
+    carbs: float
+    fat: float
+
+
+class NutritionLogOut(NutritionLogIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+    food: Optional[NutritionLogFoodOut] = None
+
+
+class BodyWeightLogIn(BaseModel):
+    weight: float
+    unit: str
+    logged_at: Optional[datetime] = None
+
+class BodyWeightLogOut(BodyWeightLogIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+
+
+class NutritionTargetIn(BaseModel):
+    target_calories: Optional[float] = None
+    target_protein: Optional[float] = None
+    target_carbs: Optional[float] = None
+    target_fat: Optional[float] = None
+
+class NutritionTargetOut(NutritionTargetIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+    is_manual: bool
+    updated_at: datetime
+
+
+class ExerciseIn(BaseModel):
+    name: str
+    muscle_group: str
+
+
+class ExerciseOut(ExerciseIn):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: Optional[int] = None
