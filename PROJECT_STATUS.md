@@ -132,6 +132,12 @@ Two laptops (MSI and Dell), each with its own independent clone:
 curl.exe -X POST http://localhost:8000/auth/login -H "Content-Type: application/json" -d "@login_test.json"
 ```
 
+**Pre-commit hooks don't sync via git:** the `gitleaks` secret-scanning hook (`.pre-commit-config.yaml`) only runs locally once `pre-commit install` has been run on that machine — it writes into `.git/hooks/`, which lives outside the repo and is never pushed or pulled. Pulling this change on MSI (or any new clone) gets you the config file, not an active hook. Before it's actually protecting a commit on a given machine, run there:
+```
+pip install pre-commit
+pre-commit install
+```
+
 ---
 
 ## 8. Database Schema
