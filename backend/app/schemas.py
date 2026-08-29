@@ -35,6 +35,14 @@ class Token(BaseModel):
     token_type: str = "bearer"
 
 
+class UserWithToken(UserResponse):
+    """What we send back after registration - the same user fields as
+    UserResponse, plus an access token so the frontend can skip a
+    separate login call right after signup."""
+    access_token: str
+    token_type: str = "bearer"
+
+
 class UserProfileIn(BaseModel):
     goal: Optional[str] = None
     experience_level: Optional[str] = None

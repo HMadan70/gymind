@@ -1,0 +1,75 @@
+<!-- @dsCard group="Brand" viewport="700x460" name="Logo & brand mark" subtitle="Streak-motif mark, lockups, clear space, misuse" -->
+<!DOCTYPE html>
+<html lang="en" data-mode="dark" data-accent="ember">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gymind — Brand Guide</title>
+<link rel="icon" href="favicon.svg">
+<link rel="stylesheet" href="../styles.css">
+<style>
+  .wrap { max-width: 1080px; margin: 0 auto; padding: 48px 40px 80px; }
+  .lede { max-width: 640px; }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:20px; }
+  .grid3 { display:grid; grid-template-columns:repeat(3,1fr); gap:20px; }
+  .panel { border:1px solid var(--border); border-radius: var(--r-card-lg); padding: 28px; display:grid; place-items:center; min-height:180px; }
+  .panel.on-dark { background:#0A0F1A; }
+  .panel.on-light { background:#F4F5F7; }
+  .panel.on-accent { background: var(--accent); }
+  .cap { margin-top:10px; }
+  .sec { margin-top:56px; }
+  .clearspace { position:relative; display:inline-block; padding:56px; }
+  .clearspace::before { content:""; position:absolute; inset:0; border:1px dashed var(--accent-dash); border-radius:12px; }
+  .misuse { position:relative; }
+  .misuse::after { content:"✕"; position:absolute; top:10px; right:12px; color:var(--status-danger); font-weight:700; font-size:18px; }
+  img.mk { display:block; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <img class="mk" src="wordmark-dark.svg" alt="Gymind" style="width:340px">
+  <h1 class="h1" style="margin-top:40px">Brand guide</h1>
+  <p class="body dim lede" style="margin-top:12px">The Gymind mark is built from the product's own <strong style="color:var(--text-primary)">7-day streak strip</strong> — a row of day markers that build from an empty rest day, through logged days, to a solid <em>check</em>. It reads as consistency and completion, and it belongs only to a training-data app. It is not a dumbbell, not a heartbeat.</p>
+
+  <div class="sec">
+    <div class="label">The mark — on every background</div>
+    <div class="grid3" style="margin-top:14px">
+      <div><div class="panel on-dark"><img class="mk" src="mark.svg" style="width:150px"></div><div class="cap sm faint">On dark base</div></div>
+      <div><div class="panel on-light"><img class="mk" src="app-icon-light.svg" style="width:118px;border-radius:26px"></div><div class="cap sm faint">On light base</div></div>
+      <div><div class="panel on-accent"><img class="mk" src="mark-mono.svg" style="width:150px;color:#170800;--mono-on:#FF6B1F"></div><div class="cap sm faint">Monochrome (Ember on accent uses accent.on)</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="label">Scales — lockup → app icon → favicon</div>
+    <div class="grid3" style="margin-top:14px">
+      <div><div class="panel on-dark"><img class="mk" src="wordmark-dark.svg" style="width:230px"></div><div class="cap sm faint">Wordmark lockup (Sora 700)</div></div>
+      <div><div class="panel on-dark"><img class="mk" src="app-icon.svg" style="width:104px"></div><div class="cap sm faint">App icon — 512, rounded 22%</div></div>
+      <div><div class="panel on-dark"><img class="mk" src="favicon.svg" style="width:48px"><img class="mk" src="favicon.svg" style="width:24px;margin-left:16px"><img class="mk" src="favicon.svg" style="width:16px;margin-left:16px"></div><div class="cap sm faint">Favicon — 48 / 24 / 16px</div></div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="label">Clear space & minimum size</div>
+    <div class="grid2" style="margin-top:14px">
+      <div class="panel on-dark"><div class="clearspace"><img class="mk" src="mark.svg" style="width:120px"></div></div>
+      <div class="panel">
+        <div class="stack gap-4" style="align-items:flex-start">
+          <p class="sm dim" style="margin:0">Keep clear space equal to <strong style="color:var(--text-primary)">one streak-dot diameter</strong> on all sides.</p>
+          <p class="sm dim" style="margin:0">Minimum sizes — mark <strong style="color:var(--text-primary)">20px</strong>, wordmark <strong style="color:var(--text-primary)">96px</strong> wide. Below that, use the favicon.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="sec">
+    <div class="label" style="color:var(--status-danger)">Misuse — never</div>
+    <div class="grid3" style="margin-top:14px">
+      <div><div class="panel on-dark misuse"><img class="mk" src="mark.svg" style="width:150px;filter:hue-rotate(180deg)"></div><div class="cap sm faint">Recolor the mark outside a preset</div></div>
+      <div><div class="panel on-dark misuse"><img class="mk" src="mark.svg" style="width:150px;transform:scaleX(1.6)"></div><div class="cap sm faint">Stretch or distort</div></div>
+      <div><div class="panel misuse" style="background:linear-gradient(45deg,#5b2,#b25)"><img class="mk" src="mark.svg" style="width:150px"></div><div class="cap sm faint">Place on a busy / off-brand background</div></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>

@@ -9,7 +9,7 @@ from app.rate_limit import limiter
 router = APIRouter()
 
 
-@router.post("/auth/register", response_model=schemas.UserResponse)
+@router.post("/auth/register", response_model=schemas.UserWithToken)
 @limiter.limit("5/minute")
 def register(request: Request, user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check nothing already uses this email or username.
@@ -27,7 +27,14 @@ def register(request: Request, user_in: schemas.UserCreate, db: Session = Depend
     db.add(new_user)
     db.commit()
     db.refresh(new_user)  # pulls back the auto-generated id and created_at
-    return new_user
+
+    token = auth.create_access_token(new_user.id)
+    return schemas.UserWithToken(
+        id=new_user.id,
+        email=new_user.email,
+        username=new_user.username,
+        access_token=token,
+    )
 
 
 @router.post("/auth/login", response_model=schemas.Token)
