@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-08-29_
+_Last updated: 2026-09-03_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -363,6 +363,10 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
 - **Onboarding-gate redirect flow on the frontend (`mobile/src/app/checkOnboarding.tsx`):** after any successful login or registration, the app routes through this screen, which calls `GET /users/onboarding-check` with the saved token and redirects to Home on `200` or Onboarding on `403`. Confirmed working both for a fresh registration (no profile yet → Onboarding) and a later login with an incomplete profile (also → Onboarding).
 - **SVG support added for real logo/icon assets:** `react-native-svg` + `react-native-svg-transformer`, configured in `mobile/metro.config.js` (`babelTransformerPath` pointed at `react-native-svg-transformer/expo`, matching that library's documented setup for Expo SDK v41+; the bare package root also works here since it auto-detects Expo's babel transformer, but `/expo` was picked to match upstream docs exactly). The real logo mark lives at `mobile/src/assets/mark.svg`, chosen over `mark-light.svg`/`mark-mono.svg` specifically because it's tuned for the app's default dark theme (its low-opacity accent strokes are white, meant to read against a dark background — `mark-light.svg` uses dark strokes for a light background instead).
 - **Gotcha: a `metro.config.js` change needs `npx expo start -c`, not a plain restart.** Metro caches per-file transform output; a plain restart/hot-reload can keep serving the *pre-transformer* output for files that were already cached before the config changed. Hit this exactly once: after adding the SVG transformer, `import Mark from "./mark.svg"` kept resolving to a plain asset object instead of a component, throwing "Element type is invalid: expected a string... but got: object" — which looks like a transformer/config bug but isn't. A full cache-cleared restart (`npx expo start -c`) fixed it immediately; verified by inspecting the compiled bundle output before and after.
+- **Workout screen (`mobile/src/app/(tabs)/workout.tsx`) session header uses three-state logic**, not a single boolean: `SESSION LIVE` / `SESSION PAUSED` / `NOT STARTED`, driven by two separate pieces of state — `isRunning` (boolean) and `elapsedSeconds` (numeric timer) — rather than collapsing to one "started" flag. Matches the design's distinct visual treatment for each state.
+- **Workout screen stat cards (Volume, Sets, Best e1RM)** are computed via a single `stats` `useMemo` hook rather than three separate calculations, recalculating only when the underlying set data changes. Best e1RM reuses the same Epley formula already established on the backend (Section 10, above, and `/progress/e1rm`) rather than reimplementing it on the frontend.
+- **Collapsed exercise cards on the workout screen use three visual states** — `QUEUED` / `IN PROGRESS` / `COMPLETED` — with a checkmark badge shown only once every set in that exercise is marked complete.
+- **8 dead Expo Router scaffold files removed** from `/mobile` (leftover from the initial `create-expo-app` scaffolding, never referenced anywhere in the app). Confirmed zero references to each file before deleting, then verified a clean `tsc --noEmit` afterward with no new errors.
 
 ---
 
@@ -429,7 +433,7 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
 - [x] Build post-login/register redirect logic based on `GET /users/onboarding-check` — `checkOnboarding.tsx`, confirmed working. See Section 10.
 - [x] Build the actual onboarding form wired to `/users/profile` — full 5-step wizard (goal, experience level, injuries, equipment, dietary restrictions), single-select cards, multi-select chips, free-text field, progress bar, real `POST /users/profile` with the auth token, redirects to Home on success.
 - [ ] Visual design pass for Onboarding to match the real screens in `Design/exports/` — Login and Register are now styled (above); Onboarding is still functional but visually unstyled
-- [ ] Build core workout logging UI
+- [ ] **Build core workout logging UI** — in progress (commit `fd5e4a7`). Done: session header with three-state logic (`SESSION LIVE` / `SESSION PAUSED` / `NOT STARTED`, driven by `isRunning` + `elapsedSeconds`); Volume/Sets/Best e1RM stat cards via a `stats` `useMemo` hook (Epley formula for e1RM); three-state collapsed exercise card styling (`QUEUED` / `IN PROGRESS` / `COMPLETED` with a checkmark badge on fully-completed cards). Still open: per-set PREV/TGT display, rest timer + per-exercise notes, "Finish session" secondary options menu — see Section 17.
 - [ ] Build Home screen (streak strip, AI Coach card, Nutrition card, Workout card)
 - [ ] Build Progress screen with drillable muscle-group → exercise → e1RM chart
 - [ ] Decide on state management approach (Context API vs. something like Zustand/Redux) once the app has enough shared state to justify it
@@ -513,6 +517,11 @@ A dedicated Coach screen/chat exists in the design, referenced contextually from
 - Error/loading states not yet designed
 - `workout_sets.workout_id`'s `ForeignKey` in `models.py` is missing `ondelete='CASCADE'`, even though the real DB has it — needs a model fix so Alembic autogenerate stops flagging it as drift (see Section 10)
 - Mobile workout screen's exercise name field is still a free-text `TextInput`, not yet wired to the already-built `exercises` table / `GET /exercises` endpoint (Section 8/9) — needs a picker/autocomplete UI before the Progress screen's drillable muscle-group → exercise → e1RM chart, since that chart depends on structured/consistent exercise names that free text can't reliably provide. Migration will also need a one-time cleanup pass on any existing free-text workout data to match it to the `exercises` table.
+- Workout screen: per-set PREV/TGT display (e.g. "PREV 185×8·8·7 · TGT 190") not yet built — needs new data-model thinking (likely fetching the most recent prior session's sets for the same exercise); currently the biggest remaining piece of the workout screen.
+- Workout screen: rest timer ("REST 2:00") and per-exercise notes ("NOTE" button) not yet built.
+- Workout screen: "Finish session" secondary options ("...") menu not yet built.
+- Workout screen: stat card customization — letting users choose which stats show, since e1RM/volume may not be meaningful to beginner users — idea only, not started.
+- Workout screen: finish-workout summary screen/modal — idea only, not started.
 - **Intentional deviations from the Login/Register design exports** (not bugs — decisions made while implementing):
   - Login's "Forgot?" link sits on its own row below the password field, not inline with the "PASSWORD" label as shown in the design.
   - Register keeps the app's real field set (username, email, password, confirm password) instead of the design mockup's fields (first name, last name, email, password) — first/last name don't correspond to any column in the actual `users` table (Section 8), and there's no current plan to add them.
