@@ -22,7 +22,13 @@ def add_exercise(
     db.add(new_exercise)
     db.commit()
     db.refresh(new_exercise)
-    return new_exercise
+    return schemas.ExerciseOut(
+        id=new_exercise.id,
+        name=new_exercise.name,
+        muscle_group=new_exercise.muscle_group,
+        user_id=new_exercise.user_id,
+        is_favorited=False,
+    )
 
 
 @router.get("/exercises", response_model=list[schemas.ExerciseOut])
@@ -30,19 +36,89 @@ def get_exercises(
     current_user: models.User = Depends(auth.require_profile),
     db: Session = Depends(get_db),
     search: str = None,
+    favorites_only: bool = False,
+    muscle_group: str = None,
 ):
-    query = db.query(models.Exercise).filter(
-        or_(
-            models.Exercise.user_id.is_(None),
-            models.Exercise.user_id == current_user.id,
+    query = (
+        db.query(
+            models.Exercise,
+            models.UserFavoriteExercise.id.isnot(None).label("is_favorited"),
+        )
+        .outerjoin(
+            models.UserFavoriteExercise,
+            (models.UserFavoriteExercise.exercise_id == models.Exercise.id)
+            & (models.UserFavoriteExercise.user_id == current_user.id),
+        )
+        .filter(
+            or_(
+                models.Exercise.user_id.is_(None),
+                models.Exercise.user_id == current_user.id,
+            )
         )
     )
 
-    if search:
-        query = query.filter(models.Exercise.name.ilike(f"%{search}%"))
+    if favorites_only:
+        query = query.filter(models.UserFavoriteExercise.id.isnot(None))
 
-    exercises = query.all()
-    return exercises
+    if muscle_group:
+        query = query.filter(models.Exercise.muscle_group == muscle_group)
+
+    if search:
+        query = query.filter(models.Exercise.name.ilike(f"{search}%"))
+
+    results = query.all()
+    return [
+        schemas.ExerciseOut(
+            id=exercise.id,
+            name=exercise.name,
+            muscle_group=exercise.muscle_group,
+            user_id=exercise.user_id,
+            is_favorited=bool(is_favorited),
+        )
+        for exercise, is_favorited in results
+    ]
+
+
+@router.post("/exercises/{exercise_id}/favorite", response_model=schemas.FavoriteExerciseOut)
+def favorite_exercise(
+    exercise_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    exercise = db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+
+    existing = db.query(models.UserFavoriteExercise).filter(
+        models.UserFavoriteExercise.user_id == current_user.id,
+        models.UserFavoriteExercise.exercise_id == exercise_id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=409, detail="Exercise already favorited")
+
+    favorite = models.UserFavoriteExercise(user_id=current_user.id, exercise_id=exercise_id)
+    db.add(favorite)
+    db.commit()
+    db.refresh(favorite)
+    return favorite
+
+
+@router.delete("/exercises/{exercise_id}/favorite", status_code=status.HTTP_204_NO_CONTENT)
+def unfavorite_exercise(
+    exercise_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    favorite = db.query(models.UserFavoriteExercise).filter(
+        models.UserFavoriteExercise.user_id == current_user.id,
+        models.UserFavoriteExercise.exercise_id == exercise_id,
+    ).first()
+
+    if not favorite:
+        raise HTTPException(status_code=404, detail="Favorite not found")
+
+    db.delete(favorite)
+    db.commit()
 
 
 @router.post("/workouts", response_model=schemas.UserWorkoutOut)

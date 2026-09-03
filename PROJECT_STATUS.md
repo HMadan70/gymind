@@ -406,6 +406,7 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
   - [x] Fixed: `POST /workouts/{id}/sets` no longer allows logging sets on a finished workout — `409` guard on `ended_at`, tested end-to-end, deployed. See Section 10.
   - [x] `DELETE /workouts/{id}` — delete (cascade-deletes associated workout_sets via ON DELETE CASCADE)
   - [x] Decide on exercise list source: user-defined only, or a seeded reference table of common exercises? — **decided: seeded reference table (`exercises`, ~37 common exercises) plus user-added custom exercises, both muscle-group tagged, same shared/private pattern as `foods`. See Section 8/10.**
+  - [ ] Migrate mobile exercise name entry from free-text TextInput to the existing `exercises` table via a picker/autocomplete UI (`GET /exercises`), before building Progress screen (see Section 17 for full rationale)
   - [x] Decide on e1RM formula (e.g. Epley) and whether it's computed on write or on read — **decided: Epley formula, computed on read, never stored. See Section 10.**
 - [x] **Nutrition**
   - [x] Design `foods` and `nutrition_logs` schema — see Section 8
@@ -511,6 +512,7 @@ A dedicated Coach screen/chat exists in the design, referenced contextually from
 - Empty states (no workouts logged yet, no food logged yet) not yet designed
 - Error/loading states not yet designed
 - `workout_sets.workout_id`'s `ForeignKey` in `models.py` is missing `ondelete='CASCADE'`, even though the real DB has it — needs a model fix so Alembic autogenerate stops flagging it as drift (see Section 10)
+- Mobile workout screen's exercise name field is still a free-text `TextInput`, not yet wired to the already-built `exercises` table / `GET /exercises` endpoint (Section 8/9) — needs a picker/autocomplete UI before the Progress screen's drillable muscle-group → exercise → e1RM chart, since that chart depends on structured/consistent exercise names that free text can't reliably provide. Migration will also need a one-time cleanup pass on any existing free-text workout data to match it to the `exercises` table.
 - **Intentional deviations from the Login/Register design exports** (not bugs — decisions made while implementing):
   - Login's "Forgot?" link sits on its own row below the password field, not inline with the "PASSWORD" label as shown in the design.
   - Register keeps the app's real field set (username, email, password, confirm password) instead of the design mockup's fields (first name, last name, email, password) — first/last name don't correspond to any column in the actual `users` table (Section 8), and there's no current plan to add them.

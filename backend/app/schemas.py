@@ -183,3 +183,12 @@ class ExerciseOut(ExerciseIn):
     model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: Optional[int] = None
+    is_favorited: bool = False
+
+
+class FavoriteExerciseOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+    exercise_id: int
+    created_at: datetime

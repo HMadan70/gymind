@@ -110,6 +110,71 @@ def test_can_log_set_on_active_workout(client):
     assert body["exercise"]["muscle_group"] == "legs"
 
 
+def test_exercise_search_matches_prefix_only(client):
+    token = register_login_and_create_profile(
+        client, "prefixsearch@example.com", "prefixsearchuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    client.post(
+        "/exercises",
+        json={"name": "Bench Press", "muscle_group": "chest"},
+        headers=headers,
+    )
+    # contains "ben" (inside "Bench"), but only in the middle of the
+    # name, not at the start - a starts-with search for "ben" must not
+    # match this, even though a "contains anywhere" search would
+    client.post(
+        "/exercises",
+        json={"name": "Reverse Bench Press", "muscle_group": "chest"},
+        headers=headers,
+    )
+
+    response = client.get("/exercises?search=ben", headers=headers)
+    assert response.status_code == 200
+
+    names = [exercise["name"] for exercise in response.json()]
+    assert names == ["Bench Press"]
+
+
+def test_exercise_filter_by_muscle_group_and_combined_with_search(client):
+    token = register_login_and_create_profile(
+        client, "musclegroupfilter@example.com", "musclegroupfilteruser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    client.post(
+        "/exercises",
+        json={"name": "Bench Press", "muscle_group": "chest"},
+        headers=headers,
+    )
+    client.post(
+        "/exercises",
+        json={"name": "Incline Fly", "muscle_group": "chest"},
+        headers=headers,
+    )
+    # starts with "Ben" too, same as "Bench Press", but in a different
+    # muscle group - proves muscle_group and search combine as an AND,
+    # not that search alone is doing the filtering
+    client.post(
+        "/exercises",
+        json={"name": "Bent Over Row", "muscle_group": "back"},
+        headers=headers,
+    )
+
+    group_only_response = client.get("/exercises?muscle_group=chest", headers=headers)
+    assert group_only_response.status_code == 200
+    group_only_names = {exercise["name"] for exercise in group_only_response.json()}
+    assert group_only_names == {"Bench Press", "Incline Fly"}
+
+    combined_response = client.get(
+        "/exercises?muscle_group=chest&search=ben", headers=headers
+    )
+    assert combined_response.status_code == 200
+    combined_names = [exercise["name"] for exercise in combined_response.json()]
+    assert combined_names == ["Bench Press"]
+
+
 def test_cannot_access_another_users_workout(client):
     token_a = register_login_and_create_profile(client, "usera@example.com", "usera")
     token_b = register_login_and_create_profile(client, "userb@example.com", "userb")
