@@ -75,55 +75,26 @@ export default function Workout() {
   const [favorites, setFavorites] = useState<ExerciseOption[]>([]);
   const [expandedGroups, setExpandedGroups] = useState<Record<string, boolean>>({});
   const [workoutTitle] = useState("Push Day A");
+  const [pendingRemoval, setPendingRemoval] = useState<ExerciseEntry | null>(null);
 
-  // The screen previously never talked to POST /workouts at all - `exercises`
-  // was purely local state with no real backend session behind it. The new
-  // per-exercise NOTE feature needs a real workout_id to PUT against, so a
-  // session is now actually created on the backend when the user presses
-  // Start Session, and its id is kept here.
   const [workoutId, setWorkoutId] = useState<number | null>(null);
-
-  // Prior-session data per exercise, keyed by the exercise's local id (not
-  // the backend exercise_id), fetched once when the exercise is added.
   const [historyByExercise, setHistoryByExercise] = useState<Record<string, ExerciseHistory>>({});
-
-  // Per-exercise note text, keyed by local exercise id. Populated
-  // optimistically right after a successful save rather than re-fetched
-  // from GET /workouts/{id} - within a single continuous session (this
-  // screen has no "resume a prior session" flow) that GET would always
-  // come back empty immediately after the session starts anyway, so local
-  // state already reflects exactly what the backend has.
   const [notesByExercise, setNotesByExercise] = useState<Record<string, string>>({});
   const [openNoteFor, setOpenNoteFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
 
-  // Session stats (total volume, set count, best e1RM) are entirely
-  // derivable from `exercises` - they're not new information, just a
-  // recalculation of data already in state. useMemo (not useState) is
-  // the right tool here: it recomputes automatically whenever `exercises`
-  // changes and is skipped on renders where it hasn't, with no risk of
-  // this "second copy" of the data drifting out of sync the way a
-  // separately-managed useState value could if we forgot to update it
-  // after every addSet/updateSet/removeSet call.
   const stats = useMemo(() => {
     const allSets = exercises.flatMap((exercise) => exercise.sets);
 
     const volume = allSets.reduce((sum, set) => sum + (set.weight || 0) * (set.reps || 0), 0);
 
-    // Denominator is planned sets across the whole workout - each
-    // exercise padded out to its planned row count, the same number the
-    // exercise badge uses - not just the rows created so far. That's what
-    // the design's "11/14" represents. The numerator counts only genuinely
-    // logged sets (see isSetLogged), so it can't outrun what's on screen.
     const plannedSets = exercises.reduce((total, exercise) => {
       const exerciseHistory = historyByExercise[exercise.id];
-      return total + Math.max(exercise.sets.length, exerciseHistory?.previous_sets.length || 3);
+      return total + Math.max(exercise.sets.length, exerciseHistory?.previous_sets.length || 0);
     }, 0);
 
     const completedSets = allSets.filter(isSetLogged).length;
 
-    // An unfilled set (weight or reps still 0/undefined) shouldn't count
-    // toward the best e1RM - it's not a real lift yet.
     const e1rm = allSets.reduce((best, set) => {
       if (!set.weight || !set.reps) return best;
       const estimated1RM = set.weight * (1 + set.reps / 30);
@@ -149,9 +120,6 @@ export default function Workout() {
   };
 
   const addSet = (exerciseId: string) => {
-    // Text fields start empty (not "0") so an untouched set renders as a
-    // blank input with a "0" placeholder rather than looking like a real
-    // entered value. The numeric weight/reps stay 0 for the stats math.
     const newSet: SetEntry = {
       id: Date.now().toString(),
       weight: 0,
@@ -196,6 +164,10 @@ export default function Workout() {
 
   const removeExercise = (exerciseId: string) => {
     setExercises(exercises.filter((exercise) => exercise.id !== exerciseId));
+  };
+
+  const confirmRemoveExercise = (exercise: ExerciseEntry) => {
+    setPendingRemoval(exercise);
   };
 
   const resetWorkout = () => {
@@ -293,17 +265,14 @@ export default function Workout() {
   const saveNote = async (exercise: ExerciseEntry) => {
     if (workoutId !== null && exercise.exerciseId !== undefined) {
       const token = await AsyncStorage.getItem("token");
-      await fetch(
-        `${API_URL}/workouts/${workoutId}/exercises/${exercise.exerciseId}/note`,
-        {
-          method: "PUT",
-          headers: {
-            Authorization: `Bearer ${token}`,
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({ note: noteDraft }),
-        }
-      );
+      await fetch(`${API_URL}/workouts/${workoutId}/exercises/${exercise.exerciseId}/note`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ note: noteDraft }),
+      });
     }
     setNotesByExercise((prev) => ({ ...prev, [exercise.id]: noteDraft }));
     setOpenNoteFor(null);
@@ -334,9 +303,7 @@ export default function Workout() {
           alignItems: "center",
         }}
       >
-        <View
-          style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent, marginRight: 8 }}
-        />
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent, marginRight: 8 }} />
         <Text style={{ color: colors.accent, fontSize: 12, letterSpacing: 1 }}>
           {isRunning ? "SESSION LIVE" : elapsedSeconds > 0 ? "SESSION PAUSED" : "NOT STARTED"}
         </Text>
@@ -354,9 +321,7 @@ export default function Workout() {
       <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
         <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, flex: 1 }}>
           <Text style={{ color: colors.textFaint, fontSize: 11, letterSpacing: 1 }}>VOLUME</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "bold" }}>
-            {stats.volume}
-          </Text>
+          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "bold" }}>{stats.volume}</Text>
         </View>
 
         <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, flex: 1 }}>
@@ -381,43 +346,43 @@ export default function Workout() {
         const isQueued = isCollapsed && completedSets === 0;
         const isFullyCompleted = totalSets > 0 && completedSets === totalSets;
         const history = historyByExercise[exercise.id];
-        // Row count includes not-yet-created "planned" slots, padded to the
-        // prior session's set count (or 3 if there's no history yet) - this
-        // is also the badge's denominator, and the numerator is whichever
-        // set the user is currently on (completedSets + 1), capped at that
-        // total once every set is done.
-        const totalRows = Math.max(exercise.sets.length, history?.previous_sets.length || 3);
+        const totalRows = Math.max(exercise.sets.length, history?.previous_sets.length || 0);
         const currentOrCompletedSetNumber = Math.min(completedSets, totalRows);
 
         if (isCollapsed) {
           return (
             <View
               key={exercise.id}
-              style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, marginBottom: 12 }}
+              style={{
+                backgroundColor: colors.bgCard,
+                borderRadius: 16,
+                padding: 16,
+                marginBottom: 12,
+                flexDirection: "row",
+                alignItems: "flex-start",
+                justifyContent: "space-between",
+              }}
             >
-              <Pressable
-                onPress={() => toggleExerciseExpanded(exercise.id)}
-                style={{ flexDirection: "row", alignItems: "flex-start", justifyContent: "space-between" }}
-              >
-                <View style={{ flex: 1 }}>
-                  <Text style={{ color: isQueued ? colors.textFaint : colors.textPrimary, fontWeight: "bold" }}>
-                    {exercise.name}
+              <Pressable onPress={() => toggleExerciseExpanded(exercise.id)} style={{ flex: 1 }}>
+                <Text style={{ color: isQueued ? colors.textFaint : colors.textPrimary, fontWeight: "bold" }}>
+                  {exercise.name}
+                </Text>
+                {isQueued ? (
+                  <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
+                    {`QUEUED · ${totalSets} SET${totalSets === 1 ? "" : "S"}`}
                   </Text>
-                  {isQueued ? (
-                    <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                      {`QUEUED · ${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                    </Text>
-                  ) : isFullyCompleted ? (
-                    <Text style={{ color: colors.accent, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                      {`COMPLETED · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                    </Text>
-                  ) : (
-                    <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                      {`IN PROGRESS · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                    </Text>
-                  )}
-                </View>
+                ) : isFullyCompleted ? (
+                  <Text style={{ color: colors.accent, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
+                    {`COMPLETED · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
+                  </Text>
+                ) : (
+                  <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
+                    {`IN PROGRESS · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
+                  </Text>
+                )}
+              </Pressable>
 
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
                 {isFullyCompleted ? (
                   <View
                     style={{
@@ -434,7 +399,11 @@ export default function Workout() {
                 ) : (
                   <Text style={{ color: colors.textFaint, fontSize: 20 }}>›</Text>
                 )}
-              </Pressable>
+
+                <Pressable onPress={() => confirmRemoveExercise(exercise)} hitSlop={8}>
+                  <Text style={{ color: colors.textFaint, fontSize: 16 }}>🗑</Text>
+                </Pressable>
+              </View>
             </View>
           );
         }
@@ -452,14 +421,7 @@ export default function Workout() {
                 {exercise.name}
               </Text>
 
-              <View
-                style={{
-                  backgroundColor: colors.soft,
-                  borderRadius: 8,
-                  paddingHorizontal: 10,
-                  paddingVertical: 4,
-                }}
-              >
+              <View style={{ backgroundColor: colors.soft, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
                 <Text style={{ color: colors.accent, fontWeight: "bold" }}>
                   {currentOrCompletedSetNumber}/{totalRows}
                 </Text>
@@ -481,12 +443,6 @@ export default function Workout() {
                 previousSets.length > 0 ? previousSets[previousSets.length - 1].reps : undefined;
 
               if (!set) {
-                // This session's own most recent real reps value (from
-                // the last logged or currently-active set) drives the
-                // preview - today's actual working reps, not last
-                // session's - and only falls back to history's last
-                // known rep count if nothing has been logged/entered
-                // in this session at all.
                 const plannedWeight = history?.suggested_target_weight;
                 let sessionReps: number | undefined;
                 for (let i = exercise.sets.length - 1; i >= 0; i--) {
@@ -501,9 +457,7 @@ export default function Workout() {
                     key={`planned-${index}`}
                     style={{ flexDirection: "row", alignItems: "center", marginTop: 8, opacity: 0.5 }}
                   >
-                    <Text style={{ color: colors.textFaint, width: 24 }}>
-                      {String(index + 1).padStart(2, "0")}
-                    </Text>
+                    <Text style={{ color: colors.textFaint, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
                     <Text style={{ color: colors.textFaint }}>
                       {plannedWeight ?? "-"} lb × {plannedReps ?? "-"}
                     </Text>
@@ -511,27 +465,18 @@ export default function Workout() {
                 );
               }
 
-              // A set only counts as "logged" once it actually has real
-              // weight and reps - completed:true on a still-zeroed set
-              // (e.g. tapped complete before typing anything) must not
-              // render as a "0 lb × 0 rp" checked-off row.
               const isLogged = isSetLogged(set);
 
               if (isLogged) {
                 return (
                   <View key={set.id} style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                    <Text style={{ color: colors.textDim, width: 24 }}>
-                      {String(index + 1).padStart(2, "0")}
-                    </Text>
+                    <Text style={{ color: colors.textDim, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
                     <Text style={{ color: colors.textPrimary, flex: 1 }}>
                       {set.weight} lb × {set.reps}
                     </Text>
                     <Pressable
                       onPress={() => updateSet(exercise.id, set.id, { completed: false })}
-                      style={{
-                        ...SET_CIRCLE_BASE,
-                        backgroundColor: colors.accent,
-                      }}
+                      style={{ ...SET_CIRCLE_BASE, backgroundColor: colors.accent }}
                     >
                       <Text style={{ color: colors.on }}>✓</Text>
                     </Pressable>
@@ -541,9 +486,7 @@ export default function Workout() {
 
               return (
                 <View key={set.id} style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                  <Text style={{ color: colors.textDim, width: 24 }}>
-                    {String(index + 1).padStart(2, "0")}
-                  </Text>
+                  <Text style={{ color: colors.textDim, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
 
                   <View
                     style={{
@@ -610,10 +553,6 @@ export default function Workout() {
 
                   <Pressable
                     onPress={() => {
-                      // Only a set with real values can be checked off -
-                      // otherwise completed:true would sit in state while
-                      // the row still renders unchecked, which is exactly
-                      // what made the badge and SETS stat over-count.
                       if (set.weight > 0 && set.reps > 0) {
                         updateSet(exercise.id, set.id, { completed: true });
                       }
@@ -630,15 +569,24 @@ export default function Workout() {
             })}
 
             <View style={{ flexDirection: "row", marginTop: 12, justifyContent: "space-between" }}>
-              <Pressable onPress={() => addSet(exercise.id)} style={{ flex: 1, alignItems: "center" }}>
-                <Text style={{ color: colors.textPrimary }}>+ SET</Text>
+              <Pressable onPress={() => addSet(exercise.id)} style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}>
+                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>+ SET</Text>
               </Pressable>
 
               <Pressable
-                onPress={() => openNoteEditor(exercise)}
-                style={{ flex: 1, alignItems: "center", justifyContent: "space-between" }}
+                onPress={() => toggleExerciseExpanded(exercise.id)}
+                style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}
               >
-                <Text style={{ color: notesByExercise[exercise.id] ? colors.accent : colors.textPrimary }}>
+                <Text style={{ color: colors.accent, fontWeight: "600" }}>Done</Text>
+              </Pressable>
+
+              <Pressable onPress={() => openNoteEditor(exercise)} style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}>
+                <Text
+                  style={{
+                    color: notesByExercise[exercise.id] ? colors.accent : colors.textPrimary,
+                    fontWeight: "600",
+                  }}
+                >
                   NOTE
                 </Text>
               </Pressable>
@@ -660,25 +608,13 @@ export default function Workout() {
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                   <Pressable
                     onPress={() => saveNote(exercise)}
-                    style={{
-                      flex: 1,
-                      backgroundColor: colors.accent,
-                      borderRadius: 8,
-                      padding: 8,
-                      alignItems: "center",
-                    }}
+                    style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 8, alignItems: "center" }}
                   >
                     <Text style={{ color: colors.on }}>Save</Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setOpenNoteFor(null)}
-                    style={{
-                      flex: 1,
-                      backgroundColor: colors.bgInset,
-                      borderRadius: 8,
-                      padding: 8,
-                      alignItems: "center",
-                    }}
+                    style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 8, alignItems: "center" }}
                   >
                     <Text style={{ color: colors.textPrimary }}>Cancel</Text>
                   </Pressable>
@@ -691,13 +627,9 @@ export default function Workout() {
 
       {isPickerOpen && (
         <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-          <Text style={{ color: colors.textDim, fontSize: 12, letterSpacing: 1, marginBottom: 8 }}>
-            FAVORITES
-          </Text>
+          <Text style={{ color: colors.textDim, fontSize: 12, letterSpacing: 1, marginBottom: 8 }}>FAVORITES</Text>
 
-          {favorites.length === 0 && (
-            <Text style={{ color: colors.textFaint, marginBottom: 8 }}>No favorites yet</Text>
-          )}
+          {favorites.length === 0 && <Text style={{ color: colors.textFaint, marginBottom: 8 }}>No favorites yet</Text>}
 
           {MUSCLE_GROUPS.map((group) => {
             const groupFavorites = favorites.filter((f) => f.muscle_group === group);
@@ -716,12 +648,7 @@ export default function Workout() {
                   groupFavorites.map((fav) => (
                     <View
                       key={fav.id}
-                      style={{
-                        flexDirection: "row",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                        marginTop: 4,
-                      }}
+                      style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginTop: 4 }}
                     >
                       <Pressable onPress={() => selectExercise(fav)} style={{ flex: 1 }}>
                         <Text style={{ color: colors.textPrimary }}>{fav.name}</Text>
@@ -777,12 +704,7 @@ export default function Workout() {
           {searchResults.map((result) => (
             <View
               key={result.id}
-              style={{
-                flexDirection: "row",
-                alignItems: "center",
-                justifyContent: "space-between",
-                paddingVertical: 8,
-              }}
+              style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", paddingVertical: 8 }}
             >
               <Pressable onPress={() => selectExercise(result)} style={{ flex: 1 }}>
                 <Text style={{ color: colors.textPrimary }}>
@@ -863,6 +785,48 @@ export default function Workout() {
           >
             <Text style={{ color: colors.textPrimary }}>Reset Workout</Text>
           </Pressable>
+        </View>
+      )}
+
+      {pendingRemoval && (
+        <View
+          style={{
+            position: "absolute",
+            top: 0,
+            left: 0,
+            right: 0,
+            bottom: 0,
+            backgroundColor: "rgba(0,0,0,0.6)",
+            justifyContent: "center",
+            alignItems: "center",
+            padding: 24,
+          }}
+        >
+          <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 20, width: "100%", maxWidth: 340 }}>
+            <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>
+              Remove exercise?
+            </Text>
+            <Text style={{ color: colors.textDim, marginBottom: 20 }}>
+              This removes "{pendingRemoval.name}" and its logged sets from this session.
+            </Text>
+            <View style={{ flexDirection: "row", gap: 8 }}>
+              <Pressable
+                onPress={() => setPendingRemoval(null)}
+                style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
+              </Pressable>
+              <Pressable
+                onPress={() => {
+                  removeExercise(pendingRemoval.id);
+                  setPendingRemoval(null);
+                }}
+                style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
+              >
+                <Text style={{ color: colors.on, fontWeight: "600" }}>Remove</Text>
+              </Pressable>
+            </View>
+          </View>
         </View>
       )}
     </View>

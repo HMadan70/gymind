@@ -18,7 +18,7 @@ export default function CheckOnboarding() {
       });
 
       if (response.ok) {
-        router.replace("/");
+        router.replace("/(tabs)");
       } else {
         router.replace("/onboarding");
       }
