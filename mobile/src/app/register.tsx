@@ -3,9 +3,8 @@ import { View, Text, TextInput, Pressable } from "react-native";
 import { Link, useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../context/ThemeContext";
+import { API_URL } from "../constants/api";
 import Mark from "../assets/mark.svg";
-
-const API_URL = "http://localhost:8000";
 
 export default function Register() {
   const { colors } = useTheme();

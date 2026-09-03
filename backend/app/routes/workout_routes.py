@@ -121,6 +121,49 @@ def unfavorite_exercise(
     db.commit()
 
 
+@router.get("/exercises/{exercise_id}/history", response_model=schemas.ExerciseHistoryOut)
+def get_exercise_history(
+    exercise_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    most_recent_workout = (
+        db.query(models.UserWorkout)
+        .join(models.WorkoutSet, models.WorkoutSet.workout_id == models.UserWorkout.id)
+        .filter(
+            models.UserWorkout.user_id == current_user.id,
+            models.UserWorkout.ended_at.isnot(None),
+            func.date(models.UserWorkout.ended_at) < func.current_date(),
+            models.WorkoutSet.exercise_id == exercise_id,
+        )
+        .order_by(models.UserWorkout.ended_at.desc())
+        .first()
+    )
+
+    if not most_recent_workout:
+        return schemas.ExerciseHistoryOut(previous_sets=[], suggested_target_weight=None)
+
+    previous_workout_sets = (
+        db.query(models.WorkoutSet)
+        .filter(
+            models.WorkoutSet.workout_id == most_recent_workout.id,
+            models.WorkoutSet.exercise_id == exercise_id,
+        )
+        .order_by(models.WorkoutSet.set_number)
+        .all()
+    )
+
+    weights = [s.weight for s in previous_workout_sets if s.weight is not None]
+
+    return schemas.ExerciseHistoryOut(
+        previous_sets=[
+            schemas.ExerciseHistorySetOut(set_number=s.set_number, weight=s.weight, reps=s.reps)
+            for s in previous_workout_sets
+        ],
+        suggested_target_weight=(max(weights) + 5) if weights else None,
+    )
+
+
 @router.post("/workouts", response_model=schemas.UserWorkoutOut)
 def create_workout(
     current_user: models.User = Depends(auth.require_profile),
@@ -228,6 +271,13 @@ def get_workout(
         .all()
     )
 
+    notes_by_exercise_id = {
+        note.exercise_id: note.note
+        for note in db.query(models.WorkoutExerciseNote).filter(
+            models.WorkoutExerciseNote.workout_id == workout_id
+        )
+    }
+
     sets = [
         schemas.WorkoutSetOut(
             id=workout_set.id,
@@ -239,6 +289,7 @@ def get_workout(
             exercise=schemas.WorkoutSetExerciseOut(
                 name=exercise.name,
                 muscle_group=exercise.muscle_group,
+                note=notes_by_exercise_id.get(exercise.id),
             ),
         )
         for workout_set, exercise in sets_with_exercise
@@ -251,6 +302,48 @@ def get_workout(
         ended_at=workout.ended_at,
         sets=sets,
     )
+
+
+@router.put(
+    "/workouts/{workout_id}/exercises/{exercise_id}/note",
+    response_model=schemas.WorkoutExerciseNoteOut,
+)
+def upsert_exercise_note(
+    workout_id: int,
+    exercise_id: int,
+    note_in: schemas.WorkoutExerciseNoteIn,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    workout = db.query(models.UserWorkout).filter(
+        models.UserWorkout.id == workout_id,
+        models.UserWorkout.user_id == current_user.id,
+    ).first()
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    exercise = db.query(models.Exercise).filter(models.Exercise.id == exercise_id).first()
+    if not exercise:
+        raise HTTPException(status_code=404, detail="Exercise not found")
+
+    note = db.query(models.WorkoutExerciseNote).filter(
+        models.WorkoutExerciseNote.workout_id == workout_id,
+        models.WorkoutExerciseNote.exercise_id == exercise_id,
+    ).first()
+
+    if note:
+        note.note = note_in.note
+    else:
+        note = models.WorkoutExerciseNote(
+            workout_id=workout_id,
+            exercise_id=exercise_id,
+            note=note_in.note,
+        )
+        db.add(note)
+
+    db.commit()
+    db.refresh(note)
+    return note
 
 
 @router.delete("/workouts/{workout_id}", status_code=status.HTTP_204_NO_CONTENT)

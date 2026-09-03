@@ -70,6 +70,20 @@ class UserFavoriteExercise(Base):
     )
 
 
+class WorkoutExerciseNote(Base):
+    __tablename__ = "workout_exercise_notes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    workout_id = Column(Integer, ForeignKey("user_workouts.id"), nullable=False)
+    exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
+    note = Column(Text, nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+    __table_args__ = (
+        UniqueConstraint("workout_id", "exercise_id", name="uq_workout_exercise_notes_workout_exercise"),
+    )
+
+
 class WorkoutSet(Base):
     __tablename__ = "workout_sets"
 

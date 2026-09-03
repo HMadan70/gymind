@@ -3,8 +3,7 @@ import { View, Text } from "react-native";
 import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../context/ThemeContext";
-
-const API_URL = "http://localhost:8000";
+import { API_URL } from "../constants/api";
 
 export default function CheckOnboarding() {
   const { colors } = useTheme();

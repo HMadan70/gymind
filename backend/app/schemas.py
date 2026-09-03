@@ -96,6 +96,7 @@ class WorkoutSetExerciseOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     name: str
     muscle_group: str
+    note: Optional[str] = None
 
 
 class WorkoutSetOut(WorkoutSetIn):
@@ -192,3 +193,27 @@ class FavoriteExerciseOut(BaseModel):
     user_id: int
     exercise_id: int
     created_at: datetime
+
+
+class WorkoutExerciseNoteIn(BaseModel):
+    note: str
+
+
+class WorkoutExerciseNoteOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    workout_id: int
+    exercise_id: int
+    note: str
+    updated_at: datetime
+
+
+class ExerciseHistorySetOut(BaseModel):
+    set_number: int
+    weight: Optional[float] = None
+    reps: Optional[int] = None
+
+
+class ExerciseHistoryOut(BaseModel):
+    previous_sets: List[ExerciseHistorySetOut]
+    suggested_target_weight: Optional[float] = None

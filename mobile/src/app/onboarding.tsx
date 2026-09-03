@@ -3,8 +3,8 @@ import { useTheme } from "../context/ThemeContext";
 import { useState } from "react";
 import { router } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { API_URL } from "../constants/api";
 
-const API_URL = "http://localhost:8000";
 const TOKEN_KEY = "token";
 
 type FormData = {

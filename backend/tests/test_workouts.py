@@ -1,5 +1,8 @@
+from datetime import datetime, timedelta, timezone
+
 import pytest
 
+from app import models
 from app.rate_limit import limiter
 
 
@@ -173,6 +176,151 @@ def test_exercise_filter_by_muscle_group_and_combined_with_search(client):
     assert combined_response.status_code == 200
     combined_names = [exercise["name"] for exercise in combined_response.json()]
     assert combined_names == ["Bench Press"]
+
+
+def test_upsert_exercise_note_creates_then_updates(client):
+    token = register_login_and_create_profile(
+        client, "notehappy@example.com", "notehappyuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Leg Press", "muscle_group": "legs"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post("/workouts", headers=headers)
+    workout_id = workout_response.json()["id"]
+
+    # a note needs at least one logged set for that exercise to show up
+    # in GET /workouts/{id}, since the note is nested under each set's
+    # exercise object rather than returned as its own top-level list
+    client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 135, "reps": 10},
+        headers=headers,
+    )
+
+    create_response = client.put(
+        f"/workouts/{workout_id}/exercises/{exercise_id}/note",
+        json={"note": "felt easy today"},
+        headers=headers,
+    )
+    assert create_response.status_code == 200
+    assert create_response.json()["note"] == "felt easy today"
+
+    update_response = client.put(
+        f"/workouts/{workout_id}/exercises/{exercise_id}/note",
+        json={"note": "actually knee felt off"},
+        headers=headers,
+    )
+    assert update_response.status_code == 200
+    assert update_response.json()["note"] == "actually knee felt off"
+    # same note row updated, not a second one created
+    assert update_response.json()["id"] == create_response.json()["id"]
+
+    workout_detail = client.get(f"/workouts/{workout_id}", headers=headers).json()
+    assert workout_detail["sets"][0]["exercise"]["note"] == "actually knee felt off"
+
+
+def test_upsert_exercise_note_ownership_404(client):
+    token_a = register_login_and_create_profile(client, "noteownera@example.com", "noteownera")
+    token_b = register_login_and_create_profile(client, "noteownerb@example.com", "noteownerb")
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Hip Thrust", "muscle_group": "legs"},
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post(
+        "/workouts", headers={"Authorization": f"Bearer {token_a}"}
+    )
+    workout_id = workout_response.json()["id"]
+
+    # user B tries to attach a note to user A's workout
+    response = client.put(
+        f"/workouts/{workout_id}/exercises/{exercise_id}/note",
+        json={"note": "sneaky"},
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Workout not found"
+
+
+def test_exercise_history_returns_previous_session_sets(client, db_session):
+    token = register_login_and_create_profile(
+        client, "historyhappy@example.com", "historyhappyuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Deadlift", "muscle_group": "back"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post("/workouts", headers=headers)
+    workout_id = workout_response.json()["id"]
+
+    client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 225, "reps": 5},
+        headers=headers,
+    )
+    client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 2, "weight": 245, "reps": 3},
+        headers=headers,
+    )
+
+    client.put(f"/workouts/{workout_id}", headers=headers)
+
+    # finish_workout stamps ended_at as "now" (today), but the route
+    # under test only considers sessions finished before today - backdate
+    # it directly through the ORM session to simulate yesterday, since
+    # there's no API surface for backdating a finished workout.
+    workout = db_session.query(models.UserWorkout).filter(
+        models.UserWorkout.id == workout_id
+    ).first()
+    workout.ended_at = datetime.now(timezone.utc) - timedelta(days=1)
+    db_session.commit()
+
+    response = client.get(f"/exercises/{exercise_id}/history", headers=headers)
+    assert response.status_code == 200
+
+    body = response.json()
+    assert body["previous_sets"] == [
+        {"set_number": 1, "weight": 225.0, "reps": 5},
+        {"set_number": 2, "weight": 245.0, "reps": 3},
+    ]
+    # highest prior weight (245) + 5
+    assert body["suggested_target_weight"] == 250.0
+
+
+def test_exercise_history_no_prior_session_returns_empty(client):
+    token = register_login_and_create_profile(
+        client, "historyempty@example.com", "historyemptyuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Overhead Press", "muscle_group": "shoulders"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    # never logged before - this is a normal state for a new exercise,
+    # not an error, so it's a 200 with empty results rather than a 404
+    response = client.get(f"/exercises/{exercise_id}/history", headers=headers)
+    assert response.status_code == 200
+    assert response.json() == {"previous_sets": [], "suggested_target_weight": None}
 
 
 def test_cannot_access_another_users_workout(client):
