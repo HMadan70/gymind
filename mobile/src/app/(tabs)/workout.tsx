@@ -61,6 +61,11 @@ type ExerciseHistory = {
 
 const MUSCLE_GROUPS = ["chest", "back", "legs", "shoulders", "arms", "core"];
 
+const formatWorkoutDate = (iso: string) => {
+  const date = new Date(iso);
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" });
+ };
+
 export default function Workout() {
   const { colors } = useTheme();
   const [exercises, setExercises] = useState<ExerciseEntry[]>([]);
@@ -82,6 +87,11 @@ export default function Workout() {
   const [notesByExercise, setNotesByExercise] = useState<Record<string, string>>({});
   const [openNoteFor, setOpenNoteFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
+  const [confirmFinish, setConfirmFinish] = useState(false);
+  const [pastWorkouts, setPastWorkouts] = useState<{ id: number; started_at: string; ended_at: string | null }[]>([]);
+  const [isPastWorkoutsOpen, setIsPastWorkoutsOpen] = useState(false);
+  const [pendingWorkoutDeletion, setPendingWorkoutDeletion] = useState<number | null>(null);
+  
 
   const stats = useMemo(() => {
     const allSets = exercises.flatMap((exercise) => exercise.sets);
@@ -212,6 +222,26 @@ export default function Workout() {
     setFavorites(data);
   };
 
+  const fetchPastWorkouts = async () => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await fetch(`${API_URL}/workouts`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await response.json();
+    console.log("past workouts response:", data);
+    setPastWorkouts(data);
+  };
+
+ const deletePastWorkout = async (id: number) => {
+   const token = await AsyncStorage.getItem("token");
+    await fetch(`${API_URL}/workouts/${id}`, {
+      method: "DELETE",
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    setPastWorkouts((prev) => prev.filter((w) => w.id !== id));
+    setPendingWorkoutDeletion(null);
+  };
+
   const toggleFavorite = async (option: ExerciseOption, isFavorited: boolean) => {
     const token = await AsyncStorage.getItem("token");
     await fetch(`${API_URL}/exercises/${option.id}/favorite`, {
@@ -278,6 +308,43 @@ export default function Workout() {
     setOpenNoteFor(null);
   };
 
+  const finishWorkout = async () => {
+  setIsRunning(false);
+  setConfirmFinish(false);
+  if (workoutId === null) return;
+  const token = await AsyncStorage.getItem("token");
+  await fetch(`${API_URL}/workouts/${workoutId}`, {
+    method: "PUT",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  fetchPastWorkouts();
+};
+
+  const syncSet = async (exercise: ExerciseEntry, set: SetEntry) => {
+  if (workoutId === null || exercise.exerciseId === undefined) return;
+  const token = await AsyncStorage.getItem("token");
+  try {
+    const response = await fetch(`${API_URL}/workouts/${workoutId}/sets`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        exercise_id: exercise.exerciseId,
+        set_number: exercise.sets.indexOf(set) + 1,
+        weight: set.weight,
+        reps: set.reps,
+      }),
+    });
+    if (!response.ok) throw new Error("save failed");
+  } catch {
+    // If the save fails, un-check the set so it doesn't sit checked
+    // locally while the backend never actually received it.
+    updateSet(exercise.id, set.id, { completed: false });
+  }
+};
+
   useEffect(() => {
     if (!isRunning) return;
 
@@ -290,6 +357,10 @@ export default function Workout() {
 
   const minutes = Math.floor(elapsedSeconds / 60);
   const seconds = elapsedSeconds % 60;
+
+  useEffect(() => {
+  fetchPastWorkouts();
+  }, []);
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgBase, padding: 16 }}>
@@ -475,7 +546,10 @@ export default function Workout() {
                       {set.weight} lb × {set.reps}
                     </Text>
                     <Pressable
-                      onPress={() => updateSet(exercise.id, set.id, { completed: false })}
+                      onPress={() => {
+                        updateSet(exercise.id, set.id, { completed: false });
+                        syncSet(exercise, { ...set, completed: false });
+                      }}
                       style={{ ...SET_CIRCLE_BASE, backgroundColor: colors.accent }}
                     >
                       <Text style={{ color: colors.on }}>✓</Text>
@@ -555,6 +629,7 @@ export default function Workout() {
                     onPress={() => {
                       if (set.weight > 0 && set.reps > 0) {
                         updateSet(exercise.id, set.id, { completed: true });
+                        syncSet(exercise, { ...set, completed: true });
                       }
                     }}
                     style={{
@@ -661,6 +736,9 @@ export default function Workout() {
               </View>
             );
           })}
+
+
+
 
           <Text style={{ color: colors.textDim, fontSize: 12, letterSpacing: 1, marginTop: 12, marginBottom: 8 }}>
             SEARCH
@@ -770,10 +848,7 @@ export default function Workout() {
           </Pressable>
 
           <Pressable
-            onPress={() => {
-              setIsRunning(false);
-              console.log("finish session");
-            }}
+            onPress={() => setConfirmFinish(true)}
             style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 12, padding: 16, alignItems: "center" }}
           >
             <Text style={{ color: colors.on }}>Finish Workout</Text>
@@ -787,6 +862,56 @@ export default function Workout() {
           </Pressable>
         </View>
       )}
+
+<Pressable
+  onPress={() => setIsPastWorkoutsOpen(true)}
+  style={{
+    backgroundColor: colors.bgCard,
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 12,
+    marginTop: 20,
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  }}
+>
+  <Text style={{ color: colors.textDim, fontSize: 12, letterSpacing: 1 }}>
+    PAST WORKOUTS {pastWorkouts.length > 0 ? `(${pastWorkouts.length})` : ""}
+  </Text>
+  <Text style={{ color: colors.textFaint, fontSize: 16 }}>›</Text>
+</Pressable>
+
+{isPastWorkoutsOpen && (
+  <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, marginBottom: 12 }}>
+    {pastWorkouts.length === 0 ? (
+      <Text style={{ color: colors.textFaint }}>No past workouts yet</Text>
+    ) : (
+      pastWorkouts.map((workout) => (
+        <View
+          key={workout.id}
+          style={{
+            flexDirection: "row",
+            alignItems: "center",
+            justifyContent: "space-between",
+            paddingVertical: 8,
+          }}
+        >
+          <View>
+            <Text style={{ color: colors.textPrimary }}>{formatWorkoutDate(workout.started_at)}</Text>
+            <Text style={{ color: colors.textFaint, fontSize: 12 }}>
+              {workout.ended_at ? "Finished" : "Not finished"}
+            </Text>
+          </View>
+          <Pressable onPress={() => setPendingWorkoutDeletion(workout.id)} hitSlop={8}>
+            <Text style={{ color: colors.textFaint, fontSize: 16 }}>🗑</Text>
+          </Pressable>
+        </View>
+      ))
+    )}
+  </View>
+)}
+
 
       {pendingRemoval && (
         <View
@@ -829,6 +954,137 @@ export default function Workout() {
           </View>
         </View>
       )}
+
+  {confirmFinish && (
+  <View
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    }}
+  >
+    <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 20, width: "100%", maxWidth: 340 }}>
+      <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>
+        Finish this workout?
+      </Text>
+      <Text style={{ color: colors.textDim, marginBottom: 20 }}>
+        This marks the session as complete and stops the timer.
+      </Text>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Pressable
+          onPress={() => setConfirmFinish(false)}
+          style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
+        >
+          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
+        </Pressable>
+        <Pressable
+          onPress={finishWorkout}
+          style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
+        >
+          <Text style={{ color: colors.on, fontWeight: "600" }}>Finish</Text>
+        </Pressable>
+      </View>
     </View>
+  </View>
+)}
+
+{isPastWorkoutsOpen && (
+  <View
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    }}
+  >
+    <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 20, width: "100%", maxWidth: 340, maxHeight: "70%" }}>
+      <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
+        <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18 }}>Past Workouts</Text>
+        <Pressable onPress={() => setIsPastWorkoutsOpen(false)}>
+          <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+        </Pressable>
+      </View>
+
+      {pastWorkouts.length === 0 ? (
+        <Text style={{ color: colors.textFaint }}>No past workouts yet</Text>
+      ) : (
+        pastWorkouts.map((workout) => (
+          <View
+            key={workout.id}
+            style={{
+              flexDirection: "row",
+              alignItems: "center",
+              justifyContent: "space-between",
+              paddingVertical: 10,
+              borderBottomWidth: 1,
+              borderBottomColor: colors.border,
+            }}
+          >
+            <View>
+              <Text style={{ color: colors.textPrimary }}>{formatWorkoutDate(workout.started_at)}</Text>
+              <Text style={{ color: colors.textFaint, fontSize: 12 }}>
+                {workout.ended_at ? "Finished" : "Not finished"}
+              </Text>
+            </View>
+            <Pressable onPress={() => setPendingWorkoutDeletion(workout.id)} hitSlop={8}>
+              <Text style={{ color: colors.textFaint, fontSize: 16 }}>🗑</Text>
+            </Pressable>
+          </View>
+        ))
+      )}
+    </View>
+  </View>
+)}
+  {pendingWorkoutDeletion !== null && (
+  <View
+    style={{
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: "rgba(0,0,0,0.6)",
+      justifyContent: "center",
+      alignItems: "center",
+      padding: 24,
+    }}
+  >
+    <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 20, width: "100%", maxWidth: 340 }}>
+      <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>
+        Delete this workout?
+      </Text>
+      <Text style={{ color: colors.textDim, marginBottom: 20 }}>
+        This permanently deletes the whole session and every set logged in it.
+      </Text>
+      <View style={{ flexDirection: "row", gap: 8 }}>
+        <Pressable
+          onPress={() => setPendingWorkoutDeletion(null)}
+          style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
+        >
+          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
+        </Pressable>
+        <Pressable
+          onPress={() => deletePastWorkout(pendingWorkoutDeletion)}
+          style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
+        >
+          <Text style={{ color: colors.on, fontWeight: "600" }}>Delete</Text>
+        </Pressable>
+      </View>
+    </View>
+  </View>
+)}
+    </View>
+    
   );
 }
