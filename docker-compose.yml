@@ -36,8 +36,13 @@ services:
       # show up immediately (paired with --reload in the Dockerfile CMD).
       # Great for active development; you'd drop this for a "frozen" prod build.
       - ./backend/app:/app/app
+      # Named volume for user-uploaded meal/progress photos (see
+      # app/storage.py for the "why local volume, not object storage"
+      # reasoning) — survives rebuilds exactly like gymind_pgdata does.
+      - gymind_uploads:/app/uploads
     depends_on:
       - db
 
 volumes:
   gymind_pgdata:
+  gymind_uploads:

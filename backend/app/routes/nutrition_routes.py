@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app import auth, models, schemas
+from app import auth, models, schemas, storage
 from app.models import Food, NutritionLog, BodyWeightLog, NutritionTarget  # you'll need NutritionLog later too
 from app.schemas import FoodIn, FoodOut, NutritionLogIn
 from typing import List, Optional
@@ -149,6 +149,7 @@ def add_nutrition_log(
         food_id=new_log.food_id,
         quantity_grams=new_log.quantity_grams,
         logged_at=new_log.logged_at,
+        photo_url=new_log.photo_url,
         food=schemas.NutritionLogFoodOut(
             name=food.name,
             calories=food.calories,
@@ -157,6 +158,47 @@ def add_nutrition_log(
             fat=food.fat,
         ),
     )
+
+
+@router.post("/nutrition/{log_id}/photo", response_model=schemas.NutritionLogOut)
+def upload_nutrition_photo(
+    log_id: int,
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    log = db.query(NutritionLog).filter(
+        NutritionLog.id == log_id,
+        NutritionLog.user_id == current_user.id,
+    ).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Nutrition log not found")
+
+    try:
+        log.photo_url = storage.save_upload(file, "nutrition")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    db.commit()
+    db.refresh(log)
+
+    food = db.query(Food).filter(Food.id == log.food_id).first()
+    return schemas.NutritionLogOut(
+        id=log.id,
+        user_id=log.user_id,
+        food_id=log.food_id,
+        quantity_grams=log.quantity_grams,
+        logged_at=log.logged_at,
+        photo_url=log.photo_url,
+        food=schemas.NutritionLogFoodOut(
+            name=food.name,
+            calories=food.calories,
+            protein=food.protein,
+            carbs=food.carbs,
+            fat=food.fat,
+        ) if food else None,
+    )
+
 
 @router.get("/nutrition", response_model=List[schemas.NutritionLogOut])
 def get_nutrition_logs(
@@ -182,6 +224,7 @@ def get_nutrition_logs(
             food_id=log.food_id,
             quantity_grams=log.quantity_grams,
             logged_at=log.logged_at,
+            photo_url=log.photo_url,
             food=schemas.NutritionLogFoodOut(
                 name=food.name,
                 calories=food.calories,
@@ -304,6 +347,7 @@ def update_nutrition_log(
         food_id=log.food_id,
         quantity_grams=log.quantity_grams,
         logged_at=log.logged_at,
+        photo_url=log.photo_url,
         food=schemas.NutritionLogFoodOut(
             name=food.name,
             calories=food.calories,

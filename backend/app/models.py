@@ -115,6 +115,7 @@ class NutritionLog(Base):
     food_id = Column(Integer, ForeignKey("foods.id"), nullable=False)
     quantity_grams = Column(Float, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    photo_url = Column(Text, nullable=True)  # set via POST /nutrition/{id}/photo
 
 
 class BodyWeightLog(Base):
@@ -124,6 +125,15 @@ class BodyWeightLog(Base):
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     weight = Column(Float, nullable=False)
     unit = Column(Text, nullable=False)
+    logged_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class ProgressPhoto(Base):
+    __tablename__ = "progress_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    photo_url = Column(Text, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
 
 

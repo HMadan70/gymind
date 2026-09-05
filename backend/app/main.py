@@ -1,11 +1,13 @@
 import os
 from fastapi import FastAPI
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import create_engine, text
 from slowapi.errors import RateLimitExceeded
 from fastapi.middleware.cors import CORSMiddleware
 
 
 from app.rate_limit import limiter, rate_limit_exceeded_handler
+from app.storage import UPLOAD_DIR
 from app.routes.workout_routes import router as workout_router
 from app.routes.auth_routes import router as auth_router
 from app.routes.profile_routes import router as profile_router
@@ -29,6 +31,12 @@ app.include_router(profile_router)
 app.include_router(nutrition_router)
 app.include_router(body_weight_router)
 app.include_router(progress_router)
+
+# Serves uploaded meal/progress photos from the local volume (storage.py)
+# at /uploads/... — created on first use if it doesn't exist yet, so a
+# fresh container/dev checkout doesn't need a manual mkdir step.
+os.makedirs(UPLOAD_DIR, exist_ok=True)
+app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)

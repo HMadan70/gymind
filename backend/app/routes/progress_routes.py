@@ -1,12 +1,12 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, File, HTTPException, UploadFile
 from sqlalchemy import func, cast, Date
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import models, auth
+from app import models, auth, schemas, storage
 
 router = APIRouter()
 
@@ -192,3 +192,52 @@ def get_consistency(
     )
 
     return {"days_trained": days_trained, "total_days": days}
+
+
+@router.post("/progress-photos", response_model=schemas.ProgressPhotoOut)
+def upload_progress_photo(
+    file: UploadFile = File(...),
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    try:
+        photo_url = storage.save_upload(file, "progress")
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+    photo = models.ProgressPhoto(user_id=current_user.id, photo_url=photo_url)
+    db.add(photo)
+    db.commit()
+    db.refresh(photo)
+    return photo
+
+
+@router.get("/progress-photos", response_model=list[schemas.ProgressPhotoOut])
+def list_progress_photos(
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    return (
+        db.query(models.ProgressPhoto)
+        .filter(models.ProgressPhoto.user_id == current_user.id)
+        .order_by(models.ProgressPhoto.logged_at.desc())
+        .all()
+    )
+
+
+@router.delete("/progress-photos/{photo_id}", status_code=204)
+def delete_progress_photo(
+    photo_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    photo = db.query(models.ProgressPhoto).filter(
+        models.ProgressPhoto.id == photo_id,
+        models.ProgressPhoto.user_id == current_user.id,
+    ).first()
+    if not photo:
+        raise HTTPException(status_code=404, detail="Progress photo not found")
+
+    storage.delete_upload(photo.photo_url)
+    db.delete(photo)
+    db.commit()

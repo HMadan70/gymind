@@ -19,6 +19,7 @@ profile.json
 test_*.json
 
 backend/data/
+backend/uploads/
 
 # Python tooling caches / artifacts
 .pytest_cache/

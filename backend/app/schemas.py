@@ -165,6 +165,7 @@ class NutritionLogOut(NutritionLogIn):
     model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: int
+    photo_url: Optional[str] = None
     food: Optional[NutritionLogFoodOut] = None
 
 
@@ -177,6 +178,14 @@ class BodyWeightLogOut(BodyWeightLogIn):
     model_config = ConfigDict(from_attributes=True)
     id: int
     user_id: int
+
+
+class ProgressPhotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    user_id: int
+    photo_url: str
+    logged_at: datetime
 
 
 class NutritionTargetIn(BaseModel):
