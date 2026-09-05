@@ -323,6 +323,155 @@ def test_exercise_history_no_prior_session_returns_empty(client):
     assert response.json() == {"previous_sets": [], "suggested_target_weight": None}
 
 
+def test_update_set_edits_weight_and_reps(client):
+    token = register_login_and_create_profile(
+        client, "editset@example.com", "editsetuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Lat Pulldown", "muscle_group": "back"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post("/workouts", headers=headers)
+    workout_id = workout_response.json()["id"]
+
+    set_response = client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 100, "reps": 10},
+        headers=headers,
+    )
+    set_id = set_response.json()["id"]
+
+    response = client.put(
+        f"/workouts/{workout_id}/sets/{set_id}",
+        json={"weight": 110, "reps": 8},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    body = response.json()
+    assert body["weight"] == 110
+    assert body["reps"] == 8
+    # unrelated fields unchanged
+    assert body["exercise_id"] == exercise_id
+    assert body["set_number"] == 1
+
+
+def test_update_set_works_on_a_finished_workout(client):
+    # Unlike POST .../sets, editing an existing set must not be blocked by
+    # ended_at - this route exists specifically to correct historical logs.
+    token = register_login_and_create_profile(
+        client, "editfinishedset@example.com", "editfinishedsetuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Cable Row", "muscle_group": "back"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post("/workouts", headers=headers)
+    workout_id = workout_response.json()["id"]
+
+    set_response = client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 100, "reps": 10},
+        headers=headers,
+    )
+    set_id = set_response.json()["id"]
+
+    client.put(f"/workouts/{workout_id}", headers=headers)  # finish it
+
+    response = client.put(
+        f"/workouts/{workout_id}/sets/{set_id}",
+        json={"weight": 105},
+        headers=headers,
+    )
+    assert response.status_code == 200
+    assert response.json()["weight"] == 105
+    # reps omitted from the request - unchanged, not nulled out
+    assert response.json()["reps"] == 10
+
+
+def test_update_set_ownership_404(client):
+    token_a = register_login_and_create_profile(client, "editowner_a@example.com", "editownera")
+    token_b = register_login_and_create_profile(client, "editowner_b@example.com", "editownerb")
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Face Pull", "muscle_group": "shoulders"},
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post(
+        "/workouts", headers={"Authorization": f"Bearer {token_a}"}
+    )
+    workout_id = workout_response.json()["id"]
+
+    set_response = client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 20, "reps": 15},
+        headers={"Authorization": f"Bearer {token_a}"},
+    )
+    set_id = set_response.json()["id"]
+
+    response = client.put(
+        f"/workouts/{workout_id}/sets/{set_id}",
+        json={"weight": 999},
+        headers={"Authorization": f"Bearer {token_b}"},
+    )
+    assert response.status_code == 404
+    assert response.json()["detail"] == "Workout not found"
+
+
+def test_list_workouts_includes_started_at_and_totals(client):
+    # Regression test: UserWorkoutOut previously had no started_at field at
+    # all, so GET /workouts silently never returned it even though the ORM
+    # model has it and the frontend's Past Workouts list has always tried
+    # to read it. Also covers the new per-workout total_volume/total_sets
+    # aggregates added alongside the fix.
+    token = register_login_and_create_profile(
+        client, "listtotals@example.com", "listtotalsuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    exercise_response = client.post(
+        "/exercises",
+        json={"name": "Front Squat", "muscle_group": "legs"},
+        headers=headers,
+    )
+    exercise_id = exercise_response.json()["id"]
+
+    workout_response = client.post("/workouts", headers=headers)
+    workout_id = workout_response.json()["id"]
+    assert workout_response.json()["started_at"] is not None
+
+    client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 1, "weight": 135, "reps": 5},
+        headers=headers,
+    )
+    client.post(
+        f"/workouts/{workout_id}/sets",
+        json={"exercise_id": exercise_id, "set_number": 2, "weight": 145, "reps": 3},
+        headers=headers,
+    )
+
+    response = client.get("/workouts", headers=headers)
+    assert response.status_code == 200
+    body = response.json()
+    assert len(body) == 1
+    assert body[0]["started_at"] is not None
+    assert body[0]["total_sets"] == 2
+    assert body[0]["total_volume"] == 135 * 5 + 145 * 3
+
+
 def test_cannot_access_another_users_workout(client):
     token_a = register_login_and_create_profile(client, "usera@example.com", "usera")
     token_b = register_login_and_create_profile(client, "userb@example.com", "userb")

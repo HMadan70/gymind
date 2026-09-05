@@ -79,9 +79,23 @@ class UserWorkoutIn(BaseModel):
 class UserWorkoutOut(UserWorkoutIn):
     id: int
     user_id: int
+    # BUG FIX (Phase 3.5): this field was missing entirely, so GET /workouts
+    # silently never returned started_at even though the ORM model has it
+    # and the frontend's Past Workouts list has always tried to read it -
+    # every date there was rendering as "Invalid Date". Pydantic only
+    # serializes declared fields, so a value passed in that isn't declared
+    # (as in UserWorkoutDetail's construction below) is dropped, not erred on.
+    started_at: Optional[datetime] = None
 
     class Config:
         from_attributes = True
+
+
+class UserWorkoutListItemOut(UserWorkoutOut):
+    """GET /workouts only - adds per-workout aggregates for the Past
+    Workouts list (PROJECT_STATUS.md Phase 3.5 "per-workout totals")."""
+    total_volume: float = 0
+    total_sets: int = 0
 
 
 class WorkoutSetIn(BaseModel):
@@ -89,6 +103,11 @@ class WorkoutSetIn(BaseModel):
     set_number: int
     weight: float
     reps: int
+
+
+class WorkoutSetUpdateIn(BaseModel):
+    weight: Optional[float] = None
+    reps: Optional[int] = None
 
 
 class WorkoutSetExerciseOut(BaseModel):

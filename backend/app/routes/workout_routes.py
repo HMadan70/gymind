@@ -175,15 +175,34 @@ def create_workout(
     db.refresh(new_workout)
     return new_workout
 
-@router.get("/workouts", response_model=list[schemas.UserWorkoutOut])
+@router.get("/workouts", response_model=list[schemas.UserWorkoutListItemOut])
 def list_workouts(
     current_user: models.User = Depends(auth.require_profile),
     db: Session = Depends(get_db),
 ):
-    workouts = db.query(models.UserWorkout).filter(
-        models.UserWorkout.user_id == current_user.id
-    ).all()
-    return workouts
+    rows = (
+        db.query(
+            models.UserWorkout,
+            func.coalesce(func.sum(models.WorkoutSet.weight * models.WorkoutSet.reps), 0.0).label("total_volume"),
+            func.count(models.WorkoutSet.id).label("total_sets"),
+        )
+        .outerjoin(models.WorkoutSet, models.WorkoutSet.workout_id == models.UserWorkout.id)
+        .filter(models.UserWorkout.user_id == current_user.id)
+        .group_by(models.UserWorkout.id)
+        .order_by(models.UserWorkout.started_at.desc())
+        .all()
+    )
+    return [
+        schemas.UserWorkoutListItemOut(
+            id=workout.id,
+            user_id=workout.user_id,
+            started_at=workout.started_at,
+            ended_at=workout.ended_at,
+            total_volume=float(total_volume),
+            total_sets=int(total_sets),
+        )
+        for workout, total_volume, total_sets in rows
+    ]
 
 @router.put("/workouts/{workout_id}", response_model=schemas.UserWorkoutOut)
 def finish_workout(
@@ -247,6 +266,56 @@ def add_set(
             name=exercise.name,
             muscle_group=exercise.muscle_group,
         ),
+    )
+
+
+@router.put("/workouts/{workout_id}/sets/{set_id}", response_model=schemas.WorkoutSetOut)
+def update_set(
+    workout_id: int,
+    set_id: int,
+    set_update: schemas.WorkoutSetUpdateIn,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    """
+    Edits an already-logged set's weight/reps. Unlike POST .../sets, this
+    is not blocked on a finished workout - it exists specifically to
+    correct historical logs after a session is over (PROJECT_STATUS.md
+    Phase 3.5 "editing already-logged past sets").
+    """
+    workout = db.query(models.UserWorkout).filter(
+        models.UserWorkout.id == workout_id,
+        models.UserWorkout.user_id == current_user.id,
+    ).first()
+    if not workout:
+        raise HTTPException(status_code=404, detail="Workout not found")
+
+    workout_set = db.query(models.WorkoutSet).filter(
+        models.WorkoutSet.id == set_id,
+        models.WorkoutSet.workout_id == workout_id,
+    ).first()
+    if not workout_set:
+        raise HTTPException(status_code=404, detail="Set not found")
+
+    for field, value in set_update.dict(exclude_unset=True).items():
+        setattr(workout_set, field, value)
+
+    db.commit()
+    db.refresh(workout_set)
+
+    exercise = db.query(models.Exercise).filter(models.Exercise.id == workout_set.exercise_id).first()
+
+    return schemas.WorkoutSetOut(
+        id=workout_set.id,
+        workout_id=workout_set.workout_id,
+        exercise_id=workout_set.exercise_id,
+        set_number=workout_set.set_number,
+        weight=workout_set.weight,
+        reps=workout_set.reps,
+        exercise=schemas.WorkoutSetExerciseOut(
+            name=exercise.name,
+            muscle_group=exercise.muscle_group,
+        ) if exercise else None,
     )
 
 
