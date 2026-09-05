@@ -13,6 +13,7 @@ import {
   Manrope_800ExtraBold,
 } from "@expo-google-fonts/manrope";
 import { ThemeProvider } from "../context/ThemeContext";
+import { WorkoutSessionProvider } from "../context/WorkoutSessionContext";
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
@@ -31,13 +32,15 @@ export default function RootLayout() {
 
   return (
     <ThemeProvider>
-      <Stack screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="(tabs)" />
-        <Stack.Screen name="login" />
-        <Stack.Screen name="register" />
-        <Stack.Screen name="checkOnboarding" />
-        <Stack.Screen name="onboarding" />
-      </Stack>
+      <WorkoutSessionProvider>
+        <Stack screenOptions={{ headerShown: false }}>
+          <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="register" />
+          <Stack.Screen name="checkOnboarding" />
+          <Stack.Screen name="onboarding" />
+        </Stack>
+      </WorkoutSessionProvider>
     </ThemeProvider>
   );
 }

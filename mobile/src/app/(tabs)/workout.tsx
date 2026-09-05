@@ -1,5 +1,6 @@
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
+import { useWorkoutSession } from "../../context/WorkoutSessionContext";
 import { useState, useEffect, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Trash2, ChevronDown, Check, Star, X } from "lucide-react-native";
@@ -65,6 +66,7 @@ const formatWorkoutDate = (iso: string) => {
 
 export default function Workout() {
   const { colors, shape } = useTheme();
+  const { setSession } = useWorkoutSession();
   const [exercises, setExercises] = useState<ExerciseEntry[]>([]);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const [isRunning, setIsRunning] = useState(false);
@@ -356,6 +358,13 @@ export default function Workout() {
   useEffect(() => {
     fetchPastWorkouts();
   }, []);
+
+  // Publishes session status to WorkoutSessionContext so Home's Workout CTA
+  // card can show Start/Resume without this screen's own state model
+  // changing at all - see WorkoutSessionContext.tsx.
+  useEffect(() => {
+    setSession({ hasStarted, isRunning, elapsedSeconds });
+  }, [hasStarted, isRunning, elapsedSeconds]);
 
   const sessionStatusLabel = isRunning ? "SESSION LIVE" : elapsedSeconds > 0 ? "SESSION PAUSED" : "NOT STARTED";
   const sessionDotColor = isRunning ? colors.primary : elapsedSeconds > 0 ? colors.secondary : colors.textDim;
