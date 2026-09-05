@@ -87,7 +87,10 @@ class WorkoutSet(Base):
     __tablename__ = "workout_sets"
 
     id = Column(Integer, primary_key=True, index=True)
-    workout_id = Column(Integer, ForeignKey("user_workouts.id"), nullable=False)
+    # ondelete="CASCADE" was missing here even though the real DB has it
+    # (set up manually via psql before Alembic existed) - PROJECT_STATUS.md
+    # Section 17's longest-standing known drift item, fixed 2026-09-05.
+    workout_id = Column(Integer, ForeignKey("user_workouts.id", ondelete="CASCADE"), nullable=False)
     exercise_id = Column(Integer, ForeignKey("exercises.id"), nullable=False)
     set_number = Column(Integer, nullable=False)
     weight = Column(Float, nullable=True)
