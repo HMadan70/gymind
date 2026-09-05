@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-09-05 (Brand 2.0 Phase 3.5 step 1: theme foundation + accent_preset removal)_
+_Last updated: 2026-09-05 (Brand 2.0 Phase 3.5 complete — all 8 steps: theme foundation, Login/Register/Workout re-skin, Onboarding styling, Home/Nutrition/Progress built, remaining Workout gaps closed, photo upload backend+frontend, app icon/splash, workout_sets CASCADE fix)_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -469,27 +469,27 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
 ### Phase 3 — Mobile App
 - [x] Full visual design complete for all 8 core screens + AI Coach chat, mobile and web (Sections 14–16)
 - [x] Scaffold React Native project in `/mobile` — **decided: Expo (TypeScript + Expo Router), SDK 57**, not a bare React Native + React Native Web setup
-- [x] Set up shared navigation — nav skeleton built with Expo Router: 6 tabs (Home, Coach, Workout, Nutrition, Progress, Settings) plus login/register/onboarding routes outside the tab group, all confirmed working
-- [x] Implement theme system as a single context/provider (dark/light + 5 accent presets), matching the token contract in Section 14 — `mobile/src/constants/theme.ts` + `mobile/src/context/ThemeContext.tsx`. See Section 10.
-- [x] Build register/login screens wired to `/auth/*` — functionally complete (real backend calls, JWT storage, validation, error handling), **and now visually styled** to match `Design/exports/mobile/mobile-login.png` and `mobile-register.png` (previously functional but unstyled). See Section 10, Section 17 for a few intentional deviations from the design.
+- [x] Set up shared navigation — **updated 2026-09-05 for Brand 2.0:** 5-tab custom floating `TabBar` (Home, Workout, Nutrition, Progress, Coach) via `expo-router/js-tabs`, matching the design's 5-tab nav exactly. Settings moved off the tab bar entirely (`href: null`), reached via a gear icon on Home's header instead — see Section 17.
+- [x] Implement theme system as a single context/provider — **rewritten 2026-09-05 for Brand 2.0:** dark/light only, the 5-accent-preset system fully retired (single fixed teal/gold/coral palette), matching the token contract in Section 14 — `mobile/src/constants/theme.ts` + `mobile/src/context/ThemeContext.tsx`. See Section 10.
+- [x] Build register/login screens wired to `/auth/*` — functionally complete, **re-skinned to Brand 2.0 2026-09-05** (previously styled to the superseded "5c" design). See Section 10, Section 17 for the intentional deviations, re-checked and still valid against Brand 2.0.
 - [x] Build post-login/register redirect logic based on `GET /users/onboarding-check` — `checkOnboarding.tsx`, confirmed working. See Section 10.
 - [x] Build the actual onboarding form wired to `/users/profile` — full 5-step wizard (goal, experience level, injuries, equipment, dietary restrictions), single-select cards, multi-select chips, free-text field, progress bar, real `POST /users/profile` with the auth token, redirects to Home on success.
-- [ ] Visual design pass for Onboarding to match the real screens in `Design/exports/` — Login and Register are now styled (above); Onboarding is still functional but visually unstyled
+- [x] Visual design pass for Onboarding — **done 2026-09-05**, built directly in Brand 2.0 (see Phase 3.5).
 - [x] **Build core workout logging UI** — complete as of 2026-09-05. Session header with three-state logic (`SESSION LIVE` / `SESSION PAUSED` / `NOT STARTED`, driven by `isRunning` + `elapsedSeconds`); Volume/Sets/Best e1RM stat cards via a `stats` `useMemo` hook (Epley formula for e1RM); three-state collapsed exercise card styling (`QUEUED` / `IN PROGRESS` / `COMPLETED` with a checkmark badge); exercise picker wired to `GET /exercises` (search + muscle-group filter + favorites); exercise favoriting; per-set PREV/TGT display via `GET /exercises/{id}/history`; per-exercise notes via `PUT /workouts/{id}/exercises/{exercise_id}/note`; Past Workouts modal with per-workout delete, repeat, and totals; Finish Workout confirm modal; rest timer; "Finish session" secondary options (Finish/Discard); editing already-logged past sets via `PUT /workouts/{id}/sets/{set_id}`. See Section 17 for the pre-session-edit (auto-start) decision. Still an idea, not started: stat card customization, a richer finish-workout summary screen.
-- [ ] Build Home screen (streak strip, AI Coach card, Nutrition card, Workout card)
-- [ ] Build Progress screen with drillable muscle-group → exercise → e1RM chart
-- [ ] Decide on state management approach (Context API vs. something like Zustand/Redux) once the app has enough shared state to justify it
-- [ ] Design still open: empty states, loading/error states, exact icon set, where Profile lives now it's off the bottom nav (see Section 17)
+- [x] Build Home screen — **done 2026-09-05** (see Phase 3.5).
+- [x] Build Progress screen with drillable muscle-group → exercise → e1RM chart — **done 2026-09-05** (see Phase 3.5).
+- [x] Decide on state management approach — **partially resolved 2026-09-05:** still Context API, not Zustand/Redux, but a second small context (`WorkoutSessionContext`) was added specifically so Home can read Workout's session status without a full state-management rewrite. Revisit only if more screens need to share state this way — see Section 17.
+- [ ] Design still open: empty states (Nutrition has one; most other screens don't), loading/error states. **Resolved:** icon set (Lucide, Section 10) and where Profile lives (gear icon on Home, Section 17) are no longer open.
 
 ### Phase 3.5 — Brand 2.0 Visual Migration (new, 2026-09-05)
 Full migration from the old "5c" direction to the new Brand 2.0 system (Section 14-16). Decided: this is a full migration, not a partial reskin — `accent_preset` is being retired, not kept dormant.
 - [x] Add the new handoff files to the repo — `Design2/` committed for real 2026-09-05 (commit `e011f66`; an earlier update had described this as done when it wasn't, see Section 10's correction note) — `BRAND_GUIDE.md`, `README.md`, `PUBLISHING_CHECKLIST.md`, `Gymind UI.dc.html`, `brand/logo-mark.png`, `brand/app-icon-1024.png`, `brand/splash-screen.png`. Old `Design/exports/` and `Design/Source/` ("5c" assets) are still in the repo, untouched and unarchived — archiving them is still an open task, not done.
 - [x] Rewrite `mobile/src/constants/theme.ts` + `mobile/src/context/ThemeContext.tsx` — new token set (`bg`/`card`/`cardAlt`/`border`/`text`/`textDim`/`primary` (teal)/`secondary` (gold)/`danger` (coral, alert-only)/`onPrimary`, dark+light), drop the 5-preset accent system entirely. Also added `shape` (cut-corner container radii) and `motion` (timing) tokens per `BRAND_GUIDE.md`. See Section 10 for the OKLCH→sRGB conversion note — the design source values are OKLCH but React Native can't render that syntax directly.
 - [x] Backend: Alembic migration (`67cb5152a861_drop_user_preferences_accent_preset`) drops `user_preferences.accent_preset`; field removed from `models.py`/`schemas.py`. `profile_routes.py` needed no change (never referenced the field by name). All 27 backend tests pass.
-- [ ] Re-skin Login/Register (functionally complete, styled to the old design) to the new tokens/shape language — re-check the intentional deviations list (Section 17) still holds
-- [ ] Style Onboarding for the first time (currently functional but visually unstyled) — build it directly in Brand 2.0, no need to style it twice
-- [ ] Re-skin Workout screen: swap Ember left-edge-border cards for cut-corner containers + teal/gold, keep all existing logic (session state, stats, exercise states, PREV/TGT, notes, favoriting) untouched — this is a visual pass, not a logic rewrite
-- [ ] Build Home, Nutrition, Progress, Coach directly in Brand 2.0 (no old-design version of these ever existed, so no double work)
+- [x] Re-skin Login/Register to the new tokens/shape language — done 2026-09-05; intentional deviations list (Section 17) re-checked and still holds.
+- [x] Style Onboarding for the first time — done 2026-09-05, built directly in Brand 2.0.
+- [x] Re-skin Workout screen: cut-corner containers + teal/gold, all existing logic untouched — done 2026-09-05 (plus the remaining Workout gaps, closed same day: rest timer, finish-session menu, repeat workout, past-workout totals, past-set editing).
+- [x] Build Home, Nutrition, Progress directly in Brand 2.0 — done 2026-09-05. **Coach excluded per this migration's explicit scope** (Phase 4/AI Coach is off-limits — `coach.tsx` untouched, no `/coach` route exists).
 - [x] Backend: `nutrition_logs.photo_url` column + upload endpoint (`POST /nutrition/{id}/photo`); `progress_photos` table + `POST/GET/DELETE /progress-photos`. Frontend wired end-to-end (real `expo-image-picker` capture/upload, not placeholders) — see Section 15.
 - [x] **Decided (2026-09-05): local Docker volume, not an object-storage service** (`gymind_uploads`, same pattern as `gymind_pgdata`) — full reasoning in `backend/app/storage.py`'s module docstring and Section 10.
 - [x] **Decided (2026-09-05): Lucide** (`lucide-react-native`), not Phosphor — used throughout every screen built in this migration. Reasoning in Section 10.
@@ -507,7 +507,7 @@ Full migration from the old "5c" direction to the new Brand 2.0 system (Section 
 - [ ] Set up `requirements.txt` with pinned versions for the backend
 - [ ] Set up `.env.example` documenting required environment variables
 - [ ] Add basic input validation/error handling conventions (see Section 13)
-- [x] Add at least minimal tests for auth endpoints before building more on top — done, and expanded beyond auth to cover ownership and key business logic (17 tests total). See Section 13.
+- [x] Add at least minimal tests for auth endpoints before building more on top — done, and expanded beyond auth to cover ownership and key business logic (36 tests total as of 2026-09-05). See Section 13.
 - [x] Decide on a migration tool (e.g. Alembic) before the schema grows much further, so schema changes are tracked rather than manual — decided and set up: Alembic, baselined via `stamp head`. See Section 10/13.
 
 ---
@@ -529,7 +529,7 @@ Full migration from the old "5c" direction to the new Brand 2.0 system (Section 
 
 - **Error handling:** decide on a consistent pattern for returning errors (FastAPI `HTTPException` with consistent status codes/messages). One convention now in place: `401` = not authenticated (bad/missing/expired JWT), `403` = authenticated but not allowed yet (e.g. `require_profile` gate). Keep this distinction for future routes.
 - **Validation:** use Pydantic models for all request/response bodies (likely already doing this for register/login — extend the pattern going forward)
-- **Testing:** a real `pytest` suite exists — 17 tests across `tests/test_auth.py`, `tests/test_workouts.py`, and `tests/test_nutrition_targets.py`, covering auth boundaries (invalid/missing tokens, duplicate registration, `require_profile` gating), ownership checks (can't access another user's workout), and key business logic (the finished-workout `409` guard, the `nutrition_targets` `is_manual` override/reset behavior). Uses FastAPI's `TestClient` against a separate `gymind_test` Postgres database, not the real dev DB. Run with `python -m pytest -v` from `backend/`.
+- **Testing:** a real `pytest` suite exists — 36 tests as of 2026-09-05 across `tests/test_auth.py`, `tests/test_workouts.py`, `tests/test_nutrition_targets.py`, `tests/test_favorites.py`, and `tests/test_photos.py`, covering auth boundaries (invalid/missing tokens, duplicate registration, `require_profile` gating), ownership checks (can't access another user's workout/set/photo), and key business logic (the finished-workout `409` guard, the `nutrition_targets` `is_manual` override/reset behavior, editing past sets, photo upload content-type validation). Uses FastAPI's `TestClient` against a separate `gymind_test` Postgres database, not the real dev DB. Run with `python -m pytest -v` from `backend/`.
 - **Migrations:** Alembic is now set up. The existing schema was baselined via `alembic stamp head` — this marks the current schema as Alembic's starting point without executing any SQL against it, since the schema already existed from manual psql work. Going forward, schema changes follow the real Alembic loop: edit `models.py` → `alembic revision --autogenerate -m "..."` → review the generated migration file carefully → `alembic upgrade head`.
 - **Dependency pinning:** pin versions in `requirements.txt` to avoid surprises like the bcrypt/passlib issue recurring elsewhere
 - **Theming discipline:** color tokens only change per theme — never layout/spacing/typography (see Section 10)
