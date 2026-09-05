@@ -80,6 +80,7 @@ class UserWorkoutIn(BaseModel):
 class UserWorkoutOut(UserWorkoutIn):
     id: int
     user_id: int
+    started_at: datetime
 
     class Config:
         from_attributes = True
