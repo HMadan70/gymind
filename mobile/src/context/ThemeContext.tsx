@@ -1,22 +1,28 @@
 // src/context/ThemeContext.tsx
 import React, { createContext, useContext, useMemo, useState } from "react";
-import { baseTokens, statusColors, getAccentTokens, AccentPreset } from "../constants/theme";
-
-type ThemeMode = "dark" | "light";
+import {
+  brand2Base,
+  getBrandTokens,
+  statusColors,
+  shapeTokens,
+  motionTokens,
+  Mode,
+} from "../constants/theme";
 
 const ThemeContext = createContext<any>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [mode, setMode] = useState<ThemeMode>("dark");
-  const [accent, setAccent] = useState<AccentPreset>("Ember");
+  const [mode, setMode] = useState<Mode>("dark");
 
   const colors = useMemo(
-    () => ({ ...baseTokens[mode], ...getAccentTokens(accent, mode), ...statusColors }),
-    [mode, accent]
+    () => ({ ...brand2Base[mode], ...getBrandTokens(mode), ...statusColors }),
+    [mode]
   );
 
   return (
-    <ThemeContext.Provider value={{ mode, accent, setMode, setAccent, colors }}>
+    <ThemeContext.Provider
+      value={{ mode, setMode, colors, shapes: shapeTokens, motion: motionTokens }}
+    >
       {children}
     </ThemeContext.Provider>
   );

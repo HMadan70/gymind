@@ -1,55 +1,38 @@
 // src/constants/theme.ts
-// Values sourced directly from the Gymind design system (theme.json / DESIGN_SYSTEM.md)
+// Values sourced directly from the Gymind Brand 2.0 design system (Design2/BRAND_GUIDE.md)
 
-export const baseTokens = {
+export const brand2Base = {
   dark: {
-    bgBase: "#0A0F1A",
-    bgElevated: "#0D1420",
-    bgCard: "#131B2B",
-    cardEdge: "rgba(255,255,255,0.06)",
-    bgInset: "rgba(255,255,255,0.045)",
-    border: "rgba(255,255,255,0.14)",
-    textPrimary: "#F0F3F8",
-    textDim: "rgba(240,243,248,0.72)",
-    textFaint: "rgba(240,243,248,0.42)",
-    shadow: "0 8px 30px rgba(0,0,0,0.45)",
+    bgBase: "#040f15",
+    bgCard: "#091b22",
+    textPrimary: "#edf3f6",
+    textDim: "#85959d",
+    textFaint: "rgba(237,243,246,0.42)",   // ← add this line
   },
   light: {
-    bgBase: "#F4F5F7",
-    bgElevated: "#EDEEF1",
-    bgCard: "#FFFFFF",
-    cardEdge: "rgba(16,20,28,0.09)",
-    bgInset: "#F1F2F5",
-    border: "rgba(16,20,28,0.14)",
-    textPrimary: "#10141C",
-    textDim: "rgba(16,20,28,0.68)",
-    textFaint: "rgba(16,20,28,0.42)",
-    shadow: "0 2px 12px rgba(16,20,28,0.07)",
+    bgBase: "#f0f6f9",
+    bgCard: "#ffffff",
+    textPrimary: "#0b181e",
+    textDim: "#59656b",
+    textFaint: "rgba(11,24,30,0.42)",   // ← add this line
   },
 } as const;
 
-// Status colors are fixed — never swapped with accent/mode
-export const statusColors = {
-  success: "#35C880",
-  warning: "#FFB23F",
-  danger: "#FF5247",
+// Two brand hues (teal/gold) + one alert-only hue (coral) — see BRAND_GUIDE.md "Color"
+export const brandColors = {
+  dark: {
+    teal: "#00bcc7",
+    gold: "#dcbc33",
+    coral: "#e6424c",
+  },
+  light: {
+    teal: "#007680",
+    gold: "#a18400",
+    coral: "#cc323e",
+  },
 } as const;
 
-// Only 5 presets exist in the real design system (not 6 — no "Teal")
-export type AccentPreset = "Ember" | "Signal" | "Amber" | "Violet" | "Volt";
-
-export const accentPresetNames: AccentPreset[] = ["Ember", "Signal", "Amber", "Violet", "Volt"];
-
-export const accentBase: Record <
-  AccentPreset,
-  { accent: string; tint2: string; tint3: string; deep: string; on: string }
-> = {
-  Ember:  { accent: "#FF6B1F", tint2: "#FF9A5E", tint3: "#FFD2B3", deep: "#C4470D", on: "#170800" },
-  Signal: { accent: "#3FC4FF", tint2: "#7ED8FF", tint3: "#B7EBFF", deep: "#0A6E9E", on: "#001622" },
-  Amber:  { accent: "#FFD023", tint2: "#FFE07A", tint3: "#FFEFBC", deep: "#A6740A", on: "#241A00" },
-  Violet: { accent: "#A788FA", tint2: "#C4B2FC", tint3: "#E2D9FE", deep: "#6D45D9", on: "#170634" },
-  Volt:   { accent: "#3FE07A", tint2: "#7DEBA6", tint3: "#BAF5CE", deep: "#12813F", on: "#04240F" },
-};
+export type Mode = "dark" | "light";
 
 // Converts a hex color to an rgba string at a given alpha (0-1)
 function hexToRgba(hex: string, alpha: number): string {
@@ -59,15 +42,50 @@ function hexToRgba(hex: string, alpha: number): string {
   return `rgba(${r},${g},${b},${alpha})`;
 }
 
-// Derived tokens: computed from the accent hex, differ by mode (per DESIGN_SYSTEM.md)
-export function getAccentTokens(preset: AccentPreset, mode: "dark" | "light") {
-  const base = accentBase[preset];
+// Derived tokens per role: a translucent "soft" wash for tinted card backgrounds,
+// computed from the same base hex rather than hand-picked — keeps dark/light consistent.
+export function getBrandTokens(mode: Mode) {
+  const c = brandColors[mode];
   return {
-    ...base,
-    text: mode === "dark" ? base.tint2 : base.deep,
-    chart: mode === "dark" ? base.tint3 : base.accent,
-    soft: hexToRgba(base.accent, mode === "dark" ? 0.16 : 0.14),
-    softStrong: hexToRgba(base.accent, mode === "dark" ? 0.24 : 0.18),
-    dash: hexToRgba(base.accent, mode === "dark" ? 0.4 : 0.45),
+    teal: c.teal,
+    gold: c.gold,
+    coral: c.coral,
+    tealSoft: hexToRgba(c.teal, mode === "dark" ? 0.16 : 0.12),
+    goldSoft: hexToRgba(c.gold, mode === "dark" ? 0.16 : 0.12),
+    coralSoft: hexToRgba(c.coral, mode === "dark" ? 0.18 : 0.14),
+    tealOn: "#0b181e",   // dark text — teal is bright enough to need dark text on top
+    goldOn: "#0b181e",   // dark text — gold is bright, same logic
+    coralOn: "#ffffff",  // white text — coral is a darker/more saturated red
   };
 }
+// Cut-corner shape presets (BRAND_GUIDE.md "Shape language")
+// Order: top-left, top-right, bottom-right, bottom-left
+export const shapeTokens = {
+  heroCard: { borderTopLeftRadius: 30, borderTopRightRadius: 12, borderBottomRightRadius: 30, borderBottomLeftRadius: 12 },
+  secondaryCard: { borderTopLeftRadius: 26, borderTopRightRadius: 10, borderBottomRightRadius: 26, borderBottomLeftRadius: 10 },
+  bottomSheet: { borderTopLeftRadius: 26, borderTopRightRadius: 26, borderBottomRightRadius: 0, borderBottomLeftRadius: 0 },
+  modal: { borderRadius: 20 },
+  pill: { borderRadius: 999 }, // buttons, chips, inputs, avatars, dots — always fully rounded
+} as const;
+
+export const setCircleBase = {
+  width: 28,
+  height: 28,
+  borderRadius: 14,
+  justifyContent: "center" as const,
+  alignItems: "center" as const,
+};
+
+// Motion timing tokens (BRAND_GUIDE.md "Motion principles")
+export const motionTokens = {
+  screenIn: { duration: 425, translateYFrom: 14 }, // ms, px
+  numericTransition: { duration: 550 },
+  ambientLoop: { duration: 19000 }, // 16-22s range, midpoint
+} as const;
+
+// Status colors are fixed — never swapped with brand/mode
+export const statusColors = {
+  success: "#35C880",
+  warning: "#FFB23F",
+  danger: "#FF5247",
+} as const;
