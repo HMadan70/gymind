@@ -1,10 +1,12 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, Image } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { ChevronLeft, Camera } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import { ChevronLeft } from "lucide-react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../constants/theme";
-import { authFetch } from "../../utils/api";
+import { authFetch, uploadPhoto } from "../../utils/api";
+import { API_URL } from "../../constants/api";
 import { ScreenBackground } from "../../components/brand/ScreenBackground";
 import { AnimatedScreen } from "../../components/brand/AnimatedScreen";
 import { AppHeader } from "../../components/brand/AppHeader";
@@ -18,6 +20,7 @@ type MuscleGroupSummary = { muscle_group: string; best_e1rm: number };
 type ExerciseOption = { id: number; name: string; muscle_group: string };
 type Consistency = { days_trained: number; total_days: number };
 type BodyWeightTrend = { unit: string | null; entries: { logged_at: string; weight: number }[] };
+type ProgressPhoto = { id: number; photo_url: string; logged_at: string };
 
 const MUSCLE_GROUPS = ["chest", "back", "legs", "shoulders", "arms", "core"];
 
@@ -36,14 +39,32 @@ export default function Progress() {
   const [weightInput, setWeightInput] = useState("");
   const [weightUnit, setWeightUnit] = useState<"lb" | "kg">("lb");
 
-  const [isPhotoOpen, setIsPhotoOpen] = useState(false);
-  const [photoAttached, setPhotoAttached] = useState(false);
+  const [photos, setPhotos] = useState<ProgressPhoto[]>([]);
+  const [pendingPhotoDeletion, setPendingPhotoDeletion] = useState<number | null>(null);
 
   const loadOverview = useCallback(() => {
     authFetch<Consistency>("/progress/consistency").then(setConsistency).catch(() => {});
     authFetch<BodyWeightTrend>("/progress/body-weight?days=90").then(setWeightTrend).catch(() => {});
     authFetch<MuscleGroupSummary[]>("/progress/muscle-groups").then(setMuscleGroups).catch(() => {});
+    authFetch<ProgressPhoto[]>("/progress-photos").then(setPhotos).catch(() => {});
   }, []);
+
+  const addProgressPhoto = async () => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({ mediaTypes: ["images"], quality: 0.7 });
+    if (result.canceled || result.assets.length === 0) return;
+
+    const photo = await uploadPhoto<ProgressPhoto>("/progress-photos", result.assets[0].uri);
+    setPhotos((prev) => [photo, ...prev]);
+  };
+
+  const deleteProgressPhoto = async (id: number) => {
+    await authFetch(`/progress-photos/${id}`, { method: "DELETE" });
+    setPhotos((prev) => prev.filter((p) => p.id !== id));
+    setPendingPhotoDeletion(null);
+  };
 
   useFocusEffect(
     useCallback(() => {
@@ -165,33 +186,39 @@ export default function Progress() {
           <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
             <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text }}>Progress photos</Text>
             <Pressable
-              onPress={() => {
-                setIsPhotoOpen(true);
-                setPhotoAttached(false);
-              }}
+              onPress={addProgressPhoto}
               style={{ backgroundColor: colors.primarySoft, borderRadius: 999, paddingHorizontal: 12, paddingVertical: 6 }}
             >
               <Text style={{ fontSize: 11, fontFamily: fonts.bodyExtraBold, color: colors.primary }}>+ Add</Text>
             </Pressable>
           </View>
-          <Pressable
-            onPress={() => {
-              setIsPhotoOpen(true);
-              setPhotoAttached(false);
-            }}
-            style={{
-              width: 78,
-              height: 96,
-              borderRadius: 16,
-              borderWidth: 1.5,
-              borderStyle: "dashed",
-              borderColor: colors.border,
-              alignItems: "center",
-              justifyContent: "center",
-            }}
-          >
-            <Text style={{ color: colors.textDim, fontSize: 22 }}>+</Text>
-          </Pressable>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+            <View style={{ flexDirection: "row", gap: 10 }}>
+              {photos.map((photo) => (
+                <Pressable key={photo.id} onPress={() => setPendingPhotoDeletion(photo.id)}>
+                  <Image
+                    source={{ uri: `${API_URL}${photo.photo_url}` }}
+                    style={{ width: 78, height: 96, borderRadius: 16 }}
+                  />
+                </Pressable>
+              ))}
+              <Pressable
+                onPress={addProgressPhoto}
+                style={{
+                  width: 78,
+                  height: 96,
+                  borderRadius: 16,
+                  borderWidth: 1.5,
+                  borderStyle: "dashed",
+                  borderColor: colors.border,
+                  alignItems: "center",
+                  justifyContent: "center",
+                }}
+              >
+                <Text style={{ color: colors.textDim, fontSize: 22 }}>+</Text>
+              </Pressable>
+            </View>
+          </ScrollView>
 
           <Text style={{ fontFamily: fonts.bodyBold, fontSize: 14, color: colors.text }}>Muscle groups</Text>
           <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 10 }}>
@@ -242,35 +269,21 @@ export default function Progress() {
         <Button title="Save" onPress={saveWeight} />
       </CenterModal>
 
-      <CenterModal visible={isPhotoOpen} onClose={() => setIsPhotoOpen(false)} widthPct={78}>
-        {photoAttached ? (
-          <View style={{ width: "100%", height: 140, borderRadius: 16, backgroundColor: colors.cardAlt, alignItems: "flex-end", justifyContent: "flex-end", padding: 8 }}>
-            <Text style={{ fontSize: 9, fontFamily: "monospace", color: colors.text, backgroundColor: colors.card, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 }}>
-              sample photo
-            </Text>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setPhotoAttached(true)}
-            style={{
-              width: "100%",
-              height: 140,
-              borderRadius: 16,
-              borderWidth: 1.5,
-              borderStyle: "dashed",
-              borderColor: colors.border,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            <Camera size={26} color={colors.textDim} />
-            <Text style={{ fontSize: 11, color: colors.textDim, fontFamily: fonts.bodyBold }}>Tap to add photo</Text>
-          </Pressable>
-        )}
-        <Text style={{ fontSize: 11, color: colors.textDim, marginTop: 12, textAlign: "center", fontFamily: fonts.bodyRegular }}>
-          Photo uploads — coming soon, UI ready for it.
+      <CenterModal visible={pendingPhotoDeletion !== null} onClose={() => setPendingPhotoDeletion(null)}>
+        <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 18, marginBottom: 8 }}>Delete this photo?</Text>
+        <Text style={{ color: colors.textDim, marginBottom: 20, fontSize: 13, fontFamily: fonts.bodyRegular }}>
+          This permanently removes it from your progress photo strip.
         </Text>
+        <View style={{ flexDirection: "row", gap: 8 }}>
+          <Button title="Cancel" onPress={() => setPendingPhotoDeletion(null)} variant="outline" style={{ flex: 1 }} fullWidth={false} />
+          <Button
+            title="Delete"
+            onPress={() => pendingPhotoDeletion !== null && deleteProgressPhoto(pendingPhotoDeletion)}
+            variant="danger"
+            style={{ flex: 1 }}
+            fullWidth={false}
+          />
+        </View>
       </CenterModal>
     </ScreenBackground>
   );

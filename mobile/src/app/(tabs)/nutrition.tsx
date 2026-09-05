@@ -1,10 +1,12 @@
 import { useState, useCallback } from "react";
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, Image } from "react-native";
 import { useFocusEffect } from "expo-router";
-import { Camera, X, Minus, Plus } from "lucide-react-native";
+import * as ImagePicker from "expo-image-picker";
+import { X, Minus, Plus, Camera } from "lucide-react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../constants/theme";
-import { authFetch } from "../../utils/api";
+import { authFetch, uploadPhoto } from "../../utils/api";
+import { API_URL } from "../../constants/api";
 import { ScreenBackground } from "../../components/brand/ScreenBackground";
 import { AnimatedScreen } from "../../components/brand/AnimatedScreen";
 import { AppHeader } from "../../components/brand/AppHeader";
@@ -12,13 +14,13 @@ import { Card } from "../../components/brand/Card";
 import { Button } from "../../components/brand/Button";
 import { ProgressRing } from "../../components/brand/ProgressRing";
 import { Sheet } from "../../components/brand/Sheet";
-import { CenterModal } from "../../components/brand/CenterModal";
 
 type Food = { id: number; name: string; calories: number; protein: number; carbs: number; fat: number };
 type NutritionLog = {
   id: number;
   quantity_grams: number;
   logged_at: string;
+  photo_url: string | null;
   food: Food;
 };
 type Targets = {
@@ -39,9 +41,6 @@ export default function Nutrition() {
   const [foodResults, setFoodResults] = useState<Food[]>([]);
   const [pickedFood, setPickedFood] = useState<Food | null>(null);
   const [foodQty, setFoodQty] = useState(100);
-
-  const [isPhotoOpen, setIsPhotoOpen] = useState(false);
-  const [photoAttached, setPhotoAttached] = useState(false);
 
   const loadLogs = useCallback(() => {
     authFetch<NutritionLog[]>("/nutrition").then(setLogs).catch(() => {});
@@ -84,6 +83,26 @@ export default function Nutrition() {
   const removeLog = async (id: number) => {
     await authFetch(`/nutrition/${id}`, { method: "DELETE" });
     setLogs((prev) => prev.filter((l) => l.id !== id));
+  };
+
+  // Attaches a photo to one specific logged meal - the design's generic
+  // top-level "Attach photo" button had no meal to attach to (its own
+  // photoOpen/photoAttached state wasn't tied to any log entry either,
+  // just a UI demo), so this migration moved the affordance onto each
+  // meal row's thumbnail instead, where there's an actual log_id for
+  // POST /nutrition/{id}/photo to target. Documented in PROJECT_STATUS.md.
+  const pickAndAttachPhoto = async (logId: number) => {
+    const permission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (!permission.granted) return;
+
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      quality: 0.7,
+    });
+    if (result.canceled || result.assets.length === 0) return;
+
+    const updated = await uploadPhoto<NutritionLog>(`/nutrition/${logId}/photo`, result.assets[0].uri);
+    setLogs((prev) => prev.map((l) => (l.id === logId ? { ...l, photo_url: updated.photo_url } : l)));
   };
 
   const totals = logs.reduce(
@@ -142,26 +161,7 @@ export default function Nutrition() {
             </View>
           </Card>
 
-          <View style={{ flexDirection: "row", gap: 10 }}>
-            <Button title="+ Log food" onPress={() => setIsAddOpen(true)} style={{ flex: 1 }} fullWidth={false} />
-            <Pressable
-              onPress={() => {
-                setIsPhotoOpen(true);
-                setPhotoAttached(false);
-              }}
-              style={{
-                flex: 1,
-                paddingVertical: 14,
-                borderRadius: 16,
-                borderWidth: 1.5,
-                borderColor: colors.border,
-                borderStyle: "dashed",
-                alignItems: "center",
-              }}
-            >
-              <Text style={{ color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 13 }}>Attach photo</Text>
-            </Pressable>
-          </View>
+          <Button title="+ Log food" onPress={() => setIsAddOpen(true)} />
 
           {logs.length === 0 ? (
             <View style={{ alignItems: "center", paddingVertical: 30 }}>
@@ -183,7 +183,27 @@ export default function Nutrition() {
             <View style={{ gap: 10 }}>
               {logs.map((log) => (
                 <Card key={log.id} variant="plain" style={{ borderRadius: 18, padding: 14, flexDirection: "row", alignItems: "center", gap: 12 }}>
-                  <View style={{ width: 44, height: 44, borderRadius: 12, backgroundColor: colors.cardAlt }} />
+                  <Pressable onPress={() => pickAndAttachPhoto(log.id)}>
+                    {log.photo_url ? (
+                      <Image
+                        source={{ uri: `${API_URL}${log.photo_url}` }}
+                        style={{ width: 44, height: 44, borderRadius: 12 }}
+                      />
+                    ) : (
+                      <View
+                        style={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: 12,
+                          backgroundColor: colors.cardAlt,
+                          alignItems: "center",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <Camera size={16} color={colors.textDim} />
+                      </View>
+                    )}
+                  </Pressable>
                   <View style={{ flex: 1 }}>
                     <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 13 }}>{log.food.name}</Text>
                     <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2, fontFamily: fonts.bodyRegular }}>
@@ -280,37 +300,6 @@ export default function Nutrition() {
           </View>
         )}
       </Sheet>
-
-      <CenterModal visible={isPhotoOpen} onClose={() => setIsPhotoOpen(false)} widthPct={78}>
-        {photoAttached ? (
-          <View style={{ width: "100%", height: 140, borderRadius: 16, backgroundColor: colors.cardAlt, alignItems: "flex-end", justifyContent: "flex-end", padding: 8 }}>
-            <Text style={{ fontSize: 9, fontFamily: "monospace", color: colors.text, backgroundColor: colors.card, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6 }}>
-              sample photo
-            </Text>
-          </View>
-        ) : (
-          <Pressable
-            onPress={() => setPhotoAttached(true)}
-            style={{
-              width: "100%",
-              height: 140,
-              borderRadius: 16,
-              borderWidth: 1.5,
-              borderStyle: "dashed",
-              borderColor: colors.border,
-              alignItems: "center",
-              justifyContent: "center",
-              gap: 10,
-            }}
-          >
-            <Camera size={26} color={colors.textDim} />
-            <Text style={{ fontSize: 11, color: colors.textDim, fontFamily: fonts.bodyBold }}>Tap to add photo</Text>
-          </Pressable>
-        )}
-        <Text style={{ fontSize: 11, color: colors.textDim, marginTop: 12, textAlign: "center", fontFamily: fonts.bodyRegular }}>
-          Photo uploads — coming soon, UI ready for it.
-        </Text>
-      </CenterModal>
     </ScreenBackground>
   );
 }

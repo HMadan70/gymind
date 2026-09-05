@@ -23,3 +23,28 @@ export async function authFetch<T = any>(path: string, options: RequestInit = {}
   if (response.status === 204) return undefined as T;
   return response.json();
 }
+
+// Multipart photo upload (meal photos, progress photos) - deliberately not
+// built on authFetch, since fetch/RN needs to set its own multipart
+// boundary in the Content-Type header; authFetch always forces
+// application/json whenever a body is present, which would break this.
+export async function uploadPhoto<T = any>(path: string, imageUri: string): Promise<T> {
+  const token = await AsyncStorage.getItem("token");
+  const filename = imageUri.split("/").pop() || "photo.jpg";
+  const extensionMatch = /\.(\w+)$/.exec(filename);
+  const extension = extensionMatch ? extensionMatch[1].toLowerCase() : "jpg";
+  const mimeType = extension === "png" ? "image/png" : extension === "webp" ? "image/webp" : "image/jpeg";
+
+  const formData = new FormData();
+  formData.append("file", { uri: imageUri, name: filename, type: mimeType } as any);
+
+  const response = await fetch(`${API_URL}${path}`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: formData,
+  });
+  if (!response.ok) {
+    throw new Error(`Photo upload to ${path} failed: ${response.status}`);
+  }
+  return response.json();
+}
