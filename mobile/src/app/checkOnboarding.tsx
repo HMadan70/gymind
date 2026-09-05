@@ -27,8 +27,8 @@ export default function CheckOnboarding() {
   }, []);
 
   return (
-    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.bgBase }}>
-      <Text style={{ color: colors.textPrimary }}>Checking your account...</Text>
+    <View style={{ flex: 1, justifyContent: "center", alignItems: "center", backgroundColor: colors.bg }}>
+      <Text style={{ color: colors.text }}>Checking your account...</Text>
     </View>
   );
 }
