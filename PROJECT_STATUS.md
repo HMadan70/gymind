@@ -1,6 +1,6 @@
 # Gymind — Project Documentation
 
-_Last updated: 2026-09-05_
+_Last updated: 2026-09-05 (Brand 2.0 Phase 3.5 step 1: theme foundation + accent_preset removal)_
 
 A fitness tracking app being built from scratch, learning as I go. This doc is the single source of truth for the project — architecture, what's built, what's planned, dev workflow, and the full design system.
 
@@ -59,16 +59,12 @@ Everything runs via `docker-compose.yml` on the home server. Ports are remapped 
 ```
 gymind/
 ├── backend/               # FastAPI app — complete (Section 8-9)
-├── mobile/                # Expo/React Native app — Phase 3 underway, Workout screen is current focus
-├── Design/
-│   ├── exports/           # "5c" era screen images — superseded by Brand 2.0 (Section 14), pending archive
-│   │   ├── mobile/        # 9 mobile screens
-│   │   ├── web/           # 9 web screens
-│   │   ├── base-token-reference.png
-│   │   └── theming-comparison-grid.png
-│   ├── Source/            # "5c" era Claude Design source files (.dc, support.js) — superseded
-│   └── (Brand 2.0 handoff not yet added — see Phase 3.5 in Section 11: BRAND_GUIDE.md, README.md,
-│         PUBLISHING_CHECKLIST.md, Gymind UI.dc.html, logo-mark.png, app-icon-1024.png, splash-screen.png)
+├── mobile/                # Expo/React Native app — Phase 3 underway, Brand 2.0 migration in progress
+├── Design2/               # Brand 2.0 handoff (added 2026-09-05) — BRAND_GUIDE.md, README.md,
+│   ├── brand/             # PUBLISHING_CHECKLIST.md, "Gymind UI.dc.html", brand/logo-mark.png,
+│   │                      # brand/app-icon-1024.png, brand/splash-screen.png
+│   └── (old "5c" era Design/exports/ and Design/Source/ no longer present on disk — removed
+│         outside this migration's own work, not archived as originally planned; see Section 10)
 ├── docker-compose.yml
 └── PROJECT_STATUS.md
 ```
@@ -168,13 +164,12 @@ pre-commit install
 **This table is now the gate for onboarding completion** — see Section 10, "Onboarding gate."
 
 ### `user_preferences` — ✅ built
-Supports the theming system (Section 14):
+Supports the theming system (Section 14). **`accent_preset` removed 2026-09-05** as part of the Brand 2.0 migration (Alembic migration `67cb5152a861` — see Section 13's migration workflow) — the new design uses a single fixed teal+gold+coral palette, no user-selectable accent presets:
 | Column | Type | Notes |
 |---|---|---|
 | `id` | serial | Primary key |
 | `user_id` | int (FK → users.id) | Unique — one row per user |
 | `theme_mode` | text, nullable | "dark" or "light" |
-| `accent_preset` | text, nullable | One of: Ember, Signal, Amber, Violet, Volt. **Decided 2026-09-05: being retired as part of the Brand 2.0 migration (Section 14) — the new design uses a single fixed teal+gold palette, no user-selectable accent presets. Column removal is an open migration task, see Section 11's Brand 2.0 phase.** |
 | `created_at` | timestamptz | Default now() |
 | `updated_at` | timestamptz | Default now(), updates on change |
 
@@ -394,6 +389,9 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
 - **Workout screen (`mobile/src/app/(tabs)/workout.tsx`) session header uses three-state logic**, not a single boolean: `SESSION LIVE` / `SESSION PAUSED` / `NOT STARTED`, driven by two separate pieces of state — `isRunning` (boolean) and `elapsedSeconds` (numeric timer) — rather than collapsing to one "started" flag. Matches the design's distinct visual treatment for each state.
 - **Workout screen stat cards (Volume, Sets, Best e1RM)** are computed via a single `stats` `useMemo` hook rather than three separate calculations, recalculating only when the underlying set data changes. Best e1RM reuses the same Epley formula already established on the backend (Section 10, above, and `/progress/e1rm`) rather than reimplementing it on the frontend.
 - **Collapsed exercise cards on the workout screen use three visual states** — `QUEUED` / `IN PROGRESS` / `COMPLETED` — with a checkmark badge shown only once every set in that exercise is marked complete.
+- **Brand 2.0 tokens are stored as sRGB (hex/rgba), not literal `oklch()` strings, even though the design source (`Design2/BRAND_GUIDE.md`, `Gymind UI.dc.html`) defines every color in OKLCH:** checked `@react-native/normalize-colors` against the installed RN version (0.86.3, Expo SDK 57) — it has no `oklch()`/`oklab()` parsing, so feeding those strings straight into RN style props would silently fail to render. Each token in `theme.ts` is the exact sRGB conversion of its OKLCH source value (standard OKLab matrices, CSS Color 4 spec), with the original `oklch(...)` value kept as an inline comment for traceability back to the design doc.
+- **RN `borderRadius` has no CSS shorthand-string support:** the design's cut-corner spec is written as a 4-value CSS shorthand (`30px 12px 30px 12px`, meaning TL/TR/BR/BL). `theme.ts`'s `shape` tokens store this as an explicit `{ borderTopLeftRadius, borderTopRightRadius, borderBottomRightRadius, borderBottomLeftRadius }` object per cut-corner spec instead, since RN only accepts individual numeric per-corner properties.
+- **`ThemeContext`'s `colors` value is still loosely typed (`createContext<any>`), not tightened to the new `ThemeColors` shape, even after the Brand 2.0 token rewrite:** several already-built screens (Login, Register, Onboarding, Workout, Settings, etc.) still reference old "5c" token names (`colors.bgBase`, `colors.accent`, `colors.on`, ...) pending their own re-skin pass (Phase 3.5 checklist, Section 11). Strictly typing `colors` now would fail `tsc --noEmit` on files this step deliberately didn't touch. Tightening the type is follow-up work once every consumer is migrated to the new token names.
 - **8 dead Expo Router scaffold files removed** from `/mobile` (leftover from the initial `create-expo-app` scaffolding, never referenced anywhere in the app). Confirmed zero references to each file before deleting, then verified a clean `tsc --noEmit` afterward with no new errors.
 
 ---
@@ -469,9 +467,9 @@ Four focused read-only aggregation endpoints rather than one mega-route, matchin
 
 ### Phase 3.5 — Brand 2.0 Visual Migration (new, 2026-09-05)
 Full migration from the old "5c" direction to the new Brand 2.0 system (Section 14-16). Decided: this is a full migration, not a partial reskin — `accent_preset` is being retired, not kept dormant.
-- [ ] Add the new handoff files to the repo (`Design/` — currently only on this machine, not committed): `BRAND_GUIDE.md`, `README.md`, `PUBLISHING_CHECKLIST.md`, `Gymind UI.dc.html`, `logo-mark.png`, `app-icon-1024.png`, `splash-screen.png`. Old `Design/exports/` and `Design/Source/` (the "5c" assets) should be archived/marked superseded, not deleted outright, in case anything needs to be referenced during migration.
-- [ ] Rewrite `mobile/src/constants/theme.ts` + `mobile/src/context/ThemeContext.tsx`: new token set (bg/card/cardAlt/border/text/textDim/primary-teal/secondary-gold/danger-coral/onPrimary, OKLCH-based, dark+light), drop the 5-preset accent system entirely
-- [ ] Backend: Alembic migration to drop `user_preferences.accent_preset`; remove the field from `schemas.py`/`profile_routes.py`
+- [x] Add the new handoff files to the repo — landed in `Design2/` (`BRAND_GUIDE.md`, `README.md`, `PUBLISHING_CHECKLIST.md`, `Gymind UI.dc.html`, `brand/logo-mark.png`, `brand/app-icon-1024.png`, `brand/splash-screen.png`). **Note:** the old `Design/exports/` and `Design/Source/` ("5c" assets) were removed from disk outside of this migration's own work rather than archived as originally planned — flagged, not reversed; nothing in the completed steps depended on them.
+- [x] Rewrite `mobile/src/constants/theme.ts` + `mobile/src/context/ThemeContext.tsx` — new token set (`bg`/`card`/`cardAlt`/`border`/`text`/`textDim`/`primary` (teal)/`secondary` (gold)/`danger` (coral, alert-only)/`onPrimary`, dark+light), drop the 5-preset accent system entirely. Also added `shape` (cut-corner container radii) and `motion` (timing) tokens per `BRAND_GUIDE.md`. See Section 10 for the OKLCH→sRGB conversion note — the design source values are OKLCH but React Native can't render that syntax directly.
+- [x] Backend: Alembic migration (`67cb5152a861_drop_user_preferences_accent_preset`) drops `user_preferences.accent_preset`; field removed from `models.py`/`schemas.py`. `profile_routes.py` needed no change (never referenced the field by name). All 27 backend tests pass.
 - [ ] Re-skin Login/Register (functionally complete, styled to the old design) to the new tokens/shape language — re-check the intentional deviations list (Section 17) still holds
 - [ ] Style Onboarding for the first time (currently functional but visually unstyled) — build it directly in Brand 2.0, no need to style it twice
 - [ ] Re-skin Workout screen: swap Ember left-edge-border cards for cut-corner containers + teal/gold, keep all existing logic (session state, stats, exercise states, PREV/TGT, notes, favoriting) untouched — this is a visual pass, not a logic rewrite
