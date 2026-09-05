@@ -1,9 +1,9 @@
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { useTheme } from "../../context/ThemeContext";
 import { useWorkoutSession } from "../../context/WorkoutSessionContext";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import { Trash2, ChevronDown, Check, Star, X } from "lucide-react-native";
+import { Trash2, ChevronDown, Check, Star, X, MoreHorizontal, Repeat } from "lucide-react-native";
 import { API_URL } from "../../constants/api";
 import { fonts } from "../../constants/theme";
 import { ScreenBackground } from "../../components/brand/ScreenBackground";
@@ -15,6 +15,7 @@ import { Chip } from "../../components/brand/Chip";
 import { Sheet } from "../../components/brand/Sheet";
 import { CenterModal } from "../../components/brand/CenterModal";
 import { PulseDot } from "../../components/brand/PulseDot";
+import { ProgressRing } from "../../components/brand/ProgressRing";
 
 type SetEntry = {
   id: string;
@@ -57,7 +58,19 @@ type ExerciseHistory = {
   suggested_target_weight: number | null;
 };
 
+type PastWorkout = { id: number; started_at: string; ended_at: string | null; total_volume: number; total_sets: number };
+
+type PastWorkoutSet = {
+  id: number;
+  exercise_id: number;
+  set_number: number;
+  weight: number | null;
+  reps: number | null;
+  exercise: { name: string; muscle_group: string };
+};
+
 const MUSCLE_GROUPS = ["chest", "back", "legs", "shoulders", "arms", "core"];
+const REST_SECONDS_DEFAULT = 90;
 
 const formatWorkoutDate = (iso: string) => {
   const date = new Date(iso);
@@ -87,9 +100,17 @@ export default function Workout() {
   const [openNoteFor, setOpenNoteFor] = useState<string | null>(null);
   const [noteDraft, setNoteDraft] = useState("");
   const [confirmFinish, setConfirmFinish] = useState(false);
-  const [pastWorkouts, setPastWorkouts] = useState<{ id: number; started_at: string; ended_at: string | null }[]>([]);
+  const [pastWorkouts, setPastWorkouts] = useState<PastWorkout[]>([]);
   const [isPastWorkoutsOpen, setIsPastWorkoutsOpen] = useState(false);
   const [pendingWorkoutDeletion, setPendingWorkoutDeletion] = useState<number | null>(null);
+  const [isOptionsOpen, setIsOptionsOpen] = useState(false);
+
+  const [restOpen, setRestOpen] = useState(false);
+  const [restRemaining, setRestRemaining] = useState(0);
+  const [restTotal, setRestTotal] = useState(REST_SECONDS_DEFAULT);
+  const restIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+
+  const [pastWorkoutDetail, setPastWorkoutDetail] = useState<{ id: number; sets: PastWorkoutSet[] } | null>(null);
 
   const stats = useMemo(() => {
     const allSets = exercises.flatMap((exercise) => exercise.sets);
@@ -239,6 +260,112 @@ export default function Workout() {
     setPendingWorkoutDeletion(null);
   };
 
+  const openPastWorkoutDetail = async (id: number) => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await fetch(`${API_URL}/workouts/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await response.json();
+    setPastWorkoutDetail({ id, sets: data.sets });
+  };
+
+  // Edits an already-logged set on a past (possibly finished) workout via
+  // PUT /workouts/{id}/sets/{set_id} - separate from syncSet, which only
+  // ever creates new sets on the *current* session.
+  const updatePastSet = async (setId: number, updates: { weight?: number; reps?: number }) => {
+    if (!pastWorkoutDetail) return;
+    setPastWorkoutDetail((prev) =>
+      prev
+        ? { ...prev, sets: prev.sets.map((s) => (s.id === setId ? { ...s, ...updates } : s)) }
+        : prev
+    );
+    const token = await AsyncStorage.getItem("token");
+    await fetch(`${API_URL}/workouts/${pastWorkoutDetail.id}/sets/${setId}`, {
+      method: "PUT",
+      headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+      body: JSON.stringify(updates),
+    });
+    fetchPastWorkouts(); // totals may have changed
+  };
+
+  // Repopulates the current exercise list from a past session's exercises
+  // (same exercises, blank sets ready to log fresh) - doesn't start a
+  // session or copy over old numbers, just sets up the picker-equivalent
+  // groundwork so the user isn't re-adding each exercise by hand.
+  const repeatWorkout = async (id: number) => {
+    const token = await AsyncStorage.getItem("token");
+    const response = await fetch(`${API_URL}/workouts/${id}`, {
+      headers: { Authorization: `Bearer ${token}` },
+    });
+    const data = await response.json();
+
+    const byExercise = new Map<number, { name: string; count: number }>();
+    for (const set of data.sets as PastWorkoutSet[]) {
+      const existing = byExercise.get(set.exercise_id);
+      if (existing) existing.count += 1;
+      else byExercise.set(set.exercise_id, { name: set.exercise.name, count: 1 });
+    }
+
+    const newExercises: ExerciseEntry[] = [...byExercise.entries()].map(([exerciseId, { name, count }]) => ({
+      id: `${Date.now()}-${exerciseId}`,
+      name,
+      exerciseId,
+      sets: Array.from({ length: count }, () => ({
+        id: `${Date.now()}-${Math.random()}`,
+        weight: 0,
+        weightText: "",
+        reps: 0,
+        repsText: "",
+        completed: false,
+      })),
+    }));
+
+    setExercises(newExercises);
+    newExercises.forEach((ex) => {
+      if (ex.exerciseId !== undefined) fetchExerciseHistory(ex.id, ex.exerciseId);
+    });
+    setIsPastWorkoutsOpen(false);
+  };
+
+  const discardWorkout = async () => {
+    setIsOptionsOpen(false);
+    if (workoutId !== null) {
+      const token = await AsyncStorage.getItem("token");
+      await fetch(`${API_URL}/workouts/${workoutId}`, {
+        method: "DELETE",
+        headers: { Authorization: `Bearer ${token}` },
+      });
+    }
+    resetWorkout();
+  };
+
+  const openRest = (secs: number = REST_SECONDS_DEFAULT) => {
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    setRestOpen(true);
+    setRestRemaining(secs);
+    setRestTotal(secs);
+    restIntervalRef.current = setInterval(() => {
+      setRestRemaining((prev) => {
+        if (prev <= 1) {
+          if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+          setRestOpen(false);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const addRest15 = () => {
+    setRestRemaining((prev) => prev + 15);
+    setRestTotal((prev) => prev + 15);
+  };
+
+  const skipRest = () => {
+    if (restIntervalRef.current) clearInterval(restIntervalRef.current);
+    setRestOpen(false);
+  };
+
   const toggleFavorite = async (option: ExerciseOption, isFavorited: boolean) => {
     const token = await AsyncStorage.getItem("token");
     await fetch(`${API_URL}/exercises/${option.id}/favorite`, {
@@ -383,9 +510,14 @@ export default function Workout() {
                 </Text>
               </View>
               {hasStarted && (
-                <Pressable onPress={() => setConfirmFinish(true)}>
-                  <Text style={{ fontSize: 12, fontFamily: fonts.bodyExtraBold, color: colors.danger }}>Finish</Text>
-                </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 14 }}>
+                  <Pressable onPress={() => setConfirmFinish(true)}>
+                    <Text style={{ fontSize: 12, fontFamily: fonts.bodyExtraBold, color: colors.danger }}>Finish</Text>
+                  </Pressable>
+                  <Pressable onPress={() => setIsOptionsOpen(true)} hitSlop={8}>
+                    <MoreHorizontal size={18} color={colors.textDim} />
+                  </Pressable>
+                </View>
               )}
             </View>
 
@@ -613,6 +745,7 @@ export default function Workout() {
                           value={set.weightText ?? ""}
                           onChangeText={(text) => {
                             if (!/^\d*\.?\d*$/.test(text)) return;
+                            if (!hasStarted && text !== "") startSession();
                             const updates: Partial<SetEntry> = { weightText: text };
                             if (text === "") {
                               updates.weight = 0;
@@ -645,6 +778,7 @@ export default function Workout() {
                           value={set.repsText ?? ""}
                           onChangeText={(text) => {
                             if (!/^\d*$/.test(text)) return;
+                            if (!hasStarted && text !== "") startSession();
                             updateSet(exercise.id, set.id, {
                               repsText: text,
                               reps: text === "" ? 0 : Number(text),
@@ -663,6 +797,9 @@ export default function Workout() {
                           if (set.weight > 0 && set.reps > 0) {
                             updateSet(exercise.id, set.id, { completed: true });
                             syncSet(exercise, { ...set, completed: true });
+                            // Skip opening the rest timer on what looks like
+                            // the last remaining set in the whole session.
+                            if (stats.completedSets + 1 < stats.plannedSets) openRest();
                           }
                         }}
                         style={{
@@ -886,17 +1023,23 @@ export default function Workout() {
                   borderBottomColor: colors.border,
                 }}
               >
-                <View>
+                <Pressable onPress={() => openPastWorkoutDetail(workout.id)} style={{ flex: 1 }}>
                   <Text style={{ color: colors.text, fontFamily: fonts.bodyMedium, fontSize: 13 }}>
                     {formatWorkoutDate(workout.started_at)}
                   </Text>
                   <Text style={{ color: colors.textDim, fontSize: 11, marginTop: 2 }}>
-                    {workout.ended_at ? "Finished" : "Not finished"}
+                    {workout.ended_at ? "Finished" : "Not finished"} · {Math.round(workout.total_volume).toLocaleString()} lb ·{" "}
+                    {workout.total_sets} set{workout.total_sets === 1 ? "" : "s"}
                   </Text>
-                </View>
-                <Pressable onPress={() => setPendingWorkoutDeletion(workout.id)} hitSlop={8}>
-                  <Trash2 size={16} color={colors.textDim} />
                 </Pressable>
+                <View style={{ flexDirection: "row", alignItems: "center", gap: 16 }}>
+                  <Pressable onPress={() => repeatWorkout(workout.id)} hitSlop={8}>
+                    <Repeat size={16} color={colors.primary} />
+                  </Pressable>
+                  <Pressable onPress={() => setPendingWorkoutDeletion(workout.id)} hitSlop={8}>
+                    <Trash2 size={16} color={colors.textDim} />
+                  </Pressable>
+                </View>
               </View>
             ))
           )}
@@ -953,6 +1096,127 @@ export default function Workout() {
           />
         </View>
       </CenterModal>
+
+      {/* Rest timer */}
+      <CenterModal visible={restOpen} onClose={skipRest} widthPct={70}>
+        <View style={{ alignItems: "center" }}>
+          <Text style={{ fontSize: 12, fontFamily: fonts.bodyExtraBold, color: colors.textDim, letterSpacing: 0.7, textTransform: "uppercase", marginBottom: 14 }}>
+            Rest
+          </Text>
+          <ProgressRing
+            size={140}
+            strokeWidth={10}
+            progress={restTotal ? restRemaining / restTotal : 0}
+            trackColor={colors.cardAlt}
+            progressColor={colors.danger}
+            linear
+          >
+            <Text style={{ fontFamily: fonts.headingBold, fontSize: 30, color: colors.text }}>
+              {String(Math.floor(restRemaining / 60)).padStart(2, "0")}:{String(restRemaining % 60).padStart(2, "0")}
+            </Text>
+          </ProgressRing>
+          <View style={{ flexDirection: "row", gap: 10, marginTop: 20 }}>
+            <Pressable
+              onPress={addRest15}
+              style={{ paddingVertical: 10, paddingHorizontal: 18, borderRadius: 14, backgroundColor: colors.cardAlt }}
+            >
+              <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 13 }}>+15s</Text>
+            </Pressable>
+            <Pressable
+              onPress={skipRest}
+              style={{ paddingVertical: 10, paddingHorizontal: 18, borderRadius: 14, backgroundColor: colors.primary }}
+            >
+              <Text style={{ color: colors.onPrimary, fontFamily: fonts.bodyExtraBold, fontSize: 13 }}>Skip</Text>
+            </Pressable>
+          </View>
+        </View>
+      </CenterModal>
+
+      {/* Finish-session secondary options */}
+      <Sheet visible={isOptionsOpen} onClose={() => setIsOptionsOpen(false)}>
+        <Pressable
+          onPress={() => {
+            setIsOptionsOpen(false);
+            setConfirmFinish(true);
+          }}
+          style={{ paddingVertical: 14 }}
+        >
+          <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 14 }}>Finish workout</Text>
+        </Pressable>
+        <Pressable onPress={discardWorkout} style={{ paddingVertical: 14 }}>
+          <Text style={{ color: colors.danger, fontFamily: fonts.bodyBold, fontSize: 14 }}>Discard workout</Text>
+        </Pressable>
+        <Pressable onPress={() => setIsOptionsOpen(false)} style={{ paddingVertical: 14 }}>
+          <Text style={{ color: colors.textDim, fontFamily: fonts.bodyBold, fontSize: 14 }}>Cancel</Text>
+        </Pressable>
+      </Sheet>
+
+      {/* Past workout detail — edit already-logged sets */}
+      <Sheet visible={pastWorkoutDetail !== null} onClose={() => setPastWorkoutDetail(null)} maxHeightPct={75}>
+        <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 16, marginBottom: 12 }}>
+          Edit logged sets
+        </Text>
+        <ScrollView style={{ maxHeight: 420 }}>
+          {pastWorkoutDetail?.sets.map((set) => (
+            <View key={set.id} style={{ flexDirection: "row", alignItems: "center", gap: 8, marginBottom: 10 }}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: colors.text, fontFamily: fonts.bodyBold, fontSize: 13 }}>{set.exercise.name}</Text>
+                <Text style={{ color: colors.textDim, fontSize: 11 }}>Set {set.set_number}</Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: colors.bg,
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <TextInput
+                  defaultValue={set.weight?.toString() ?? ""}
+                  onEndEditing={(e) => {
+                    const value = Number(e.nativeEvent.text);
+                    if (!isNaN(value)) updatePastSet(set.id, { weight: value });
+                  }}
+                  placeholder="0"
+                  placeholderTextColor={colors.textDim}
+                  keyboardType="decimal-pad"
+                  style={{ color: colors.text, width: 40, fontSize: 12, fontFamily: fonts.bodyMedium }}
+                />
+                <Text style={{ color: colors.textDim, marginLeft: 3, fontSize: 11 }}>lb</Text>
+              </View>
+              <View
+                style={{
+                  flexDirection: "row",
+                  alignItems: "center",
+                  backgroundColor: colors.bg,
+                  borderRadius: 8,
+                  paddingHorizontal: 8,
+                  paddingVertical: 6,
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                }}
+              >
+                <TextInput
+                  defaultValue={set.reps?.toString() ?? ""}
+                  onEndEditing={(e) => {
+                    const value = Number(e.nativeEvent.text);
+                    if (!isNaN(value)) updatePastSet(set.id, { reps: value });
+                  }}
+                  placeholder="0"
+                  placeholderTextColor={colors.textDim}
+                  keyboardType="number-pad"
+                  style={{ color: colors.text, width: 32, fontSize: 12, fontFamily: fonts.bodyMedium }}
+                />
+                <Text style={{ color: colors.textDim, marginLeft: 3, fontSize: 11 }}>rp</Text>
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+      </Sheet>
     </ScreenBackground>
   );
 }
