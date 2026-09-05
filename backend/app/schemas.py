@@ -62,7 +62,6 @@ class UserProfileOut(UserProfileIn):
 
 class UserPreferenceIn(BaseModel):
     theme_mode: Optional[str] = None
-    accent_preset: Optional[str] = None
 
 class UserPreferenceOut(UserPreferenceIn):
     id: int
