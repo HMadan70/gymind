@@ -81,12 +81,12 @@ export default function Login() {
       </View>
 
       <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 8, marginBottom: 20 }}>
-        <Text style={{ color: colors.accent }}>Forgot?</Text>
+        <Text style={{ color: colors.teal }}>Forgot?</Text>
       </View>
 
       <Pressable
         onPress={handleSubmit}
-        style={{ backgroundColor: colors.accent, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
+        style={{ backgroundColor: colors.teal, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
       >
         <Text style={{ color: colors.on, fontWeight: "600" }}>Log In</Text>
       </Pressable>
@@ -114,7 +114,7 @@ export default function Login() {
 
       <Link href="/register" style={{ marginTop: 16 }}>
         <Text style={{ color: colors.textDim }}>
-          Don't have an account? <Text style={{ color: colors.accent }}>Sign up</Text>
+          Don't have an account? <Text style={{ color: colors.teal }}>Sign up</Text>
         </Text>
       </Link>
 

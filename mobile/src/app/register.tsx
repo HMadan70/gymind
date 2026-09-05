@@ -145,7 +145,7 @@ export default function Register() {
               flex: 1,
               height: 4,
               borderRadius: 2,
-              backgroundColor: i < strength ? colors.accent : colors.border,
+              backgroundColor: i < strength ? colors.teal : colors.border,
             }}
           />
         ))}
@@ -192,29 +192,29 @@ export default function Register() {
           height: 22,
           borderRadius: 6,
           borderWidth: 1,
-          borderColor: agreedToTerms ? colors.accent : colors.border,
-          backgroundColor: agreedToTerms ? colors.accent : "transparent",
+          borderColor: agreedToTerms ? colors.teal : colors.border,
+          backgroundColor: agreedToTerms ? colors.teal : "transparent",
           alignItems: "center",
           justifyContent: "center",
         }}>
           {agreedToTerms && <Text style={{ color: colors.on, fontSize: 13 }}>✓</Text>}
         </View>
         <Text style={{ color: colors.textDim, flex: 1 }}>
-          I agree to the <Text style={{ color: colors.accent }}>Terms</Text> and{" "}
-          <Text style={{ color: colors.accent }}>Privacy Policy</Text>.
+          I agree to the <Text style={{ color: colors.teal }}>Terms</Text> and{" "}
+          <Text style={{ color: colors.teal }}>Privacy Policy</Text>.
         </Text>
       </Pressable>
 
       <Pressable
         onPress={handleSubmit}
-        style={{ backgroundColor: colors.accent, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
+        style={{ backgroundColor: colors.teal, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
       >
         <Text style={{ color: colors.on, fontWeight: "600" }}>Create account</Text>
       </Pressable>
 
       <Link href="/login" style={{ marginTop: 16, alignSelf: "center" }}>
         <Text style={{ color: colors.textDim }}>
-          Already have an account? <Text style={{ color: colors.accent }}>Log in</Text>
+          Already have an account? <Text style={{ color: colors.teal }}>Log in</Text>
         </Text>
       </Link>
     </View>

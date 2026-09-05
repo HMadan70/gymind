@@ -20,7 +20,7 @@ export default function Index() {
 
   return (
     <View style={{ flex: 1, backgroundColor: colors.bgBase, justifyContent: "center", alignItems: "center" }}>
-      <ActivityIndicator color={colors.accent} />
+      <ActivityIndicator color={colors.teal} />
     </View>
   );
 }

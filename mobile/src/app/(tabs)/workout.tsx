@@ -374,8 +374,8 @@ export default function Workout() {
           alignItems: "center",
         }}
       >
-        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.accent, marginRight: 8 }} />
-        <Text style={{ color: colors.accent, fontSize: 12, letterSpacing: 1 }}>
+        <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: colors.teal, marginRight: 8 }} />
+        <Text style={{ color: colors.teal, fontSize: 12, letterSpacing: 1 }}>
           {isRunning ? "SESSION LIVE" : elapsedSeconds > 0 ? "SESSION PAUSED" : "NOT STARTED"}
         </Text>
       </View>
@@ -492,8 +492,8 @@ export default function Workout() {
                 {exercise.name}
               </Text>
 
-              <View style={{ backgroundColor: colors.soft, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
-                <Text style={{ color: colors.accent, fontWeight: "bold" }}>
+              <View style={{ backgroundColor: colors.tealSoft, borderRadius: 8, paddingHorizontal: 10, paddingVertical: 4 }}>
+                <Text style={{ color: colors.teal, fontWeight: "bold" }}>
                   {currentOrCompletedSetNumber}/{totalRows}
                 </Text>
               </View>
@@ -652,13 +652,13 @@ export default function Workout() {
                 onPress={() => toggleExerciseExpanded(exercise.id)}
                 style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}
               >
-                <Text style={{ color: colors.accent, fontWeight: "600" }}>Done</Text>
+                <Text style={{ color: colors.teal, fontWeight: "600" }}>Done</Text>
               </Pressable>
 
               <Pressable onPress={() => openNoteEditor(exercise)} style={{ flex: 1, alignItems: "center", paddingVertical: 6 }}>
                 <Text
                   style={{
-                    color: notesByExercise[exercise.id] ? colors.accent : colors.textPrimary,
+                    color: notesByExercise[exercise.id] ? colors.teal : colors.textPrimary,
                     fontWeight: "600",
                   }}
                 >
@@ -683,7 +683,7 @@ export default function Workout() {
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                   <Pressable
                     onPress={() => saveNote(exercise)}
-                    style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 8, alignItems: "center" }}
+                    style={{ flex: 1, backgroundColor: colors.teal, borderRadius: 8, padding: 8, alignItems: "center" }}
                   >
                     <Text style={{ color: colors.on }}>Save</Text>
                   </Pressable>
@@ -729,7 +729,7 @@ export default function Workout() {
                         <Text style={{ color: colors.textPrimary }}>{fav.name}</Text>
                       </Pressable>
                       <Pressable onPress={() => toggleFavorite(fav, true)}>
-                        <Text style={{ color: colors.accent }}>★</Text>
+                        <Text style={{ color: colors.teal }}>★</Text>
                       </Pressable>
                     </View>
                   ))}
@@ -750,7 +750,7 @@ export default function Workout() {
                 key={group}
                 onPress={() => toggleMuscleGroupFilter(group)}
                 style={{
-                  backgroundColor: activeMuscleGroup === group ? colors.accent : colors.bgInset,
+                  backgroundColor: activeMuscleGroup === group ? colors.teal : colors.bgInset,
                   borderRadius: 8,
                   paddingHorizontal: 10,
                   paddingVertical: 6,
@@ -817,7 +817,7 @@ export default function Workout() {
           }}
           style={{
             borderWidth: 1,
-            borderColor: colors.accent,
+            borderColor: colors.teal,
             borderStyle: "dashed",
             padding: 14,
             borderRadius: 12,

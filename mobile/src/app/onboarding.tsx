@@ -74,8 +74,8 @@ function OptionCard({
         padding: 16,
         borderRadius: 16,
         borderWidth: 1,
-        borderColor: selected ? colors.accent : colors.border,
-        backgroundColor: selected ? colors.soft : colors.bgCard,
+        borderColor: selected ? colors.teal : colors.border,
+        backgroundColor: selected ? colors.tealSoft : colors.bgCard,
       }}
     >
       <View
@@ -83,7 +83,7 @@ function OptionCard({
           width: 44,
           height: 44,
           borderRadius: 10,
-          backgroundColor: selected ? colors.accent : colors.bgInset,
+          backgroundColor: selected ? colors.teal : colors.bgInset,
           alignItems: "center",
           justifyContent: "center",
         }}
@@ -104,8 +104,8 @@ function OptionCard({
           height: 24,
           borderRadius: 12,
           borderWidth: 1,
-          borderColor: selected ? colors.accent : colors.border,
-          backgroundColor: selected ? colors.accent : "transparent",
+          borderColor: selected ? colors.teal : colors.border,
+          backgroundColor: selected ? colors.teal : "transparent",
         }}
       >
         {selected && <Text style={{ color: colors.on, fontSize: 15 }}> ✓ </Text>}
@@ -214,7 +214,7 @@ export default function Onboarding() {
             style={{
               flex: 1,
               height: 4,
-              backgroundColor: i <= step ? colors.accent : colors.border,
+              backgroundColor: i <= step ? colors.teal : colors.border,
             }}
           />
         ))}
@@ -297,11 +297,11 @@ export default function Onboarding() {
                     paddingHorizontal: 16,
                     borderRadius: 999,
                     borderWidth: 1,
-                    borderColor: selected ? colors.accent : colors.border,
-                    backgroundColor: selected ? colors.soft : colors.bgCard,
+                    borderColor: selected ? colors.teal : colors.border,
+                    backgroundColor: selected ? colors.tealSoft : colors.bgCard,
                   }}
                 >
-                  <Text style={{ color: selected ? colors.accent : colors.textPrimary }}>{item}</Text>
+                  <Text style={{ color: selected ? colors.teal : colors.textPrimary }}>{item}</Text>
                 </Pressable>
               );
             })}
@@ -322,11 +322,11 @@ export default function Onboarding() {
                     paddingHorizontal: 16,
                     borderRadius: 999,
                     borderWidth: 1,
-                    borderColor: selected ? colors.accent : colors.border,
-                    backgroundColor: selected ? colors.soft : colors.bgCard,
+                    borderColor: selected ? colors.teal : colors.border,
+                    backgroundColor: selected ? colors.tealSoft : colors.bgCard,
                   }}
                 >
-                  <Text style={{ color: selected ? colors.accent : colors.textPrimary }}>{item}</Text>
+                  <Text style={{ color: selected ? colors.teal : colors.textPrimary }}>{item}</Text>
                 </Pressable>
               );
             })}
@@ -360,7 +360,7 @@ export default function Onboarding() {
             flex: 1,
             height: 52,
             borderRadius: 16,
-            backgroundColor: canContinue() ? colors.accent : colors.border,
+            backgroundColor: canContinue() ? colors.teal : colors.border,
             alignItems: "center",
             justifyContent: "center",
           }}
