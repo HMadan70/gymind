@@ -1,21 +1,27 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useTheme } from "../context/ThemeContext";
+import { fonts } from "../constants/theme";
 import { API_URL } from "../constants/api";
-import Mark from "../assets/mark.svg";
+import { ScreenBackground } from "../components/brand/ScreenBackground";
+import { AnimatedScreen } from "../components/brand/AnimatedScreen";
+import { BrandMark } from "../components/brand/BrandMark";
+import { Field } from "../components/brand/Field";
+import { Button } from "../components/brand/Button";
 
 export default function Login() {
   const { colors } = useTheme();
   const router = useRouter();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   async function handleSubmit() {
     setError("");
+    setSubmitting(true);
     try {
       const response = await fetch(`${API_URL}/auth/login`, {
         method: "POST",
@@ -33,91 +39,93 @@ export default function Login() {
       router.replace("/");
     } catch (err) {
       setError("Could not reach the server");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgBase, paddingTop: 60, paddingHorizontal: 20 }}>
-
-      <Mark width={72} height={72}> </Mark>
-
-      <Text style={{ color: colors.textPrimary, fontSize: 32, marginTop: 24, marginBottom: 8, fontWeight: "bold" }}>Welcome back</Text>
-
-      <Text style={{ color: colors.textDim, fontSize: 15, marginBottom: 24 }}>Log your next session in seconds.</Text>
-
-      {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
-
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginBottom: 8 }}>EMAIL OR USERNAME</Text>
-      <TextInput
-        placeholder="Email or username"
-        placeholderTextColor={colors.textFaint}
-        value={identifier}
-        onChangeText={setIdentifier}
-        autoCapitalize="none"
-        style={{ width: "100%", borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, color: colors.textPrimary, marginBottom: 12 }}
-      />
-
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginBottom: 8 }}>PASSWORD</Text>
-      <View style={{
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-      }}>
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor={colors.textFaint}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          style={{ flex: 1, paddingVertical: 12, color: colors.textPrimary }}
-        />
-        <Pressable onPress={() => setShowPassword(!showPassword)}>
-          <Text style={{ color: colors.textDim }}>{showPassword ? "Hide" : "Show"}</Text>
-        </Pressable>
-      </View>
-
-      <View style={{ flexDirection: "row", justifyContent: "flex-end", marginTop: 8, marginBottom: 20 }}>
-        <Text style={{ color: colors.accent }}>Forgot?</Text>
-      </View>
-
-      <Pressable
-        onPress={handleSubmit}
-        style={{ backgroundColor: colors.accent, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
-      >
-        <Text style={{ color: colors.on, fontWeight: "600" }}>Log In</Text>
-      </Pressable>
-
-      <View style={{ flexDirection: "row", alignItems: "center", marginVertical: 24 }}>
-        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-        <Text style={{ color: colors.textDim, marginHorizontal: 12 }}>OR</Text>
-        <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
-      </View>
-
-      <View style={{ flexDirection: "row", gap: 12, marginBottom: 24 }}>
-        <Pressable
-          onPress={() => {}}
-          style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundColor: colors.bgCard }}
+    <ScreenBackground>
+      <AnimatedScreen>
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 64, paddingHorizontal: 26, paddingBottom: 30, flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
         >
-          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Apple</Text>
-        </Pressable>
-        <Pressable
-          onPress={() => {}}
-          style={{ flex: 1, borderWidth: 1, borderColor: colors.border, borderRadius: 12, paddingVertical: 12, alignItems: "center", backgroundColor: colors.bgCard }}
-        >
-          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Google</Text>
-        </Pressable>
-      </View>
+          <BrandMark size={52} />
 
-      <Link href="/register" style={{ marginTop: 16 }}>
-        <Text style={{ color: colors.textDim }}>
-          Don't have an account? <Text style={{ color: colors.accent }}>Sign up</Text>
-        </Text>
-      </Link>
+          <Text
+            style={{
+              fontFamily: fonts.headingBold,
+              fontSize: 28,
+              color: colors.text,
+              marginTop: 20,
+              marginBottom: 6,
+            }}
+          >
+            Welcome back
+          </Text>
+          <Text style={{ fontFamily: fonts.bodyRegular, fontSize: 14, color: colors.textDim, marginBottom: 28 }}>
+            Log in to keep your streak going.
+          </Text>
 
-    </View>
+          {error ? (
+            <Text style={{ color: colors.danger, marginBottom: 12, fontFamily: fonts.bodyMedium }}>{error}</Text>
+          ) : null}
+
+          <View style={{ gap: 14 }}>
+            <Field
+              label="Email or username"
+              placeholder="you@example.com"
+              value={identifier}
+              onChangeText={setIdentifier}
+              autoCapitalize="none"
+            />
+            <Field
+              label="Password"
+              placeholder="••••••••"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry
+            />
+            {/* Intentional deviation from the design (kept from pre-Brand-2.0
+                decision, PROJECT_STATUS.md Section 17): "Forgot?" sits on its
+                own row below the password field rather than inline with the
+                PASSWORD label. */}
+            <Pressable style={{ alignSelf: "flex-end" }}>
+              <Text style={{ color: colors.primary, fontSize: 12, fontFamily: fonts.bodyBold }}>Forgot?</Text>
+            </Pressable>
+          </View>
+
+          <Button
+            title="Log in"
+            onPress={handleSubmit}
+            loading={submitting}
+            style={{ marginTop: 22 }}
+          />
+
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 22 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <Text style={{ fontSize: 11, color: colors.textDim, fontFamily: fonts.bodyBold }}>OR</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
+
+          {/* Intentional deviation (Section 17): visually present but inert —
+              no OAuth wired up. */}
+          <View style={{ gap: 10 }}>
+            <Button title="Continue with Apple" onPress={() => {}} variant="outline" />
+            <Button title="Continue with Google" onPress={() => {}} variant="outline" />
+          </View>
+
+          <View style={{ flex: 1 }} />
+
+          <Pressable onPress={() => router.push("/register")} style={{ paddingTop: 24 }}>
+            <Text style={{ color: colors.textDim, fontSize: 13, textAlign: "center", fontFamily: fonts.bodyRegular }}>
+              New here?{" "}
+              <Text style={{ color: colors.primary, fontFamily: fonts.bodyExtraBold }}>Create account</Text>
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </AnimatedScreen>
+    </ScreenBackground>
   );
 }

@@ -17,6 +17,19 @@
 
 export type ThemeMode = "dark" | "light";
 
+// Typography (BRAND_GUIDE.md "Typography") — Space Grotesk 600/700 for
+// headings/titles/large numerals, Manrope 400-800 for everything else.
+// Font family names match the @expo-google-fonts/* packages' exported keys.
+export const fonts = {
+  headingSemiBold: "SpaceGrotesk_600SemiBold",
+  headingBold: "SpaceGrotesk_700Bold",
+  bodyRegular: "Manrope_400Regular",
+  bodyMedium: "Manrope_500Medium",
+  bodySemiBold: "Manrope_600SemiBold",
+  bodyBold: "Manrope_700Bold",
+  bodyExtraBold: "Manrope_800ExtraBold",
+} as const;
+
 export const baseTokens = {
   dark: {
     bg: "#040f15", // oklch(0.16 0.022 228)

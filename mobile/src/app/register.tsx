@@ -1,10 +1,16 @@
 import { useState } from "react";
-import { View, Text, TextInput, Pressable } from "react-native";
-import { Link, useRouter } from "expo-router";
+import { View, Text, Pressable, ScrollView } from "react-native";
+import { useRouter } from "expo-router";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { ChevronLeft, Check } from "lucide-react-native";
 import { useTheme } from "../context/ThemeContext";
+import { fonts } from "../constants/theme";
 import { API_URL } from "../constants/api";
-import Mark from "../assets/mark.svg";
+import { ScreenBackground } from "../components/brand/ScreenBackground";
+import { AnimatedScreen } from "../components/brand/AnimatedScreen";
+import { BrandMark } from "../components/brand/BrandMark";
+import { Field } from "../components/brand/Field";
+import { Button } from "../components/brand/Button";
 
 export default function Register() {
   const { colors } = useTheme();
@@ -13,10 +19,9 @@ export default function Register() {
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
+  const [submitting, setSubmitting] = useState(false);
 
   // Password strength: 0-4, based on simple checks (length, uppercase, number, symbol)
   function getPasswordStrength(pw: string) {
@@ -29,8 +34,8 @@ export default function Register() {
   }
 
   const strength = getPasswordStrength(password);
-  const strengthLabels = ["", "Weak", "Fair", "Good", "Strong"];
-  const strengthLabel = password.length > 0 ? strengthLabels[strength] : "";
+  const segmentColor =
+    strength <= 1 ? colors.danger : strength <= 2 ? colors.secondary : colors.primary;
 
   async function handleSubmit() {
     setError("");
@@ -39,22 +44,20 @@ export default function Register() {
       setError("Password must be at least 8 characters");
       return;
     }
-
     if (!/[A-Z]/.test(password)) {
       setError("Password must include at least one uppercase letter");
       return;
     }
-
     if (password !== confirmPassword) {
       setError("Passwords do not match");
       return;
     }
-
     if (!agreedToTerms) {
       setError("You must agree to the Terms and Privacy Policy");
       return;
     }
 
+    setSubmitting(true);
     try {
       const response = await fetch(`${API_URL}/auth/register`, {
         method: "POST",
@@ -72,151 +75,122 @@ export default function Register() {
       router.replace("/checkOnboarding");
     } catch (err) {
       setError("An error occurred");
+    } finally {
+      setSubmitting(false);
     }
   }
 
   return (
-    <View style={{ flex: 1, backgroundColor: colors.bgBase, paddingTop: 60, paddingHorizontal: 20 }}>
+    <ScreenBackground>
+      <AnimatedScreen>
+        <ScrollView
+          contentContainerStyle={{ paddingTop: 64, paddingHorizontal: 26, paddingBottom: 30, flexGrow: 1 }}
+          keyboardShouldPersistTaps="handled"
+        >
+          <Pressable
+            onPress={() => router.push("/login")}
+            style={{ flexDirection: "row", alignItems: "center", marginBottom: 20, alignSelf: "flex-start" }}
+          >
+            <ChevronLeft size={16} color={colors.textDim} />
+            <Text style={{ color: colors.textDim, fontSize: 13, fontFamily: fonts.bodyBold }}>Log in</Text>
+          </Pressable>
 
-      <Link href="/login" style={{ marginBottom: 24 }}>
-        <Text style={{ color: colors.textDim }}>‹ Log in</Text>
-      </Link>
+          <BrandMark size={52} />
 
-      <Mark width={72} height={72} />
+          <Text
+            style={{ fontFamily: fonts.headingBold, fontSize: 28, color: colors.text, marginTop: 20, marginBottom: 6 }}
+          >
+            Create account
+          </Text>
+          <Text style={{ fontFamily: fonts.bodyRegular, fontSize: 14, color: colors.textDim, marginBottom: 24 }}>
+            Start tracking in under a minute.
+          </Text>
 
-      <Text style={{ color: colors.textPrimary, fontSize: 32, marginTop: 24, marginBottom: 8, fontWeight: "bold" }}>
-        Create your account
-      </Text>
-      <Text style={{ color: colors.textDim, fontSize: 15, marginBottom: 24 }}>
-        Two minutes, then straight into onboarding.
-      </Text>
+          {error ? (
+            <Text style={{ color: colors.danger, marginBottom: 12, fontFamily: fonts.bodyMedium }}>{error}</Text>
+          ) : null}
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
+          <View style={{ gap: 14 }}>
+            <Field label="Username" placeholder="yourname" value={username} onChangeText={setUsername} autoCapitalize="none" />
+            <Field label="Email" placeholder="you@example.com" value={email} onChangeText={setEmail} autoCapitalize="none" />
+            <View>
+              <Field
+                label="Password"
+                placeholder="8+ characters, 1 uppercase"
+                value={password}
+                onChangeText={setPassword}
+                secureTextEntry
+              />
+              <View style={{ flexDirection: "row", gap: 5, marginTop: 8 }}>
+                {[0, 1, 2, 3].map((i) => (
+                  <View
+                    key={i}
+                    style={{
+                      flex: 1,
+                      height: 5,
+                      borderRadius: 999,
+                      backgroundColor: i < strength ? segmentColor : colors.cardAlt,
+                    }}
+                  />
+                ))}
+              </View>
+            </View>
+            <Field
+              label="Confirm password"
+              placeholder="••••••••"
+              value={confirmPassword}
+              onChangeText={setConfirmPassword}
+              secureTextEntry
+            />
+          </View>
 
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginBottom: 8 }}>USERNAME</Text>
-      <TextInput
-        placeholder="alex.mercer"
-        placeholderTextColor={colors.textFaint}
-        value={username}
-        onChangeText={setUsername}
-        autoCapitalize="none"
-        style={{ width: "100%", borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, color: colors.textPrimary, marginBottom: 16 }}
-      />
+          <Pressable
+            onPress={() => setAgreedToTerms(!agreedToTerms)}
+            style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 18 }}
+          >
+            <View
+              style={{
+                width: 20,
+                height: 20,
+                borderRadius: 6,
+                borderWidth: 1.5,
+                borderColor: agreedToTerms ? colors.primary : colors.border,
+                backgroundColor: agreedToTerms ? colors.primary : "transparent",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              {agreedToTerms && <Check size={13} color={colors.onPrimary} strokeWidth={3} />}
+            </View>
+            <Text style={{ color: colors.textDim, flex: 1, fontSize: 12, fontFamily: fonts.bodyRegular }}>
+              I agree to the <Text style={{ color: colors.primary, fontFamily: fonts.bodyBold }}>Terms</Text> and{" "}
+              <Text style={{ color: colors.primary, fontFamily: fonts.bodyBold }}>Privacy Policy</Text>.
+            </Text>
+          </Pressable>
 
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginBottom: 8 }}>EMAIL</Text>
-      <TextInput
-        placeholder="alex.mercer@email.com"
-        placeholderTextColor={colors.textFaint}
-        value={email}
-        onChangeText={setEmail}
-        autoCapitalize="none"
-        style={{ width: "100%", borderWidth: 1, borderColor: colors.border, borderRadius: 12, padding: 12, color: colors.textPrimary, marginBottom: 16 }}
-      />
+          <Button title="Create account" onPress={handleSubmit} loading={submitting} style={{ marginTop: 22 }} />
 
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginBottom: 8 }}>PASSWORD</Text>
-      <View style={{
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-      }}>
-        <TextInput
-          placeholder="Password"
-          placeholderTextColor={colors.textFaint}
-          value={password}
-          onChangeText={setPassword}
-          secureTextEntry={!showPassword}
-          style={{ flex: 1, paddingVertical: 12, color: colors.textPrimary }}
-        />
-        <Pressable onPress={() => setShowPassword(!showPassword)}>
-          <Text style={{ color: colors.textDim }}>{showPassword ? "Hide" : "Show"}</Text>
-        </Pressable>
-      </View>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginVertical: 22 }}>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+            <Text style={{ fontSize: 11, color: colors.textDim, fontFamily: fonts.bodyBold }}>OR</Text>
+            <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
+          </View>
 
-      {/* Password strength meter — 4 segments, filled based on score */}
-      <View style={{ flexDirection: "row", gap: 6, marginTop: 8 }}>
-        {[0, 1, 2, 3].map((i) => (
-          <View
-            key={i}
-            style={{
-              flex: 1,
-              height: 4,
-              borderRadius: 2,
-              backgroundColor: i < strength ? colors.accent : colors.border,
-            }}
-          />
-        ))}
-      </View>
-      {strengthLabel !== "" && (
-        <Text style={{ color: colors.textDim, fontSize: 13, marginTop: 6 }}>
-          {strengthLabel}
-          {strength < 4 ? " — add more variety for max strength." : ""}
-        </Text>
-      )}
+          <View style={{ gap: 10 }}>
+            <Button title="Continue with Apple" onPress={() => {}} variant="outline" />
+            <Button title="Continue with Google" onPress={() => {}} variant="outline" />
+          </View>
 
-      <Text style={{ fontSize: 12, color: colors.textDim, letterSpacing: 1, marginTop: 16, marginBottom: 8 }}>
-        CONFIRM PASSWORD
-      </Text>
-      <View style={{
-        flexDirection: "row",
-        alignItems: "center",
-        width: "100%",
-        borderWidth: 1,
-        borderColor: colors.border,
-        borderRadius: 12,
-        paddingHorizontal: 12,
-      }}>
-        <TextInput
-          placeholder="Confirm password"
-          placeholderTextColor={colors.textFaint}
-          value={confirmPassword}
-          onChangeText={setConfirmPassword}
-          secureTextEntry={!showConfirmPassword}
-          style={{ flex: 1, paddingVertical: 12, color: colors.textPrimary }}
-        />
-        <Pressable onPress={() => setShowConfirmPassword(!showConfirmPassword)}>
-          <Text style={{ color: colors.textDim }}>{showConfirmPassword ? "Hide" : "Show"}</Text>
-        </Pressable>
-      </View>
+          <View style={{ flex: 1 }} />
 
-      {/* Terms checkbox */}
-      <Pressable
-        onPress={() => setAgreedToTerms(!agreedToTerms)}
-        style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 20, marginBottom: 24 }}
-      >
-        <View style={{
-          width: 22,
-          height: 22,
-          borderRadius: 6,
-          borderWidth: 1,
-          borderColor: agreedToTerms ? colors.accent : colors.border,
-          backgroundColor: agreedToTerms ? colors.accent : "transparent",
-          alignItems: "center",
-          justifyContent: "center",
-        }}>
-          {agreedToTerms && <Text style={{ color: colors.on, fontSize: 13 }}>✓</Text>}
-        </View>
-        <Text style={{ color: colors.textDim, flex: 1 }}>
-          I agree to the <Text style={{ color: colors.accent }}>Terms</Text> and{" "}
-          <Text style={{ color: colors.accent }}>Privacy Policy</Text>.
-        </Text>
-      </Pressable>
-
-      <Pressable
-        onPress={handleSubmit}
-        style={{ backgroundColor: colors.accent, paddingVertical: 12, paddingHorizontal: 24, borderRadius: 12, width: "100%", alignItems: "center" }}
-      >
-        <Text style={{ color: colors.on, fontWeight: "600" }}>Create account</Text>
-      </Pressable>
-
-      <Link href="/login" style={{ marginTop: 16, alignSelf: "center" }}>
-        <Text style={{ color: colors.textDim }}>
-          Already have an account? <Text style={{ color: colors.accent }}>Log in</Text>
-        </Text>
-      </Link>
-    </View>
+          <Pressable onPress={() => router.push("/login")} style={{ paddingTop: 24 }}>
+            <Text style={{ color: colors.textDim, fontSize: 13, textAlign: "center", fontFamily: fonts.bodyRegular }}>
+              Already have an account?{" "}
+              <Text style={{ color: colors.primary, fontFamily: fonts.bodyExtraBold }}>Log in</Text>
+            </Text>
+          </Pressable>
+        </ScrollView>
+      </AnimatedScreen>
+    </ScreenBackground>
   );
 }
