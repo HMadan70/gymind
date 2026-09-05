@@ -3,6 +3,13 @@ import { useTheme } from "../../context/ThemeContext";
 import { useState, useEffect, useMemo } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { API_URL } from "../../constants/api";
+import { ConfirmModal } from "../../components/ConfirmModal";
+import { StatCard } from "../../components/StatCard";
+import { ExerciseCardCollapsed } from "../../components/ExerciseCardCollapsed";
+import { PlannedSetRow } from "../../components/PlannedSetRow";
+import { LoggedSetRow } from "../../components/LoggedSetRow";
+import { EditableSetRow } from "../../components/EditableSetRow";
+import { Button } from "../../components/Button";
 
 type SetEntry = {
   id: string;
@@ -20,20 +27,6 @@ type SetEntry = {
 // renderer go through this so the numbers on screen can never disagree
 // with the rows on screen.
 const isSetLogged = (set: SetEntry) => set.completed && set.weight > 0 && set.reps > 0;
-
-// Single source of truth for the small circle at the end of each set
-// row. Both the "logged" (filled/checked) and "not yet logged" (hollow)
-// variants are built from this one base object so it is structurally
-// impossible for two circles on screen to differ from each other -
-// only the properties that are supposed to change by state do.
-const SET_CIRCLE_BASE = {
-  width: 28,
-  height: 28,
-  borderRadius: 14,
-  justifyContent: "center" as const,
-  alignItems: "center" as const,
-  marginLeft: "auto" as const,
-};
 
 type ExerciseEntry = {
   id: string;
@@ -389,26 +382,11 @@ export default function Workout() {
         </Text>
       </View>
 
-      <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
-        <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, flex: 1 }}>
-          <Text style={{ color: colors.textFaint, fontSize: 11, letterSpacing: 1 }}>VOLUME</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "bold" }}>{stats.volume}</Text>
-        </View>
-
-        <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, flex: 1 }}>
-          <Text style={{ color: colors.textFaint, fontSize: 11, letterSpacing: 1 }}>SETS</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "bold" }}>
-            {stats.completedSets}/{stats.plannedSets}
-          </Text>
-        </View>
-
-        <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, flex: 1 }}>
-          <Text style={{ color: colors.textFaint, fontSize: 11, letterSpacing: 1 }}>BEST E1RM</Text>
-          <Text style={{ color: colors.textPrimary, fontSize: 24, fontWeight: "bold" }}>
-            {Math.round(stats.e1rm)}
-          </Text>
-        </View>
-      </View>
+    <View style={{ flexDirection: "row", gap: 8, marginBottom: 16 }}>
+      <StatCard label="VOLUME" value={stats.volume} />
+      <StatCard label="SETS" value={`${stats.completedSets}/${stats.plannedSets}`} />
+      <StatCard label="BEST E1RM" value={Math.round(stats.e1rm)} />
+    </View>
 
       {exercises.map((exercise) => {
         const totalSets = exercise.sets.length;
@@ -421,64 +399,19 @@ export default function Workout() {
         const currentOrCompletedSetNumber = Math.min(completedSets, totalRows);
 
         if (isCollapsed) {
-          return (
-            <View
-              key={exercise.id}
-              style={{
-                backgroundColor: colors.bgCard,
-                borderRadius: 16,
-                padding: 16,
-                marginBottom: 12,
-                flexDirection: "row",
-                alignItems: "flex-start",
-                justifyContent: "space-between",
-              }}
-            >
-              <Pressable onPress={() => toggleExerciseExpanded(exercise.id)} style={{ flex: 1 }}>
-                <Text style={{ color: isQueued ? colors.textFaint : colors.textPrimary, fontWeight: "bold" }}>
-                  {exercise.name}
-                </Text>
-                {isQueued ? (
-                  <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                    {`QUEUED · ${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                  </Text>
-                ) : isFullyCompleted ? (
-                  <Text style={{ color: colors.accent, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                    {`COMPLETED · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                  </Text>
-                ) : (
-                  <Text style={{ color: colors.textFaint, fontSize: 12, letterSpacing: 1, marginTop: 4 }}>
-                    {`IN PROGRESS · ${completedSets}/${totalSets} SET${totalSets === 1 ? "" : "S"}`}
-                  </Text>
-                )}
-              </Pressable>
-
-              <View style={{ flexDirection: "row", alignItems: "center", gap: 12 }}>
-                {isFullyCompleted ? (
-                  <View
-                    style={{
-                      width: 24,
-                      height: 24,
-                      borderRadius: 12,
-                      backgroundColor: colors.accent,
-                      justifyContent: "center",
-                      alignItems: "center",
-                    }}
-                  >
-                    <Text style={{ color: colors.on, fontSize: 14 }}>✓</Text>
-                  </View>
-                ) : (
-                  <Text style={{ color: colors.textFaint, fontSize: 20 }}>›</Text>
-                )}
-
-                <Pressable onPress={() => confirmRemoveExercise(exercise)} hitSlop={8}>
-                  <Text style={{ color: colors.textFaint, fontSize: 16 }}>🗑</Text>
-                </Pressable>
-              </View>
-            </View>
-          );
-        }
-
+  return (
+    <ExerciseCardCollapsed
+      key={exercise.id}
+      name={exercise.name}
+      isQueued={isQueued}
+      isFullyCompleted={isFullyCompleted}
+      totalSets={totalSets}
+      completedSets={completedSets}
+      onToggleExpand={() => toggleExerciseExpanded(exercise.id)}
+      onRemove={() => confirmRemoveExercise(exercise)}
+    />
+  );
+}
         return (
           <View
             key={exercise.id}
@@ -524,15 +457,7 @@ export default function Workout() {
                 }
                 const plannedReps = sessionReps ?? lastKnownReps;
                 return (
-                  <View
-                    key={`planned-${index}`}
-                    style={{ flexDirection: "row", alignItems: "center", marginTop: 8, opacity: 0.5 }}
-                  >
-                    <Text style={{ color: colors.textFaint, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Text style={{ color: colors.textFaint }}>
-                      {plannedWeight ?? "-"} lb × {plannedReps ?? "-"}
-                    </Text>
-                  </View>
+                  <PlannedSetRow key={`planned-${index}`} index={index} plannedWeight={plannedWeight ?? undefined} plannedReps={plannedReps ?? undefined} />
                 );
               }
 
@@ -540,106 +465,48 @@ export default function Workout() {
 
               if (isLogged) {
                 return (
-                  <View key={set.id} style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                    <Text style={{ color: colors.textDim, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
-                    <Text style={{ color: colors.textPrimary, flex: 1 }}>
-                      {set.weight} lb × {set.reps}
-                    </Text>
-                    <Pressable
-                      onPress={() => {
-                        updateSet(exercise.id, set.id, { completed: false });
-                        syncSet(exercise, { ...set, completed: false });
-                      }}
-                      style={{ ...SET_CIRCLE_BASE, backgroundColor: colors.accent }}
-                    >
-                      <Text style={{ color: colors.on }}>✓</Text>
-                    </Pressable>
-                  </View>
+                  <LoggedSetRow
+                    key={set.id}
+                    index={index}
+                    weight={set.weight}
+                    reps={set.reps}
+                    onUncomplete={() => {
+                      updateSet(exercise.id, set.id, { completed: false });
+                      syncSet(exercise, { ...set, completed: false });
+                    }}
+                  />
                 );
               }
 
               return (
-                <View key={set.id} style={{ flexDirection: "row", alignItems: "center", marginTop: 8 }}>
-                  <Text style={{ color: colors.textDim, width: 24 }}>{String(index + 1).padStart(2, "0")}</Text>
-
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: colors.bgInset,
-                      borderRadius: 8,
-                      paddingHorizontal: 10,
-                      paddingVertical: 6,
-                      marginRight: 8,
-                      borderWidth: 1,
-                      borderColor: colors.accent,
-                    }}
-                  >
-                    <TextInput
-                      value={set.weightText ?? ""}
-                      onChangeText={(text) => {
-                        if (!/^\d*\.?\d*$/.test(text)) return;
-                        const updates: Partial<SetEntry> = { weightText: text };
-                        if (text === "") {
-                          updates.weight = 0;
-                        } else if (!text.endsWith(".")) {
-                          updates.weight = Number(text);
-                        }
-                        updateSet(exercise.id, set.id, updates);
-                      }}
-                      placeholder="0"
-                      placeholderTextColor={colors.textFaint}
-                      style={{ color: colors.textPrimary, width: 40 }}
-                      keyboardType="decimal-pad"
-                    />
-                    <Text style={{ color: colors.textFaint, marginLeft: 4 }}>lb</Text>
-                  </View>
-
-                  <View
-                    style={{
-                      flexDirection: "row",
-                      alignItems: "center",
-                      backgroundColor: colors.bgInset,
-                      borderRadius: 8,
-                      paddingHorizontal: 10,
-                      paddingVertical: 6,
-                      marginRight: 8,
-                      borderWidth: 1,
-                      borderColor: colors.accent,
-                    }}
-                  >
-                    <TextInput
-                      value={set.repsText ?? ""}
-                      onChangeText={(text) => {
-                        if (!/^\d*$/.test(text)) return;
-                        updateSet(exercise.id, set.id, {
-                          repsText: text,
-                          reps: text === "" ? 0 : Number(text),
-                        });
-                      }}
-                      placeholder="0"
-                      placeholderTextColor={colors.textFaint}
-                      style={{ color: colors.textPrimary, width: 40 }}
-                      keyboardType="number-pad"
-                    />
-                    <Text style={{ color: colors.textFaint, marginLeft: 4 }}>rp</Text>
-                  </View>
-
-                  <Pressable
-                    onPress={() => {
-                      if (set.weight > 0 && set.reps > 0) {
-                        updateSet(exercise.id, set.id, { completed: true });
-                        syncSet(exercise, { ...set, completed: true });
-                      }
-                    }}
-                    style={{
-                      ...SET_CIRCLE_BASE,
-                      backgroundColor: "transparent",
-                      borderWidth: 1,
-                      borderColor: colors.border,
-                    }}
-                  />
-                </View>
+                <EditableSetRow
+                  key={set.id}
+                  index={index}
+                  weightText={set.weightText ?? ""}
+                  repsText={set.repsText ?? ""}
+                  onChangeWeightText={(text) => {
+                    if (!/^\d*\.?\d*$/.test(text)) return;
+                    const updates: Partial<SetEntry> = { weightText: text };
+                    if (text === "") {
+                      updates.weight = 0;
+                    } else if (!text.endsWith(".")) {
+                      updates.weight = Number(text);
+                    }
+                    updateSet(exercise.id, set.id, updates);
+                  }}
+                  onChangeRepsText={(text) => {
+                    if (!/^\d*$/.test(text)) return;
+                    updateSet(exercise.id, set.id, {
+                      repsText: text,
+                      reps: text === "" ? 0 : Number(text),
+                    });
+                  }}
+                  canComplete={set.weight > 0 && set.reps > 0}
+                  onComplete={() => {
+                    updateSet(exercise.id, set.id, { completed: true });
+                    syncSet(exercise, { ...set, completed: true });
+                  }}
+                />
               );
             })}
 
@@ -830,36 +697,28 @@ export default function Workout() {
       )}
 
       {!hasStarted && (
-        <Pressable
-          onPress={startSession}
-          style={{ backgroundColor: colors.accent, borderRadius: 12, padding: 16, alignItems: "center" }}
-        >
-          <Text style={{ color: colors.on }}>Start Session</Text>
-        </Pressable>
+        <Button label="Start Session" onPress={startSession} variant="primary" size="lg" />
       )}
 
       {hasStarted && (
         <View style={{ flexDirection: "row", gap: 8 }}>
-          <Pressable
+          <Button
+            label={isRunning ? "Pause" : "Resume"}
             onPress={() => setIsRunning(!isRunning)}
-            style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 12, padding: 16, alignItems: "center" }}
-          >
-            <Text style={{ color: colors.textPrimary }}>{isRunning ? "Pause" : "Resume"}</Text>
-          </Pressable>
+            variant="secondary"
+            size="lg"
+            flex
+          />
 
-          <Pressable
+          <Button
+            label="Finish Workout"
             onPress={() => setConfirmFinish(true)}
-            style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 12, padding: 16, alignItems: "center" }}
-          >
-            <Text style={{ color: colors.on }}>Finish Workout</Text>
-          </Pressable>
+            variant="primary"
+            size="lg"
+            flex
+          />
 
-          <Pressable
-            onPress={resetWorkout}
-            style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 12, padding: 16, alignItems: "center" }}
-          >
-            <Text style={{ color: colors.textPrimary }}>Reset Workout</Text>
-          </Pressable>
+          <Button label="Reset Workout" onPress={resetWorkout} variant="secondary" size="lg" flex />
         </View>
       )}
 
@@ -913,48 +772,19 @@ export default function Workout() {
 )}
 
 
-      {pendingRemoval && (
-        <View
-          style={{
-            position: "absolute",
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: "rgba(0,0,0,0.6)",
-            justifyContent: "center",
-            alignItems: "center",
-            padding: 24,
-          }}
-        >
-          <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 20, width: "100%", maxWidth: 340 }}>
-            <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18, marginBottom: 8 }}>
-              Remove exercise?
-            </Text>
-            <Text style={{ color: colors.textDim, marginBottom: 20 }}>
-              This removes "{pendingRemoval.name}" and its logged sets from this session.
-            </Text>
-            <View style={{ flexDirection: "row", gap: 8 }}>
-              <Pressable
-                onPress={() => setPendingRemoval(null)}
-                style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
-              >
-                <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
-              </Pressable>
-              <Pressable
-                onPress={() => {
-                  removeExercise(pendingRemoval.id);
-                  setPendingRemoval(null);
-                }}
-                style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
-              >
-                <Text style={{ color: colors.on, fontWeight: "600" }}>Remove</Text>
-              </Pressable>
-            </View>
-          </View>
-        </View>
-      )}
-
+      <ConfirmModal
+  visible={pendingRemoval !== null}
+  title="Remove exercise?"
+  description={`This removes "${pendingRemoval?.name}" and its logged sets from this session.`}
+  confirmLabel="Remove"
+  confirmColor={colors.coral}
+  confirmTextColor={colors.coralOn}
+  onCancel={() => setPendingRemoval(null)}
+  onConfirm={() => {
+    removeExercise(pendingRemoval!.id);
+    setPendingRemoval(null);
+  }}
+/>
   {confirmFinish && (
   <View
     style={{
@@ -977,18 +807,8 @@ export default function Workout() {
         This marks the session as complete and stops the timer.
       </Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Pressable
-          onPress={() => setConfirmFinish(false)}
-          style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
-        >
-          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
-        </Pressable>
-        <Pressable
-          onPress={finishWorkout}
-          style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
-        >
-          <Text style={{ color: colors.on, fontWeight: "600" }}>Finish</Text>
-        </Pressable>
+        <Button label="Cancel" onPress={() => setConfirmFinish(false)} variant="secondary" size="sm" flex />
+        <Button label="Finish" onPress={finishWorkout} variant="primary" size="sm" flex />
       </View>
     </View>
   </View>
@@ -1068,18 +888,14 @@ export default function Workout() {
         This permanently deletes the whole session and every set logged in it.
       </Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Pressable
-          onPress={() => setPendingWorkoutDeletion(null)}
-          style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 12, alignItems: "center" }}
-        >
-          <Text style={{ color: colors.textPrimary, fontWeight: "600" }}>Cancel</Text>
-        </Pressable>
-        <Pressable
+        <Button label="Cancel" onPress={() => setPendingWorkoutDeletion(null)} variant="secondary" size="sm" flex />
+        <Button
+          label="Delete"
           onPress={() => deletePastWorkout(pendingWorkoutDeletion)}
-          style={{ flex: 1, backgroundColor: colors.accent, borderRadius: 8, padding: 12, alignItems: "center" }}
-        >
-          <Text style={{ color: colors.on, fontWeight: "600" }}>Delete</Text>
-        </Pressable>
+          variant="danger"
+          size="sm"
+          flex
+        />
       </View>
     </View>
   </View>
