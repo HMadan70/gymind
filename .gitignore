@@ -1,0 +1,47 @@
+.env
+*.env
+__pycache__/
+*.pyc
+node_modules/
+.expo/
+login_test.json
+register_test.json
+set_test.json
+profile_test.json
+token.txt
+login_response.json
+login.json
+register.json
+profile.json
+*_secret*
+*credentials*
+*_test.json
+test_*.json
+
+backend/data/
+
+# Python tooling caches / artifacts
+.pytest_cache/
+.venv/
+venv/
+env/
+*.egg-info/
+build/
+dist/
+.coverage
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# OS-generated clutter
+Thumbs.db
+desktop.ini
+.DS_Store
+
+# Machine-local editor and coding-assistant settings
+.claude/
+.vscode/
+mobile/CLAUDE.md
+
+# generic logs
+*.log

@@ -1,0 +1,1100 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+  body{margin:0;background:#0a0a0f;}
+  * { box-sizing: border-box; font-family: 'Manrope', sans-serif; }
+  ::-webkit-scrollbar{width:0;height:0;}
+  @keyframes screenIn{from{opacity:0;transform:translateY(14px) scale(.985);}to{opacity:1;transform:translateY(0) scale(1);}}
+  @keyframes sheetUp{from{transform:translateY(100%);}to{transform:translateY(0);}}
+  @keyframes fadeIn{from{opacity:0;}to{opacity:1;}}
+  @keyframes popIn{from{opacity:0;transform:scale(.85);}to{opacity:1;transform:scale(1);}}
+  @keyframes softPulse{0%,100%{transform:scale(1);}50%{transform:scale(1.05);}}
+  @keyframes dotBounce{0%,60%,100%{transform:translateY(0);opacity:.4;}30%{transform:translateY(-5px);opacity:1;}}
+  @keyframes spinSlow{to{transform:rotate(360deg);}}
+  @keyframes floatBlob{0%{transform:translate(0,0) rotate(0deg) scale(1);}33%{transform:translate(-18px,14px) rotate(6deg) scale(1.08);}66%{transform:translate(10px,-10px) rotate(-5deg) scale(0.96);}100%{transform:translate(0,0) rotate(0deg) scale(1);}}
+  @keyframes shimmerSweep{0%{background-position:-150% 0;}100%{background-position:250% 0;}}
+</style>
+</helmet>
+<x-import component-from-global-scope="IOSDevice" from="./ios-frame.jsx" hint-size="390px,844px" style="margin:0 auto;">
+<div style="width:390px;height:844px;overflow:hidden;position:relative;background:{{ t.bg }};font-family:'Manrope',sans-serif;color:{{ t.text }};">
+  <div style="position:absolute;top:-70px;right:-70px;width:240px;height:240px;border-radius:50%;background:conic-gradient(from 120deg,{{ t.bgGrad1 }},{{ t.bgGrad2 }},{{ t.bgGrad1 }});filter:blur(46px);opacity:0.55;animation:floatBlob 16s ease-in-out infinite;pointer-events:none;"></div>
+  <div style="position:absolute;bottom:60px;left:-80px;width:220px;height:220px;border-radius:50%;background:conic-gradient(from 300deg,{{ t.bgGrad2 }},{{ t.bgGrad1 }},{{ t.bgGrad2 }});filter:blur(50px);opacity:0.48;animation:floatBlob 19s ease-in-out infinite reverse;pointer-events:none;"></div>
+  <div style="position:absolute;top:38%;left:38%;width:150px;height:150px;border-radius:50%;background:radial-gradient(circle,{{ t.bgGrad1 }},transparent 70%);filter:blur(38px);opacity:0.35;animation:floatBlob 22s ease-in-out infinite;pointer-events:none;"></div>
+
+  <sc-if value="{{ isAuth }}" hint-placeholder-val="{{ false }}">
+    <div key="{{ authView }}" style="position:relative;height:100%;display:flex;flex-direction:column;padding:64px 26px 30px;animation:screenIn .45s cubic-bezier(.2,.8,.2,1) both;overflow-y:auto;">
+      <div style="width:52px;height:52px;border-radius:16px 6px 16px 6px;background:linear-gradient(135deg,{{ t.secondary }},{{ t.primary }});display:flex;align-items:center;justify-content:center;margin-bottom:20px;">
+        <svg width="26" height="26" viewBox="0 0 26 26"><polyline points="2,15 8,15 11,6 15,20 18,11 24,11" fill="none" stroke="#fff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"></polyline></svg>
+      </div>
+
+      <sc-if value="{{ isLogin }}" hint-placeholder-val="{{ true }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:28px;font-weight:700;margin-bottom:6px;">Welcome back</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:28px;">Log in to keep your streak going.</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Email or username</div>
+              <input value="{{ loginId }}" onChange="{{ onLoginId }}" placeholder="you@example.com" style="{{ inputStyle }}"></input>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Password</div>
+              <input value="{{ loginPw }}" onChange="{{ onLoginPw }}" placeholder="••••••••" type="password" style="{{ inputStyle }}"></input>
+            </div>
+            <button style="align-self:flex-end;background:none;border:none;color:{{ t.primary }};font-size:12px;font-weight:700;cursor:pointer;padding:0;">Forgot?</button>
+          </div>
+          <button onClick="{{ submitLogin }}" style="width:100%;margin-top:22px;padding:16px;border-radius:18px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:15px;cursor:pointer;">Log in</button>
+          <div style="display:flex;align-items:center;gap:10px;margin:22px 0;">
+            <div style="flex:1;height:1px;background:{{ t.border }};"></div><div style="font-size:11px;color:{{ t.textDim }};font-weight:700;">OR</div><div style="flex:1;height:1px;background:{{ t.border }};"></div>
+          </div>
+          <div style="display:flex;flex-direction:column;gap:10px;">
+            <button style="width:100%;padding:14px;border-radius:16px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};font-weight:700;font-size:13px;cursor:pointer;">Continue with Apple</button>
+            <button style="width:100%;padding:14px;border-radius:16px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};font-weight:700;font-size:13px;cursor:pointer;">Continue with Google</button>
+          </div>
+          <div style="flex:1;"></div>
+          <button onClick="{{ goRegister }}" style="background:none;border:none;color:{{ t.textDim }};font-size:13px;text-align:center;cursor:pointer;padding-top:16px;">New here? <span style="color:{{ t.primary }};font-weight:800;">Create account</span></button>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ isRegister }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:28px;font-weight:700;margin-bottom:6px;">Create account</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">Start tracking in under a minute.</div>
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Username</div>
+              <input value="{{ regUsername }}" onChange="{{ onRegUsername }}" placeholder="yourname" style="{{ inputStyle }}"></input>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Email</div>
+              <input value="{{ regEmail }}" onChange="{{ onRegEmail }}" placeholder="you@example.com" style="{{ inputStyle }}"></input>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Password</div>
+              <input value="{{ regPw }}" onChange="{{ onRegPw }}" placeholder="8+ characters, 1 uppercase" type="password" style="{{ inputStyle }}"></input>
+              <div style="display:flex;gap:5px;margin-top:8px;">
+                <sc-for list="{{ pwSegments }}" as="seg" hint-placeholder-count="4">
+                  <div style="{{ seg.style }}"></div>
+                </sc-for>
+              </div>
+            </div>
+            <div>
+              <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.05em;margin-bottom:6px;">Confirm password</div>
+              <input value="{{ regConfirm }}" onChange="{{ onRegConfirm }}" placeholder="••••••••" type="password" style="{{ inputStyle }}"></input>
+            </div>
+          </div>
+          <button onClick="{{ submitRegister }}" style="width:100%;margin-top:22px;padding:16px;border-radius:18px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:15px;cursor:pointer;">Create account</button>
+          <div style="flex:1;"></div>
+          <button onClick="{{ goLogin }}" style="background:none;border:none;color:{{ t.textDim }};font-size:13px;text-align:center;cursor:pointer;padding-top:16px;">Already have an account? <span style="color:{{ t.primary }};font-weight:800;">Log in</span></button>
+        </div>
+      </sc-if>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isOnboarding }}" hint-placeholder-val="{{ false }}">
+    <div key="{{ obKey }}" style="position:relative;height:100%;display:flex;flex-direction:column;padding:64px 22px 22px;animation:screenIn .45s cubic-bezier(.2,.8,.2,1) both;">
+      <div style="display:flex;align-items:center;gap:10px;margin-bottom:22px;">
+        <sc-if value="{{ obStep }}" hint-placeholder-val="{{ 0 }}">
+        </sc-if>
+        <button onClick="{{ prevStep }}" style="{{ backBtnStyle }}">←</button>
+        <div style="flex:1;height:6px;border-radius:99px;background:{{ t.cardAlt }};overflow:hidden;">
+          <div style="height:100%;border-radius:99px;background:linear-gradient(90deg,{{ t.primaryDeep }},{{ t.primary }});width:{{ obProgressPct }}%;transition:width .4s cubic-bezier(.2,.8,.2,1);"></div>
+        </div>
+        <div style="font-size:12px;color:{{ t.textDim }};font-weight:700;">{{ obStepLabel }}</div>
+      </div>
+
+      <sc-if value="{{ obStepIs0 }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin-bottom:8px;">What's your main goal?</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">We'll shape your plan around this.</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ goalOptions }}" as="g" hint-placeholder-count="4">
+              <button onClick="{{ g.pick }}" style="{{ g.cardStyle }}">
+                <div style="{{ g.dotStyle }}"></div>
+                <div style="flex:1;text-align:left;">
+                  <div style="font-weight:700;font-size:15px;">{{ g.label }}</div>
+                  <div style="font-size:12px;color:{{ t.textDim }};margin-top:2px;">{{ g.sub }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obStepIs1 }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin-bottom:8px;">Your experience level</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">So the coach doesn't over- or under-shoot.</div>
+          <div style="display:flex;flex-direction:column;gap:12px;">
+            <sc-for list="{{ expOptions }}" as="e" hint-placeholder-count="3">
+              <button onClick="{{ e.pick }}" style="{{ e.cardStyle }}">
+                <div style="flex:1;text-align:left;">
+                  <div style="font-weight:700;font-size:15px;">{{ e.label }}</div>
+                  <div style="font-size:12px;color:{{ t.textDim }};margin-top:2px;">{{ e.sub }}</div>
+                </div>
+              </button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obStepIs2 }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin-bottom:8px;">Any injuries?</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">Optional — helps us avoid risky movements.</div>
+          <textarea value="{{ injuries }}" onChange="{{ onInjuries }}" placeholder="e.g. tweaky left shoulder, old knee sprain..." style="width:100%;min-height:140px;border-radius:20px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};padding:16px;font-size:14px;font-family:inherit;resize:none;outline:none;"></textarea>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obStepIs3 }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin-bottom:8px;">What equipment do you have?</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">Pick as many as apply.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <sc-for list="{{ equipOptions }}" as="q" hint-placeholder-count="6">
+              <button onClick="{{ q.toggle }}" style="{{ q.chipStyle }}">{{ q.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <sc-if value="{{ obStepIs4 }}" hint-placeholder-val="{{ false }}">
+        <div style="animation:fadeIn .3s;">
+          <div style="font-family:'Space Grotesk';font-size:26px;font-weight:700;margin-bottom:8px;">Dietary restrictions?</div>
+          <div style="font-size:14px;color:{{ t.textDim }};margin-bottom:24px;">We'll steer nutrition suggestions around these.</div>
+          <div style="display:flex;flex-wrap:wrap;gap:10px;">
+            <sc-for list="{{ dietOptions }}" as="d" hint-placeholder-count="6">
+              <button onClick="{{ d.toggle }}" style="{{ d.chipStyle }}">{{ d.label }}</button>
+            </sc-for>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="flex:1;"></div>
+      <button onClick="{{ nextStep }}" disabled="{{ nextDisabled }}" style="{{ nextBtnStyle }}">{{ nextBtnLabel }}</button>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ isApp }}" hint-placeholder-val="{{ false }}">
+    <div style="position:relative;height:100%;display:flex;flex-direction:column;">
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:58px 20px 6px;">
+        <div>
+          <div style="font-size:12px;color:{{ t.textDim }};font-weight:700;letter-spacing:.06em;text-transform:uppercase;">{{ greeting }}</div>
+          <div style="font-family:'Space Grotesk';font-size:22px;font-weight:700;">{{ tabTitle }}</div>
+        </div>
+        <button onClick="{{ toggleTheme }}" style="width:44px;height:44px;border-radius:50%;border:1px solid {{ t.border }};background:{{ t.card }};display:flex;align-items:center;justify-content:center;cursor:pointer;">
+          <div style="{{ themeIconStyle }}"></div>
+        </button>
+      </div>
+
+      <div key="{{ tabKey }}" style="flex:1;overflow-y:auto;padding:14px 20px 100px;animation:screenIn .4s cubic-bezier(.2,.8,.2,1) both;">
+
+        <sc-if value="{{ isHome }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="display:inline-flex;align-self:flex-start;align-items:center;gap:8px;padding:8px 14px;border-radius:99px;background:{{ t.primarySoft }};">
+              <div style="width:7px;height:7px;border-radius:50%;background:{{ t.primary }};animation:softPulse 1.6s ease-in-out infinite;"></div>
+              <div style="font-size:12px;font-weight:800;color:{{ t.primary }};">{{ streakLabel }}</div>
+            </div>
+
+            <button onClick="{{ goCoach }}" style="text-align:left;border:none;cursor:pointer;border-radius:30px 12px 30px 12px;padding:20px;background:linear-gradient(135deg,{{ t.secondary }},{{ t.primary }});color:#fff;position:relative;overflow:hidden;">
+              <div style="position:absolute;top:16px;right:18px;width:13px;height:13px;background:rgba(255,255,255,0.35);border-radius:3px;transform:rotate(45deg);"></div>
+              <div style="font-size:11px;font-weight:800;letter-spacing:.08em;opacity:.85;text-transform:uppercase;">Coach</div>
+              <div style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-top:6px;line-height:1.35;">{{ coachTeaser }}</div>
+              <div style="margin-top:12px;font-size:12px;font-weight:700;opacity:.9;">Ask something →</div>
+            </button>
+
+            <button onClick="{{ goNutrition }}" style="border:1px solid {{ t.border }};background:{{ t.card }};border-radius:30px 12px 30px 12px;padding:18px;cursor:pointer;text-align:left;display:flex;gap:16px;align-items:center;">
+              <div style="position:relative;width:66px;height:66px;flex-shrink:0;">
+                <svg width="66" height="66" viewBox="0 0 66 66">
+                  <circle cx="33" cy="33" r="27" fill="none" stroke="{{ t.cardAlt }}" stroke-width="8"></circle>
+                  <circle cx="33" cy="33" r="27" fill="none" stroke="{{ t.primary }}" stroke-width="8" stroke-linecap="round" stroke-dasharray="{{ calRingCirc }}" stroke-dashoffset="{{ calRingOffset }}" transform="rotate(-90 33 33)" style="transition:stroke-dashoffset .6s ease;"></circle>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:{{ t.text }};">{{ calPct }}%</div>
+              </div>
+              <div style="flex:1;">
+                <div style="font-weight:700;font-size:15px;">Nutrition today</div>
+                <div style="font-size:12px;color:{{ t.textDim }};margin-top:2px;">{{ calSummary }}</div>
+              </div>
+            </button>
+
+            <button onClick="{{ goWorkoutStart }}" style="border:1px solid {{ t.border }};background:{{ t.card }};border-radius:30px 12px 30px 12px;padding:20px;cursor:pointer;text-align:left;position:relative;overflow:hidden;">
+              <div style="position:absolute;top:16px;right:18px;width:13px;height:13px;background:{{ t.primarySoft }};border:1.5px solid {{ t.primary }};border-radius:3px;transform:rotate(45deg);"></div>
+              <div style="font-weight:700;font-size:16px;">{{ workoutCtaTitle }}</div>
+              <div style="font-size:12px;color:{{ t.textDim }};margin-top:4px;">{{ workoutCtaSub }}</div>
+              <div style="margin-top:14px;display:inline-flex;align-items:center;gap:8px;padding:10px 18px;border-radius:99px;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:13px;">{{ workoutCtaBtn }}</div>
+            </button>
+
+            <div style="display:flex;gap:12px;">
+              <div style="flex:1;border:1px solid {{ t.border }};border-radius:22px 10px 22px 10px;padding:14px;background:{{ t.card }};position:relative;overflow:hidden;">
+                <div style="position:absolute;inset:0;background:linear-gradient(100deg,transparent 30%,{{ t.primarySoft }} 45%,{{ t.secondarySoft }} 55%,transparent 70%);background-size:250% 100%;animation:shimmerSweep 3.2s ease-in-out infinite;"></div>
+                <div style="position:relative;font-size:11px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Best e1RM</div>
+                <div style="position:relative;font-family:'Space Grotesk';font-size:20px;font-weight:700;margin-top:4px;">365 lb</div>
+              </div>
+              <div style="flex:1;border:1px solid {{ t.border }};border-radius:20px;padding:14px;background:{{ t.card }};">
+                <div style="font-size:11px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;letter-spacing:.05em;">Body weight</div>
+                <div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;margin-top:4px;">{{ latestWeight }} lb</div>
+              </div>
+            </div>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isWorkout }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:14px;">
+            <div style="border-radius:30px 12px 30px 12px;padding:20px;background:{{ t.card }};border:1px solid {{ t.border }};">
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="display:flex;align-items:center;gap:8px;">
+                  <div style="{{ sessionDotStyle }}"></div>
+                  <div style="font-size:12px;font-weight:800;letter-spacing:.06em;color:{{ t.textDim }};">{{ sessionStatusLabel }}</div>
+                </div>
+                <sc-if value="{{ workoutIsLive }}" hint-placeholder-val="{{ false }}">
+                  <button onClick="{{ openFinishConfirm }}" style="font-size:12px;font-weight:800;color:{{ t.danger }};background:none;border:none;cursor:pointer;">Finish</button>
+                </sc-if>
+              </div>
+              <div style="font-family:'Space Grotesk';font-size:40px;font-weight:700;margin-top:8px;letter-spacing:.02em;">{{ elapsedLabel }}</div>
+              <sc-if value="{{ workoutIsIdle }}" hint-placeholder-val="{{ true }}">
+                <button onClick="{{ startWorkout }}" style="margin-top:12px;width:100%;padding:14px;border-radius:16px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Start session</button>
+              </sc-if>
+              <sc-if value="{{ workoutIsLive }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ pauseWorkout }}" style="margin-top:12px;width:100%;padding:14px;border-radius:16px;border:1px solid {{ t.border }};background:{{ t.cardAlt }};color:{{ t.text }};font-weight:800;font-size:14px;cursor:pointer;">Pause</button>
+              </sc-if>
+              <sc-if value="{{ workoutIsPaused }}" hint-placeholder-val="{{ false }}">
+                <button onClick="{{ resumeWorkout }}" style="margin-top:12px;width:100%;padding:14px;border-radius:16px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Resume</button>
+              </sc-if>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <div style="flex:1;border-radius:18px;padding:12px;background:{{ t.card }};border:1px solid {{ t.border }};text-align:center;">
+                <div style="font-size:10px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;">Volume</div>
+                <div style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-top:2px;">{{ volLabel }}</div>
+              </div>
+              <div style="flex:1;border-radius:18px;padding:12px;background:{{ t.card }};border:1px solid {{ t.border }};text-align:center;">
+                <div style="font-size:10px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;">Sets</div>
+                <div style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-top:2px;">{{ setsDone }}</div>
+              </div>
+              <div style="flex:1;border-radius:18px;padding:12px;background:{{ t.card }};border:1px solid {{ t.border }};text-align:center;">
+                <div style="font-size:10px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;">Best e1RM</div>
+                <div style="font-family:'Space Grotesk';font-size:17px;font-weight:700;margin-top:2px;">{{ bestE1rmLabel }}</div>
+              </div>
+            </div>
+
+            <sc-for list="{{ exercises }}" as="ex" hint-placeholder-count="3">
+              <div style="border-radius:26px 10px 26px 10px;background:{{ t.card }};border:1px solid {{ t.border }};overflow:hidden;">
+                <button onClick="{{ ex.toggleExpand }}" style="width:100%;display:flex;align-items:center;gap:12px;padding:16px;background:none;border:none;cursor:pointer;text-align:left;">
+                  <div style="{{ ex.statusDotStyle }}"></div>
+                  <div style="flex:1;">
+                    <div style="font-weight:700;font-size:14px;">{{ ex.name }}</div>
+                    <div style="font-size:11px;color:{{ t.textDim }};margin-top:2px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;">{{ ex.statusLabel }} · {{ ex.muscleGroup }}</div>
+                  </div>
+                  <div style="{{ ex.chevronStyle }}">⌄</div>
+                </button>
+                <sc-if value="{{ ex.expanded }}" hint-placeholder-val="{{ false }}">
+                  <div style="padding:0 16px 16px;animation:fadeIn .25s;">
+                    <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr 32px;gap:6px;font-size:10px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;padding:0 2px 8px;">
+                      <div>#</div><div>Prev</div><div>Wt / Reps</div><div>Tgt</div><div></div>
+                    </div>
+                    <sc-for list="{{ ex.sets }}" as="s" hint-placeholder-count="3">
+                      <div style="display:grid;grid-template-columns:28px 1fr 1fr 1fr 32px;gap:6px;align-items:center;margin-bottom:6px;">
+                        <div style="font-weight:700;font-size:13px;color:{{ t.textDim }};">{{ s.num }}</div>
+                        <div style="font-size:12px;color:{{ t.textDim }};">{{ s.prevLabel }}</div>
+                        <div style="display:flex;gap:4px;">
+                          <input value="{{ s.weight }}" onChange="{{ s.onWeight }}" placeholder="lb" style="width:100%;min-width:0;padding:6px 4px;border-radius:8px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.text }};font-size:12px;text-align:center;"></input>
+                          <input value="{{ s.reps }}" onChange="{{ s.onReps }}" placeholder="reps" style="width:100%;min-width:0;padding:6px 4px;border-radius:8px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.text }};font-size:12px;text-align:center;"></input>
+                        </div>
+                        <div style="font-size:12px;color:{{ t.textDim }};">{{ s.tgtLabel }}</div>
+                        <button onClick="{{ s.toggleDone }}" style="{{ s.doneBtnStyle }}">✓</button>
+                      </div>
+                    </sc-for>
+                    <button onClick="{{ ex.openNote }}" style="margin-top:6px;font-size:11px;font-weight:700;color:{{ t.secondary }};background:{{ t.secondarySoft }};border:none;border-radius:10px;padding:8px 12px;cursor:pointer;">{{ ex.noteBtnLabel }}</button>
+                  </div>
+                </sc-if>
+              </div>
+            </sc-for>
+
+            <button onClick="{{ openPicker }}" style="border:1.5px dashed {{ t.border }};border-radius:26px 10px 26px 10px;padding:16px;background:none;color:{{ t.textDim }};font-weight:700;font-size:13px;cursor:pointer;">+ Add exercise</button>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isNutrition }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:16px;">
+            <div style="border-radius:30px 12px 30px 12px;padding:22px;background:{{ t.card }};border:1px solid {{ t.border }};display:flex;flex-direction:column;align-items:center;">
+              <div style="position:relative;width:150px;height:150px;">
+                <svg width="150" height="150" viewBox="0 0 150 150">
+                  <circle cx="75" cy="75" r="62" fill="none" stroke="{{ t.cardAlt }}" stroke-width="14"></circle>
+                  <circle cx="75" cy="75" r="62" fill="none" stroke="{{ t.primary }}" stroke-width="14" stroke-linecap="round" stroke-dasharray="{{ calRingCircBig }}" stroke-dashoffset="{{ calRingOffsetBig }}" transform="rotate(-90 75 75)" style="transition:stroke-dashoffset .6s ease;"></circle>
+                </svg>
+                <div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;">
+                  <div style="font-family:'Space Grotesk';font-size:28px;font-weight:700;color:{{ t.text }};">{{ calConsumed }}</div>
+                  <div style="font-size:11px;color:{{ t.textDim }};font-weight:700;">of {{ calTarget }} kcal</div>
+                </div>
+              </div>
+              <div style="display:flex;gap:18px;margin-top:10px;width:100%;">
+                <sc-for list="{{ macros }}" as="m" hint-placeholder-count="3">
+                  <div style="flex:1;">
+                    <div style="display:flex;justify-content:space-between;font-size:11px;font-weight:700;color:{{ t.textDim }};margin-bottom:4px;"><span>{{ m.label }}</span><span>{{ m.consumed }}/{{ m.target }}g</span></div>
+                    <div style="height:6px;border-radius:99px;background:{{ t.cardAlt }};overflow:hidden;">
+                      <div style="height:100%;border-radius:99px;background:{{ m.color }};width:{{ m.pct }}%;transition:width .5s ease;"></div>
+                    </div>
+                  </div>
+                </sc-for>
+              </div>
+            </div>
+
+            <div style="display:flex;gap:10px;">
+              <button onClick="{{ openAddFood }}" style="flex:1;padding:14px;border-radius:16px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:13px;cursor:pointer;">+ Log food</button>
+              <button onClick="{{ openPhoto }}" style="flex:1;padding:14px;border-radius:16px;border:1.5px dashed {{ t.border }};background:none;color:{{ t.textDim }};font-weight:700;font-size:13px;cursor:pointer;">Attach photo</button>
+            </div>
+
+            <sc-if value="{{ hasNutritionLogs }}" hint-placeholder-val="{{ true }}">
+              <div style="display:flex;flex-direction:column;gap:10px;">
+                <sc-for list="{{ nutritionLogs }}" as="log" hint-placeholder-count="3">
+                  <div style="display:flex;align-items:center;gap:12px;border-radius:18px;background:{{ t.card }};border:1px solid {{ t.border }};padding:12px 14px;">
+                    <div style="{{ log.thumbStyle }}"></div>
+                    <div style="flex:1;">
+                      <div style="font-weight:700;font-size:13px;">{{ log.food.name }}</div>
+                      <div style="font-size:11px;color:{{ t.textDim }};margin-top:2px;">{{ log.qty }}g · {{ log.calories }} kcal</div>
+                    </div>
+                    <button onClick="{{ log.remove }}" style="width:26px;height:26px;border-radius:50%;border:none;background:{{ t.cardAlt }};color:{{ t.textDim }};cursor:pointer;font-size:13px;">×</button>
+                  </div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ hasNutritionLogs }}" hint-placeholder-val="{{ false }}">
+            </sc-if>
+            <sc-if value="{{ noNutritionLogs }}" hint-placeholder-val="{{ false }}">
+              <div style="text-align:center;padding:30px 10px;">
+                <div style="width:100%;height:80px;border-radius:16px;background:repeating-linear-gradient(45deg,{{ t.cardAlt }},{{ t.cardAlt }} 10px,{{ t.card }} 10px,{{ t.card }} 20px);margin-bottom:14px;"></div>
+                <div style="font-weight:700;font-size:14px;">No meals logged yet</div>
+                <div style="font-size:12px;color:{{ t.textDim }};margin-top:4px;">Tap "Log food" to add your first meal.</div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+        <sc-if value="{{ isProgress }}" hint-placeholder-val="{{ false }}">
+          <sc-if value="{{ progressIsOverview }}" hint-placeholder-val="{{ true }}">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+              <div style="display:flex;gap:12px;">
+                <div style="flex:1;border-radius:26px 10px 26px 10px;padding:16px;background:{{ t.card }};border:1px solid {{ t.border }};display:flex;align-items:center;gap:12px;">
+                  <svg width="56" height="56" viewBox="0 0 56 56">
+                    <circle cx="28" cy="28" r="23" fill="none" stroke="{{ t.cardAlt }}" stroke-width="7"></circle>
+                    <circle cx="28" cy="28" r="23" fill="none" stroke="{{ t.secondary }}" stroke-width="7" stroke-linecap="round" stroke-dasharray="{{ consistCirc }}" stroke-dashoffset="{{ consistOffset }}" transform="rotate(-90 28 28)"></circle>
+                  </svg>
+                  <div>
+                    <div style="font-weight:700;font-size:15px;">{{ consistLabel }}</div>
+                    <div style="font-size:11px;color:{{ t.textDim }};">days trained</div>
+                  </div>
+                </div>
+              </div>
+
+              <div style="border-radius:26px 10px 26px 10px;padding:18px;background:{{ t.card }};border:1px solid {{ t.border }};">
+                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+                  <div style="font-weight:700;font-size:14px;">Body weight</div>
+                  <button onClick="{{ openWeightLog }}" style="font-size:11px;font-weight:800;color:{{ t.primary }};background:{{ t.primarySoft }};border:none;border-radius:99px;padding:6px 12px;cursor:pointer;">+ Log</button>
+                </div>
+                <svg width="100%" height="90" viewBox="0 0 300 90" preserveAspectRatio="none">
+                  <polyline points="{{ weightLinePoints }}" fill="none" stroke="{{ t.secondary }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                </svg>
+                <div style="font-size:11px;color:{{ t.textDim }};">{{ latestWeight }} lb · {{ weightTrendLabel }}</div>
+              </div>
+
+              <div style="display:flex;justify-content:space-between;align-items:center;">
+                <div style="font-weight:700;font-size:14px;">Progress photos</div>
+                <button onClick="{{ openPhoto }}" style="font-size:11px;font-weight:800;color:{{ t.primary }};background:{{ t.primarySoft }};border:none;border-radius:99px;padding:6px 12px;cursor:pointer;">+ Add</button>
+              </div>
+              <div style="display:flex;gap:10px;overflow-x:auto;padding-bottom:4px;">
+                <sc-for list="{{ progressPhotos }}" as="pp" hint-placeholder-count="4">
+                  <div style="{{ pp.style }}">
+                    <div style="font-size:9px;font-weight:800;color:{{ t.textDim }};background:{{ t.card }};border-radius:6px;padding:2px 6px;">{{ pp.label }}</div>
+                  </div>
+                </sc-for>
+                <button onClick="{{ openPhoto }}" style="flex-shrink:0;width:78px;height:96px;border-radius:16px;border:1.5px dashed {{ t.border }};background:none;color:{{ t.textDim }};font-size:22px;cursor:pointer;">+</button>
+              </div>
+
+              <div style="font-weight:700;font-size:14px;">Muscle groups</div>
+              <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;">
+                <sc-for list="{{ muscleGroups }}" as="mg" hint-placeholder-count="6">
+                  <button onClick="{{ mg.select }}" style="border-radius:20px;padding:14px;background:{{ t.card }};border:1px solid {{ t.border }};text-align:left;cursor:pointer;">
+                    <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;">{{ mg.label }}</div>
+                    <div style="font-family:'Space Grotesk';font-size:18px;font-weight:700;margin-top:4px;">{{ mg.valueLabel }}</div>
+                  </button>
+                </sc-for>
+              </div>
+            </div>
+          </sc-if>
+          <sc-if value="{{ progressIsDetail }}" hint-placeholder-val="{{ false }}">
+            <div key="{{ progressView }}" style="animation:screenIn .35s both;">
+              <button onClick="{{ backProgress }}" style="background:none;border:none;color:{{ t.textDim }};font-weight:700;font-size:13px;cursor:pointer;margin-bottom:12px;">← Muscle groups</button>
+              <div style="font-family:'Space Grotesk';font-size:22px;font-weight:700;text-transform:capitalize;margin-bottom:14px;">{{ progressView }}</div>
+              <sc-if value="{{ hasDetailData }}" hint-placeholder-val="{{ true }}">
+                <div style="border-radius:26px 10px 26px 10px;padding:18px;background:{{ t.card }};border:1px solid {{ t.border }};margin-bottom:14px;">
+                  <div style="font-size:11px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;margin-bottom:8px;">Best e1RM trend</div>
+                  <svg width="100%" height="90" viewBox="0 0 300 90" preserveAspectRatio="none">
+                    <polyline points="{{ detailLinePoints }}" fill="none" stroke="{{ t.primary }}" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+                  </svg>
+                </div>
+              </sc-if>
+              <sc-if value="{{ hasDetailData }}" hint-placeholder-val="{{ false }}">
+              </sc-if>
+              <sc-if value="{{ noDetailData }}" hint-placeholder-val="{{ false }}">
+                <div style="text-align:center;padding:30px 10px;color:{{ t.textDim }};font-size:13px;">No logged sets for this group yet.</div>
+              </sc-if>
+            </div>
+          </sc-if>
+        </sc-if>
+
+        <sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+          <div style="display:flex;flex-direction:column;gap:10px;padding-bottom:10px;">
+            <sc-for list="{{ messages }}" as="msg" hint-placeholder-count="3">
+              <div style="{{ msg.rowStyle }}">
+                <div style="{{ msg.bubbleStyle }}">{{ msg.text }}</div>
+              </div>
+            </sc-for>
+            <sc-if value="{{ isTyping }}" hint-placeholder-val="{{ false }}">
+              <div style="display:flex;justify-content:flex-start;">
+                <div style="display:flex;gap:4px;padding:14px 16px;border-radius:18px;background:{{ t.card }};border:1px solid {{ t.border }};">
+                  <div style="width:6px;height:6px;border-radius:50%;background:{{ t.textDim }};animation:dotBounce 1.2s infinite;animation-delay:0s;"></div>
+                  <div style="width:6px;height:6px;border-radius:50%;background:{{ t.textDim }};animation:dotBounce 1.2s infinite;animation-delay:.15s;"></div>
+                  <div style="width:6px;height:6px;border-radius:50%;background:{{ t.textDim }};animation:dotBounce 1.2s infinite;animation-delay:.3s;"></div>
+                </div>
+              </div>
+            </sc-if>
+          </div>
+        </sc-if>
+
+      </div>
+
+      <sc-if value="{{ isCoach }}" hint-placeholder-val="{{ false }}">
+        <div style="position:absolute;left:0;right:0;bottom:88px;padding:0 16px;">
+          <div style="display:flex;gap:8px;overflow-x:auto;padding-bottom:8px;">
+            <sc-for list="{{ quickPrompts }}" as="qp" hint-placeholder-count="3">
+              <button onClick="{{ qp.use }}" style="flex-shrink:0;padding:8px 14px;border-radius:99px;background:{{ t.card }};border:1px solid {{ t.border }};font-size:12px;font-weight:700;color:{{ t.text }};cursor:pointer;white-space:nowrap;">{{ qp.label }}</button>
+            </sc-for>
+          </div>
+          <div style="display:flex;gap:8px;align-items:center;background:{{ t.card }};border:1px solid {{ t.border }};border-radius:99px;padding:6px 6px 6px 16px;">
+            <input value="{{ chatInput }}" onChange="{{ onChatInput }}" placeholder="Ask your coach..." style="flex:1;border:none;background:none;outline:none;font-size:13px;color:{{ t.text }};font-family:inherit;"></input>
+            <button onClick="{{ sendMessage }}" style="width:38px;height:38px;border-radius:50%;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;cursor:pointer;">→</button>
+          </div>
+        </div>
+      </sc-if>
+
+      <div style="position:absolute;left:16px;right:16px;bottom:22px;height:64px;border-radius:30px 12px 30px 12px;background:{{ t.navBg }};border:1px solid {{ t.border }};display:flex;align-items:center;box-shadow:0 12px 30px -10px rgba(0,0,0,0.35);backdrop-filter:blur(12px);">
+        <div style="position:absolute;bottom:11px;width:9px;height:9px;background:{{ t.primary }};border-radius:2px;transform:translateX(-50%) rotate(45deg);left:{{ navPillLeft }}%;transition:left .35s cubic-bezier(.2,.8,.2,1);box-shadow:0 0 12px {{ t.primary }};"></div>
+        <sc-for list="{{ tabs }}" as="tb" hint-placeholder-count="5">
+          <button onClick="{{ tb.select }}" style="position:relative;flex:1;height:100%;background:none;border:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;">
+            <div style="{{ tb.iconWrapStyle }}">{{ tb.iconChar }}</div>
+            <div style="{{ tb.labelStyle }}">{{ tb.label }}</div>
+          </button>
+        </sc-for>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ pickerOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:20;animation:fadeIn .2s;" onClick="{{ closePicker }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;max-height:70%;background:{{ t.bg }};border-radius:26px 26px 0 0;padding:18px 18px 24px;animation:sheetUp .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;" onClick="{{ stop }}">
+        <div style="width:36px;height:4px;border-radius:99px;background:{{ t.border }};margin:0 auto 14px;"></div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Add exercise</div>
+        <input value="{{ pickerSearch }}" onChange="{{ onPickerSearch }}" placeholder="Search exercises..." style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};font-size:13px;margin-bottom:12px;outline:none;"></input>
+        <div style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+          <sc-for list="{{ pickerResults }}" as="pr" hint-placeholder-count="5">
+            <button onClick="{{ pr.pick }}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:{{ t.card }};border:1px solid {{ t.border }};cursor:pointer;text-align:left;">
+              <div style="font-weight:700;font-size:13px;">{{ pr.name }}</div>
+              <div style="font-size:11px;color:{{ t.textDim }};text-transform:uppercase;font-weight:700;">{{ pr.muscleGroup }}</div>
+            </button>
+          </sc-for>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ noteOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:20;animation:fadeIn .2s;" onClick="{{ closeNote }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;background:{{ t.bg }};border-radius:26px 26px 0 0;padding:18px 18px 28px;animation:sheetUp .3s cubic-bezier(.2,.8,.2,1);" onClick="{{ stop }}">
+        <div style="width:36px;height:4px;border-radius:99px;background:{{ t.border }};margin:0 auto 14px;"></div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Exercise note</div>
+        <textarea value="{{ noteText }}" onChange="{{ onNoteText }}" placeholder="Cue to remember, machine setting, etc." style="width:100%;min-height:100px;border-radius:14px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};padding:12px;font-size:13px;font-family:inherit;resize:none;outline:none;"></textarea>
+        <button onClick="{{ saveNote }}" style="margin-top:12px;width:100%;padding:14px;border-radius:14px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Save note</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ restOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:20;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s;">
+      <div style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:28px;padding:28px;display:flex;flex-direction:column;align-items:center;animation:popIn .3s cubic-bezier(.2,.8,.2,1);">
+        <div style="font-size:12px;font-weight:800;color:{{ t.textDim }};text-transform:uppercase;letter-spacing:.06em;margin-bottom:14px;">Rest</div>
+        <div style="position:relative;width:140px;height:140px;">
+          <svg width="140" height="140" viewBox="0 0 140 140">
+            <circle cx="70" cy="70" r="58" fill="none" stroke="{{ t.cardAlt }}" stroke-width="10"></circle>
+            <circle cx="70" cy="70" r="58" fill="none" stroke="{{ t.danger }}" stroke-width="10" stroke-linecap="round" stroke-dasharray="{{ restCirc }}" stroke-dashoffset="{{ restOffset }}" transform="rotate(-90 70 70)" style="transition:stroke-dashoffset 1s linear;"></circle>
+          </svg>
+          <div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-family:'Space Grotesk';font-size:30px;font-weight:700;color:{{ t.text }};">{{ restLabel }}</div>
+        </div>
+        <div style="display:flex;gap:10px;margin-top:20px;">
+          <button onClick="{{ addRest15 }}" style="padding:10px 18px;border-radius:14px;background:{{ t.cardAlt }};border:none;color:{{ t.text }};font-weight:700;font-size:13px;cursor:pointer;">+15s</button>
+          <button onClick="{{ skipRest }}" style="padding:10px 18px;border-radius:14px;background:{{ t.primary }};border:none;color:{{ t.onPrimary }};font-weight:800;font-size:13px;cursor:pointer;">Skip</button>
+        </div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ finishOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.6);z-index:20;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s;">
+      <div style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:28px;padding:26px;width:80%;animation:popIn .3s cubic-bezier(.2,.8,.2,1);">
+        <div style="font-family:'Space Grotesk';font-size:20px;font-weight:700;margin-bottom:4px;">Session complete 🎉</div>
+        <div style="font-size:12px;color:{{ t.textDim }};margin-bottom:18px;">{{ elapsedLabel }} · nice work.</div>
+        <div style="display:flex;gap:10px;margin-bottom:18px;">
+          <div style="flex:1;text-align:center;background:{{ t.cardAlt }};border-radius:14px;padding:10px;">
+            <div style="font-size:10px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;">Volume</div>
+            <div style="font-weight:700;font-size:15px;margin-top:2px;">{{ volLabel }}</div>
+          </div>
+          <div style="flex:1;text-align:center;background:{{ t.cardAlt }};border-radius:14px;padding:10px;">
+            <div style="font-size:10px;color:{{ t.textDim }};font-weight:700;text-transform:uppercase;">Sets</div>
+            <div style="font-weight:700;font-size:15px;margin-top:2px;">{{ setsDone }}</div>
+          </div>
+        </div>
+        <button onClick="{{ confirmFinish }}" style="width:100%;padding:14px;border-radius:14px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Done</button>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ addFoodOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:20;animation:fadeIn .2s;" onClick="{{ closeAddFood }}">
+      <div style="position:absolute;left:0;right:0;bottom:0;max-height:75%;background:{{ t.bg }};border-radius:26px 26px 0 0;padding:18px 18px 24px;animation:sheetUp .3s cubic-bezier(.2,.8,.2,1);display:flex;flex-direction:column;" onClick="{{ stop }}">
+        <div style="width:36px;height:4px;border-radius:99px;background:{{ t.border }};margin:0 auto 14px;"></div>
+        <div style="font-weight:700;font-size:16px;margin-bottom:10px;">Log food</div>
+        <sc-if value="{{ noPickedFood }}" hint-placeholder-val="{{ true }}">
+          <input value="{{ foodSearch }}" onChange="{{ onFoodSearch }}" placeholder="Search foods..." style="width:100%;padding:12px 14px;border-radius:14px;border:1px solid {{ t.border }};background:{{ t.card }};color:{{ t.text }};font-size:13px;margin-bottom:12px;outline:none;"></input>
+          <div style="overflow-y:auto;display:flex;flex-direction:column;gap:8px;">
+            <sc-for list="{{ foodResults }}" as="fr" hint-placeholder-count="5">
+              <button onClick="{{ fr.pick }}" style="display:flex;justify-content:space-between;align-items:center;padding:12px 14px;border-radius:14px;background:{{ t.card }};border:1px solid {{ t.border }};cursor:pointer;text-align:left;">
+                <div style="font-weight:700;font-size:13px;">{{ fr.name }}</div>
+                <div style="font-size:11px;color:{{ t.textDim }};font-weight:700;">{{ fr.calories }} kcal/100g</div>
+              </button>
+            </sc-for>
+          </div>
+        </sc-if>
+        <sc-if value="{{ hasPickedFood }}" hint-placeholder-val="{{ false }}">
+          <div style="animation:fadeIn .25s;">
+            <div style="font-weight:700;font-size:15px;margin-bottom:12px;">{{ pickedFoodName }}</div>
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:16px;">
+              <button onClick="{{ qtyMinus }}" style="width:38px;height:38px;border-radius:50%;background:{{ t.cardAlt }};border:none;font-size:16px;font-weight:800;cursor:pointer;color:{{ t.text }};">−</button>
+              <div style="flex:1;text-align:center;font-family:'Space Grotesk';font-size:20px;font-weight:700;">{{ foodQty }}g</div>
+              <button onClick="{{ qtyPlus }}" style="width:38px;height:38px;border-radius:50%;background:{{ t.cardAlt }};border:none;font-size:16px;font-weight:800;cursor:pointer;color:{{ t.text }};">+</button>
+            </div>
+            <div style="font-size:12px;color:{{ t.textDim }};margin-bottom:16px;">{{ pickedFoodCalcLabel }}</div>
+            <button onClick="{{ confirmAddFood }}" style="width:100%;padding:14px;border-radius:14px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Add to log</button>
+          </div>
+        </sc-if>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ photoOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:20;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s;" onClick="{{ closePhoto }}">
+      <div style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:24px;padding:24px;width:78%;text-align:center;animation:popIn .3s;" onClick="{{ stop }}">
+        <sc-if value="{{ photoAttached }}" hint-placeholder-val="{{ false }}">
+          <div style="width:100%;height:140px;border-radius:16px;overflow:hidden;position:relative;background:repeating-linear-gradient(135deg,{{ t.secondarySoft }},{{ t.secondarySoft }} 8px,{{ t.primarySoft }} 8px,{{ t.primarySoft }} 16px);animation:fadeIn .25s;">
+            <div style="position:absolute;bottom:8px;left:8px;font-size:9px;font-family:monospace;font-weight:700;color:{{ t.text }};background:{{ t.card }};padding:3px 7px;border-radius:6px;">sample photo</div>
+          </div>
+        </sc-if>
+        <sc-if value="{{ photoAttached }}" hint-placeholder-val="{{ true }}">
+        </sc-if>
+        <sc-if value="{{ photoNotAttached }}" hint-placeholder-val="{{ true }}">
+          <button onClick="{{ attachPhoto }}" style="width:100%;height:140px;border-radius:16px;border:1.5px dashed {{ t.border }};display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;background:repeating-linear-gradient(45deg,{{ t.cardAlt }},{{ t.cardAlt }} 10px,transparent 10px,transparent 20px);cursor:pointer;">
+            <div style="width:34px;height:26px;border-radius:6px;border:2.5px solid {{ t.textDim }};position:relative;">
+              <div style="position:absolute;left:9px;top:-6px;width:14px;height:6px;border-radius:3px 3px 0 0;border:2.5px solid {{ t.textDim }};border-bottom:none;"></div>
+              <div style="position:absolute;left:9px;top:6px;width:14px;height:14px;border-radius:50%;border:2.5px solid {{ t.textDim }};"></div>
+            </div>
+            <div style="font-size:11px;color:{{ t.textDim }};font-weight:700;">Tap to add photo</div>
+          </button>
+        </sc-if>
+        <div style="font-size:11px;color:{{ t.textDim }};margin-top:12px;">Photo uploads — coming soon, UI ready for it.</div>
+      </div>
+    </div>
+  </sc-if>
+
+  <sc-if value="{{ weightLogOpen }}" hint-placeholder-val="{{ false }}">
+    <div style="position:absolute;inset:0;background:rgba(0,0,0,0.5);z-index:20;display:flex;align-items:center;justify-content:center;animation:fadeIn .2s;" onClick="{{ closeWeightLog }}">
+      <div style="background:{{ t.card }};border:1px solid {{ t.border }};border-radius:24px;padding:24px;width:78%;animation:popIn .3s;" onClick="{{ stop }}">
+        <div style="font-weight:700;font-size:15px;margin-bottom:14px;">Log body weight</div>
+        <div style="display:flex;gap:8px;margin-bottom:14px;">
+          <input value="{{ weightInput }}" onChange="{{ onWeightInput }}" placeholder="180" style="flex:1;padding:12px;border-radius:12px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.text }};font-size:14px;text-align:center;outline:none;"></input>
+          <button onClick="{{ toggleWeightUnit }}" style="padding:12px 16px;border-radius:12px;border:1px solid {{ t.border }};background:{{ t.bg }};color:{{ t.text }};font-weight:700;font-size:13px;cursor:pointer;">{{ weightUnit }}</button>
+        </div>
+        <button onClick="{{ saveWeight }}" style="width:100%;padding:14px;border-radius:14px;border:none;background:{{ t.primary }};color:{{ t.onPrimary }};font-weight:800;font-size:14px;cursor:pointer;">Save</button>
+      </div>
+    </div>
+  </sc-if>
+
+</div>
+</x-import>
+</x-dc>
+<script type="text/x-dc" data-dc-script>
+const DARK = {
+  bg:'oklch(0.16 0.022 228)', bgGrad1:'oklch(0.32 0.10 205)', bgGrad2:'oklch(0.32 0.11 95)',
+  card:'oklch(0.21 0.028 228)', cardAlt:'oklch(0.26 0.032 228)', border:'oklch(0.33 0.038 228)',
+  navBg:'oklch(0.21 0.028 228 / 0.85)',
+  text:'oklch(0.96 0.008 228)', textDim:'oklch(0.66 0.022 228)',
+  primary:'oklch(0.72 0.13 202)', primaryDeep:'oklch(0.50 0.13 202)', primarySoft:'oklch(0.72 0.13 202 / 0.20)', onPrimary:'oklch(0.16 0.03 202)',
+  secondary:'oklch(0.80 0.15 95)', secondarySoft:'oklch(0.80 0.15 95 / 0.20)',
+  danger:'oklch(0.62 0.20 22)', dangerSoft:'oklch(0.62 0.20 22 / 0.20)',
+};
+const LIGHT = {
+  bg:'oklch(0.97 0.008 228)', bgGrad1:'oklch(0.90 0.05 205)', bgGrad2:'oklch(0.91 0.06 95)',
+  card:'oklch(1 0 0)', cardAlt:'oklch(0.95 0.012 228)', border:'oklch(0.88 0.016 228)',
+  navBg:'oklch(1 0 0 / 0.85)',
+  text:'oklch(0.20 0.022 228)', textDim:'oklch(0.50 0.018 228)',
+  primary:'oklch(0.50 0.12 202)', primaryDeep:'oklch(0.38 0.12 202)', primarySoft:'oklch(0.50 0.12 202 / 0.14)', onPrimary:'#fff',
+  secondary:'oklch(0.62 0.14 95)', secondarySoft:'oklch(0.62 0.14 95 / 0.14)',
+  danger:'oklch(0.56 0.19 22)', dangerSoft:'oklch(0.56 0.19 22 / 0.14)',
+};
+
+const EXERCISE_CATALOG = [
+  {name:'Bench Press', muscleGroup:'Chest'}, {name:'Incline Dumbbell Press', muscleGroup:'Chest'}, {name:'Cable Fly', muscleGroup:'Chest'},
+  {name:'Deadlift', muscleGroup:'Back'}, {name:'Lat Pulldown', muscleGroup:'Back'}, {name:'Barbell Row', muscleGroup:'Back'},
+  {name:'Squat', muscleGroup:'Legs'}, {name:'Leg Press', muscleGroup:'Legs'}, {name:'Walking Lunge', muscleGroup:'Legs'},
+  {name:'Overhead Press', muscleGroup:'Shoulders'}, {name:'Lateral Raise', muscleGroup:'Shoulders'},
+  {name:'Bicep Curl', muscleGroup:'Arms'}, {name:'Tricep Pushdown', muscleGroup:'Arms'},
+  {name:'Plank', muscleGroup:'Core'}, {name:'Cable Crunch', muscleGroup:'Core'},
+];
+const FOOD_CATALOG = [
+  {name:'Chicken Breast', cal:165}, {name:'Brown Rice', cal:112}, {name:'Broccoli', cal:34},
+  {name:'Almonds', cal:579}, {name:'Greek Yogurt', cal:59}, {name:'Banana', cal:89},
+  {name:'Salmon', cal:208}, {name:'Oats', cal:389},
+];
+const MUSCLE_GROUP_DATA = {
+  Chest:{best:225, trend:[180,190,200,210,225]}, Back:{best:315, trend:[260,275,290,300,315]},
+  Legs:{best:365, trend:[300,320,335,350,365]}, Shoulders:{best:145, trend:[110,120,130,138,145]},
+  Arms:{best:95, trend:[70,78,85,90,95]}, Core:{best:null, trend:[]},
+};
+
+function fmtTime(s){ const m=Math.floor(s/60), sec=s%60; return String(m).padStart(2,'0')+':'+String(sec).padStart(2,'0'); }
+function nowId(){ return Date.now()+Math.random(); }
+
+class Component extends DCLogic {
+  state = {
+    theme:'dark', phase:'auth', authView:'login',
+    loginId:'', loginPw:'', regUsername:'', regEmail:'', regPw:'', regConfirm:'',
+    obStep:0,
+    goal:null, experience:null, injuries:'', equipment:[], diet:[],
+    tab:'home',
+    workoutStatus:'idle', elapsed:0,
+    exercises:[
+      {id:1, name:'Bench Press', muscleGroup:'Chest', expanded:true, note:'', sets:[
+        {prevWeight:185, prevReps:8, tgtWeight:190, tgtReps:8, weight:'', reps:'', done:false},
+        {prevWeight:185, prevReps:8, tgtWeight:190, tgtReps:8, weight:'', reps:'', done:false},
+        {prevWeight:180, prevReps:7, tgtWeight:190, tgtReps:8, weight:'', reps:'', done:false},
+      ]},
+      {id:2, name:'Incline Dumbbell Press', muscleGroup:'Chest', expanded:false, note:'', sets:[
+        {prevWeight:60, prevReps:10, tgtWeight:65, tgtReps:10, weight:'', reps:'', done:false},
+        {prevWeight:60, prevReps:10, tgtWeight:65, tgtReps:10, weight:'', reps:'', done:false},
+      ]},
+      {id:3, name:'Tricep Pushdown', muscleGroup:'Arms', expanded:false, note:'', sets:[
+        {prevWeight:45, prevReps:12, tgtWeight:50, tgtReps:12, weight:'', reps:'', done:false},
+        {prevWeight:45, prevReps:12, tgtWeight:50, tgtReps:12, weight:'', reps:'', done:false},
+        {prevWeight:45, prevReps:12, tgtWeight:50, tgtReps:12, weight:'', reps:'', done:false},
+      ]},
+    ],
+    pickerOpen:false, pickerSearch:'',
+    noteOpen:false, noteExId:null, noteText:'',
+    restOpen:false, restRemaining:0, restTotal:90,
+    finishOpen:false,
+    nutritionLogs:[
+      {id:1, food:{name:'Greek Yogurt', cal:59, protein:10, carbs:3.6, fat:0.4}, qty:200},
+      {id:2, food:{name:'Oats', cal:389, protein:16.9, carbs:66, fat:6.9}, qty:80},
+      {id:3, food:{name:'Chicken Breast', cal:165, protein:31, carbs:0, fat:3.6}, qty:180},
+    ],
+    addFoodOpen:false, foodSearch:'', pickedFood:null, foodQty:100,
+    photoOpen:false, photoAttached:false,
+    progressView:'overview',
+    weightLogOpen:false, weightInput:'', weightUnit:'lb',
+    bodyweight:[182,181,180.5,180,179,178.5,178,177],
+    messages:[{from:'coach', text:"Hey — ready to crush today's session? Ask me anything about your plan."}],
+    chatInput:'', isTyping:false,
+  };
+
+  componentWillUnmount(){ clearInterval(this._t); clearInterval(this._r); }
+
+  toggleTheme = () => this.setState(s => ({theme: s.theme==='dark'?'light':'dark'}));
+
+  goLogin = () => this.setState({authView:'login'});
+  goRegister = () => this.setState({authView:'register'});
+  onLoginId = (e) => this.setState({loginId: e.target.value});
+  onLoginPw = (e) => this.setState({loginPw: e.target.value});
+  onRegUsername = (e) => this.setState({regUsername: e.target.value});
+  onRegEmail = (e) => this.setState({regEmail: e.target.value});
+  onRegPw = (e) => this.setState({regPw: e.target.value});
+  onRegConfirm = (e) => this.setState({regConfirm: e.target.value});
+  submitLogin = () => this.setState({phase:'onboarding'});
+  submitRegister = () => this.setState({phase:'onboarding'});
+
+  // ---------- onboarding ----------
+  setGoal = (v) => this.setState({goal:v});
+  setExperience = (v) => this.setState({experience:v});
+  onInjuries = (e) => this.setState({injuries: e.target.value});
+  toggleEquip = (v) => this.setState(s => ({equipment: s.equipment.includes(v) ? s.equipment.filter(x=>x!==v) : [...s.equipment, v]}));
+  toggleDiet = (v) => this.setState(s => ({diet: s.diet.includes(v) ? s.diet.filter(x=>x!==v) : [...s.diet, v]}));
+  nextStep = () => {
+    if (this.state.obStep >= 4) { this.setState({phase:'app'}); return; }
+    this.setState(s => ({obStep: s.obStep+1}));
+  };
+  prevStep = () => this.setState(s => ({obStep: Math.max(0, s.obStep-1)}));
+
+  // ---------- nav ----------
+  switchTab = (tab) => this.setState({tab});
+  goCoach = () => this.setState({tab:'coach'});
+  goNutrition = () => this.setState({tab:'nutrition'});
+  goWorkoutStart = () => this.setState({tab:'workout'});
+
+  // ---------- workout ----------
+  startWorkout = () => {
+    this.setState({workoutStatus:'live'});
+    this._t = setInterval(() => this.setState(s => ({elapsed: s.elapsed+1})), 1000);
+  };
+  pauseWorkout = () => { clearInterval(this._t); this.setState({workoutStatus:'paused'}); };
+  resumeWorkout = () => {
+    this.setState({workoutStatus:'live'});
+    this._t = setInterval(() => this.setState(s => ({elapsed: s.elapsed+1})), 1000);
+  };
+  openFinishConfirm = () => { clearInterval(this._t); this.setState({finishOpen:true}); };
+  confirmFinish = () => {
+    this.setState({finishOpen:false, workoutStatus:'idle', elapsed:0,
+      exercises: this.state.exercises.map(ex => ({...ex, sets: ex.sets.map(s => ({...s, weight:'', reps:'', done:false}))}))});
+  };
+
+  toggleExpand = (id) => this.setState(s => ({exercises: s.exercises.map(ex => ex.id===id ? {...ex, expanded:!ex.expanded} : ex)}));
+
+  updateSetField = (exId, idx, field, val) => this.setState(s => ({exercises: s.exercises.map(ex => ex.id!==exId ? ex : {...ex, sets: ex.sets.map((st,i) => i!==idx ? st : {...st, [field]:val})})}));
+
+  toggleSetDone = (exId, idx) => {
+    let allDone = false, isLast = false;
+    this.setState(s => {
+      const exercises = s.exercises.map(ex => {
+        if (ex.id!==exId) return ex;
+        const sets = ex.sets.map((st,i) => i!==idx ? st : {...st, done:!st.done});
+        const done = sets.every(st => st.done);
+        allDone = done;
+        return {...ex, sets};
+      });
+      const flatIdx = exercises.findIndex(e=>e.id===exId);
+      isLast = flatIdx === exercises.length-1 && exercises[flatIdx].sets.every(s=>s.done);
+      return {exercises};
+    }, () => {
+      const ex = this.state.exercises.find(e=>e.id===exId);
+      const wasJustCompleted = ex.sets[idx].done;
+      if (wasJustCompleted && !isLast) this.openRest();
+    });
+  };
+
+  openPicker = () => this.setState({pickerOpen:true});
+  closePicker = () => this.setState({pickerOpen:false, pickerSearch:''});
+  onPickerSearch = (e) => this.setState({pickerSearch: e.target.value});
+  addExercise = (item) => this.setState(s => ({
+    exercises: [...s.exercises, {id: nowId(), name: item.name, muscleGroup: item.muscleGroup, expanded:true, note:'',
+      sets:[{prevWeight:null,prevReps:null,tgtWeight:null,tgtReps:null,weight:'',reps:'',done:false},
+            {prevWeight:null,prevReps:null,tgtWeight:null,tgtReps:null,weight:'',reps:'',done:false},
+            {prevWeight:null,prevReps:null,tgtWeight:null,tgtReps:null,weight:'',reps:'',done:false}]}],
+    pickerOpen:false, pickerSearch:'',
+  }));
+
+  openNote = (exId) => { const ex=this.state.exercises.find(e=>e.id===exId); this.setState({noteOpen:true, noteExId:exId, noteText: ex.note||''}); };
+  closeNote = () => this.setState({noteOpen:false});
+  onNoteText = (e) => this.setState({noteText: e.target.value});
+  saveNote = () => this.setState(s => ({exercises: s.exercises.map(ex => ex.id!==s.noteExId ? ex : {...ex, note:s.noteText}), noteOpen:false}));
+
+  openRest = (secs=90) => {
+    clearInterval(this._r);
+    this.setState({restOpen:true, restRemaining:secs, restTotal:secs});
+    this._r = setInterval(() => this.setState(s => {
+      if (s.restRemaining <= 1) { clearInterval(this._r); return {restOpen:false, restRemaining:0}; }
+      return {restRemaining: s.restRemaining-1};
+    }), 1000);
+  };
+  addRest15 = () => this.setState(s => ({restRemaining: s.restRemaining+15, restTotal: s.restTotal+15}));
+  skipRest = () => { clearInterval(this._r); this.setState({restOpen:false}); };
+
+  // ---------- nutrition ----------
+  openAddFood = () => this.setState({addFoodOpen:true});
+  closeAddFood = () => this.setState({addFoodOpen:false, foodSearch:'', pickedFood:null, foodQty:100});
+  onFoodSearch = (e) => this.setState({foodSearch: e.target.value});
+  pickFood = (item) => this.setState({pickedFood:item, foodQty:100});
+  qtyMinus = () => this.setState(s => ({foodQty: Math.max(10, s.foodQty-10)}));
+  qtyPlus = () => this.setState(s => ({foodQty: s.foodQty+10}));
+  confirmAddFood = () => this.setState(s => ({
+    nutritionLogs: [...s.nutritionLogs, {id: nowId(), food:{name:s.pickedFood.name, cal:s.pickedFood.cal, protein: s.pickedFood.cal*0.08, carbs: s.pickedFood.cal*0.12, fat: s.pickedFood.cal*0.03}, qty:s.foodQty}],
+    addFoodOpen:false, foodSearch:'', pickedFood:null, foodQty:100,
+  }));
+  removeLog = (id) => this.setState(s => ({nutritionLogs: s.nutritionLogs.filter(l => l.id!==id)}));
+  openPhoto = () => this.setState({photoOpen:true, photoAttached:false});
+  closePhoto = () => this.setState({photoOpen:false});
+  attachPhoto = () => this.setState({photoAttached:true});
+
+  // ---------- progress ----------
+  selectMuscleGroup = (g) => this.setState({progressView:g});
+  backProgress = () => this.setState({progressView:'overview'});
+  openWeightLog = () => this.setState({weightLogOpen:true, weightInput:''});
+  closeWeightLog = () => this.setState({weightLogOpen:false});
+  onWeightInput = (e) => this.setState({weightInput: e.target.value});
+  toggleWeightUnit = () => this.setState(s => ({weightUnit: s.weightUnit==='lb'?'kg':'lb'}));
+  saveWeight = () => {
+    const v = parseFloat(this.state.weightInput);
+    if (!isNaN(v)) this.setState(s => ({bodyweight:[...s.bodyweight, v], weightLogOpen:false}));
+    else this.setState({weightLogOpen:false});
+  };
+
+  // ---------- coach ----------
+  onChatInput = (e) => this.setState({chatInput: e.target.value});
+  useQuickPrompt = (text) => { this.setState({chatInput:text}); this.sendMessageWith(text); };
+  sendMessage = () => { if(this.state.chatInput.trim()) this.sendMessageWith(this.state.chatInput.trim()); };
+  sendMessageWith = (text) => {
+    const replies = {
+      "How's my week?": "You've trained 4 of 7 days and hit your protein target 5 days running — solid week. Consider an extra rest day before your next heavy squat session.",
+      "Suggest a workout": "Try a push day: Bench Press 4x6-8, Incline DB Press 3x10, Cable Fly 3x12, Tricep Pushdown 3x15. Should take about 50 minutes.",
+      "Review my nutrition": "You're averaging 2,180 kcal against a 2,400 target with protein slightly under goal — add a scoop of Greek yogurt or a protein shake in the evening.",
+    };
+    const reply = replies[text] || "Got it — I'll factor that in. Anything specific you want me to adjust in your plan?";
+    this.setState(s => ({messages:[...s.messages, {from:'me', text}], chatInput:'', isTyping:true}));
+    setTimeout(() => this.setState(s => ({messages:[...s.messages, {from:'coach', text:reply}], isTyping:false})), 900);
+  };
+
+  stop = (e) => e.stopPropagation();
+
+  renderVals() {
+    const s = this.state;
+    const t = s.theme==='dark' ? DARK : LIGHT;
+
+    // ---- onboarding ----
+    const obStepLabels = ['Goal','Level','Injuries','Equipment','Diet'];
+    const goalDefs = [
+      {v:'lose', label:'Lose weight', sub:'Trim down, stay strong'},
+      {v:'build', label:'Build muscle', sub:'Add size and strength'},
+      {v:'maintain', label:'Maintain', sub:'Stay consistent'},
+      {v:'endurance', label:'Improve endurance', sub:'Go longer, recover faster'},
+    ];
+    const goalOptions = goalDefs.map(g => ({
+      label:g.label, sub:g.sub,
+      pick: () => this.setGoal(g.v),
+      cardStyle: `display:flex;align-items:center;gap:14px;padding:16px;border-radius:20px;border:1.5px solid ${s.goal===g.v?t.primary:t.border};background:${s.goal===g.v?t.primarySoft:t.card};cursor:pointer;text-align:left;transition:border-color .2s;`,
+      dotStyle: `width:12px;height:12px;border-radius:50%;background:${s.goal===g.v?t.primary:t.cardAlt};border:2px solid ${s.goal===g.v?t.primary:t.border};flex-shrink:0;`,
+    }));
+    const expDefs = [
+      {v:'beginner', label:'Beginner', sub:'New to structured training'},
+      {v:'intermediate', label:'Intermediate', sub:'6+ months consistent training'},
+      {v:'advanced', label:'Advanced', sub:'Years of dedicated training'},
+    ];
+    const expOptions = expDefs.map(e => ({
+      label:e.label, sub:e.sub, pick: () => this.setExperience(e.v),
+      cardStyle: `padding:16px;border-radius:20px;border:1.5px solid ${s.experience===e.v?t.primary:t.border};background:${s.experience===e.v?t.primarySoft:t.card};cursor:pointer;text-align:left;`,
+    }));
+    const equipList = ['Dumbbells','Barbell','Machines','Resistance bands','Bodyweight only','Full gym'];
+    const equipOptions = equipList.map(v => ({label:v, toggle:()=>this.toggleEquip(v),
+      chipStyle: `padding:10px 16px;border-radius:99px;border:1.5px solid ${s.equipment.includes(v)?t.primary:t.border};background:${s.equipment.includes(v)?t.primarySoft:t.card};color:${s.equipment.includes(v)?t.primary:t.text};font-weight:700;font-size:13px;cursor:pointer;`}));
+    const dietList = ['None','Vegetarian','Vegan','Gluten-free','Dairy-free','Halal','Kosher'];
+    const dietOptions = dietList.map(v => ({label:v, toggle:()=>this.toggleDiet(v),
+      chipStyle: `padding:10px 16px;border-radius:99px;border:1.5px solid ${s.diet.includes(v)?t.primary:t.border};background:${s.diet.includes(v)?t.primarySoft:t.card};color:${s.diet.includes(v)?t.primary:t.text};font-weight:700;font-size:13px;cursor:pointer;`}));
+
+    const nextDisabled = (s.obStep===0 && !s.goal) || (s.obStep===1 && !s.experience);
+    const nextBtnStyle = `width:100%;padding:16px;border-radius:18px;border:none;background:${nextDisabled?t.cardAlt:t.primary};color:${nextDisabled?t.textDim:t.onPrimary};font-weight:800;font-size:15px;cursor:${nextDisabled?'default':'pointer'};transition:background .2s;`;
+
+    // ---- workout stats ----
+    const allSets = s.exercises.flatMap(ex => ex.sets);
+    const doneSets = allSets.filter(st => st.done && st.weight && st.reps);
+    const volume = doneSets.reduce((a,st) => a + (parseFloat(st.weight)||0)*(parseInt(st.reps)||0), 0);
+    const bestE1rm = doneSets.reduce((max,st) => { const w=parseFloat(st.weight)||0, r=parseInt(st.reps)||0; const e = w*(1+r/30); return Math.max(max,e); }, 0);
+
+    const exercises = s.exercises.map(ex => {
+      const done = ex.sets.every(st=>st.done);
+      const started = ex.sets.some(st=>st.done);
+      const status = done ? 'COMPLETED' : started ? 'IN PROGRESS' : 'QUEUED';
+      const color = done ? t.primary : started ? t.secondary : t.textDim;
+      return {
+        id:ex.id, name:ex.name, muscleGroup:ex.muscleGroup, expanded:ex.expanded,
+        statusLabel: status,
+        statusDotStyle: `width:10px;height:10px;border-radius:50%;background:${color};flex-shrink:0;`,
+        chevronStyle: `color:${t.textDim};font-size:16px;transform:rotate(${ex.expanded?'180deg':'0deg'});transition:transform .2s;`,
+        toggleExpand: () => this.toggleExpand(ex.id),
+        openNote: () => this.openNote(ex.id),
+        noteBtnLabel: ex.note ? '✎ Edit note' : '+ Add note',
+        sets: ex.sets.map((st,i) => ({
+          num:i+1,
+          prevLabel: st.prevWeight ? `${st.prevWeight}×${st.prevReps}` : '—',
+          tgtLabel: st.tgtWeight ? `${st.tgtWeight}×${st.tgtReps}` : '—',
+          weight: st.weight, reps: st.reps,
+          onWeight: (e) => this.updateSetField(ex.id, i, 'weight', e.target.value),
+          onReps: (e) => this.updateSetField(ex.id, i, 'reps', e.target.value),
+          toggleDone: () => this.toggleSetDone(ex.id, i),
+          doneBtnStyle: `width:28px;height:28px;border-radius:8px;border:1.5px solid ${st.done?t.primary:t.border};background:${st.done?t.primary:'transparent'};color:${st.done?t.onPrimary:t.border};font-size:13px;font-weight:800;cursor:pointer;`,
+        })),
+      };
+    });
+
+    const pickerResults = EXERCISE_CATALOG.filter(e => e.name.toLowerCase().includes(s.pickerSearch.toLowerCase())).map(e => ({
+      name:e.name, muscleGroup:e.muscleGroup, pick: () => this.addExercise(e),
+    }));
+
+    // ---- nutrition ----
+    const targets = {calories:2400, protein:180, carbs:260, fat:70};
+    const consumed = s.nutritionLogs.reduce((acc,l) => {
+      const f = l.qty/100;
+      acc.calories += l.food.cal*f; acc.protein += l.food.protein*f; acc.carbs += l.food.carbs*f; acc.fat += l.food.fat*f;
+      return acc;
+    }, {calories:0,protein:0,carbs:0,fat:0});
+    const calPct = Math.min(100, Math.round(consumed.calories/targets.calories*100));
+    const r1=27, circ1=2*Math.PI*r1;
+    const r2=62, circ2=2*Math.PI*r2;
+    const macroColors = {Protein:t.primary, Carbs:t.secondary, Fat:t.danger};
+    const macros = ['Protein','Carbs','Fat'].map(label => {
+      const key = label.toLowerCase();
+      const pct = Math.min(100, Math.round(consumed[key]/targets[key]*100));
+      return {label, consumed: Math.round(consumed[key]), target: targets[key], pct, color: macroColors[label]};
+    });
+
+    const foodResults = FOOD_CATALOG.filter(f => f.name.toLowerCase().includes(s.foodSearch.toLowerCase())).map(f => ({
+      name:f.name, calories:f.cal, pick: () => this.pickFood(f),
+    }));
+
+    // ---- progress ----
+    const consistTrained = 18, consistTotal = 28;
+    const r3=23, circ3=2*Math.PI*r3;
+    const bw = s.bodyweight;
+    const bwMin = Math.min(...bw), bwMax = Math.max(...bw);
+    const weightLinePoints = bw.map((v,i) => {
+      const x = (i/(bw.length-1))*300;
+      const y = 80 - ((v-bwMin)/((bwMax-bwMin)||1))*60;
+      return `${x},${y}`;
+    }).join(' ');
+    const muscleGroups = Object.keys(MUSCLE_GROUP_DATA).map(g => ({
+      label:g, valueLabel: MUSCLE_GROUP_DATA[g].best ? `${MUSCLE_GROUP_DATA[g].best} lb` : '—',
+      select: () => this.selectMuscleGroup(g),
+    }));
+    const detail = MUSCLE_GROUP_DATA[s.progressView] || {trend:[]};
+    let detailLinePoints = '';
+    if (detail.trend && detail.trend.length) {
+      const dMin = Math.min(...detail.trend), dMax = Math.max(...detail.trend);
+      detailLinePoints = detail.trend.map((v,i) => {
+        const x = (i/(detail.trend.length-1))*300;
+        const y = 80 - ((v-dMin)/((dMax-dMin)||1))*60;
+        return `${x},${y}`;
+      }).join(' ');
+    }
+
+    // ---- coach ----
+    const messages = s.messages.map(m => ({
+      text:m.text,
+      rowStyle: `display:flex;justify-content:${m.from==='me'?'flex-end':'flex-start'};`,
+      bubbleStyle: `max-width:78%;padding:12px 16px;border-radius:18px;font-size:13px;line-height:1.45;${m.from==='me' ? `background:${t.primary};color:${t.onPrimary};font-weight:600;` : `background:${t.card};border:1px solid ${t.border};color:${t.text};`}`,
+    }));
+    const quickPromptDefs = ["How's my week?","Suggest a workout","Review my nutrition"];
+    const quickPrompts = quickPromptDefs.map(p => ({label:p, use: () => this.useQuickPrompt(p)}));
+
+    // ---- nav ----
+    const tabDefs = [
+      {key:'home', label:'Home', icon: 'home'},
+      {key:'workout', label:'Train', icon:'workout'},
+      {key:'nutrition', label:'Food', icon:'nutrition'},
+      {key:'progress', label:'Progress', icon:'progress'},
+      {key:'coach', label:'Coach', icon:'coach'},
+    ];
+    const iconChars = {home:'⌂', workout:'⚡', nutrition:'◍', progress:'▲', coach:'✦'};
+    const tabIdx = tabDefs.findIndex(td => td.key===s.tab);
+    const tabs = tabDefs.map((td,i) => ({
+      label: td.label, iconChar: iconChars[td.icon],
+      select: () => this.switchTab(td.key),
+      iconWrapStyle: `font-size:16px;color:${s.tab===td.key?t.primary:t.textDim};transition:color .2s;`,
+      labelStyle: `font-size:10px;font-weight:700;color:${s.tab===td.key?t.primary:t.textDim};transition:color .2s;`,
+    }));
+
+    const pickedFood = s.pickedFood;
+    const pickedCalc = pickedFood ? Math.round(pickedFood.cal*s.foodQty/100) : 0;
+
+    const pw = s.regPw || '';
+    const pwScore = (pw.length>=8?1:0) + (/[A-Z]/.test(pw)?1:0) + (/[0-9]/.test(pw)?1:0) + (/[^A-Za-z0-9]/.test(pw)?1:0);
+    const pwSegments = [0,1,2,3].map(i => ({style: `flex:1;height:5px;border-radius:99px;background:${i<pwScore ? (pwScore<=1?t.danger:pwScore<=2?t.secondary:t.primary) : t.cardAlt};transition:background .2s;`}));
+    const inputStyle = `width:100%;padding:14px 16px;border-radius:14px;border:1px solid ${t.border};background:${t.card};color:${t.text};font-size:14px;font-family:inherit;outline:none;`;
+
+    return {
+      t,
+      isAuth: s.phase==='auth', authView: s.authView, isLogin: s.authView==='login', isRegister: s.authView==='register',
+      loginId: s.loginId, loginPw: s.loginPw, onLoginId: this.onLoginId, onLoginPw: this.onLoginPw, submitLogin: this.submitLogin,
+      regUsername: s.regUsername, regEmail: s.regEmail, regPw: s.regPw, regConfirm: s.regConfirm,
+      onRegUsername: this.onRegUsername, onRegEmail: this.onRegEmail, onRegPw: this.onRegPw, onRegConfirm: this.onRegConfirm, submitRegister: this.submitRegister,
+      goLogin: this.goLogin, goRegister: this.goRegister, inputStyle, pwSegments,
+      isOnboarding: s.phase==='onboarding', isApp: s.phase==='app',
+      obKey: 'ob'+s.obStep, obStep: s.obStep,
+      obStepLabel: obStepLabels[s.obStep], obProgressPct: ((s.obStep+1)/5)*100,
+      obStepIs0: s.obStep===0, obStepIs1: s.obStep===1, obStepIs2: s.obStep===2, obStepIs3: s.obStep===3, obStepIs4: s.obStep===4,
+      backBtnStyle: `width:34px;height:34px;border-radius:50%;border:1px solid ${t.border};background:${t.card};color:${t.text};font-size:14px;cursor:pointer;${s.obStep===0?'visibility:hidden;':''}`,
+      prevStep: this.prevStep, nextStep: this.nextStep,
+      goalOptions, expOptions, equipOptions, dietOptions,
+      injuries: s.injuries, onInjuries: this.onInjuries,
+      nextDisabled, nextBtnStyle, nextBtnLabel: s.obStep===4 ? "Let's go" : 'Continue',
+
+      greeting: s.phase==='app' && new Date().getHours()<12 ? 'Good morning' : 'Welcome back',
+      tabTitle: {home:'Overview', workout:'Workout', nutrition:'Nutrition', progress:'Progress', coach:'Coach'}[s.tab],
+      toggleTheme: this.toggleTheme,
+      themeIconStyle: `width:16px;height:16px;border-radius:50%;background:${t.text};box-shadow:${s.theme==='dark' ? `-4px -4px 0 -2px ${t.card}` : 'none'};`,
+      tabKey: s.tab, tab: s.tab,
+      isHome: s.tab==='home', isWorkout: s.tab==='workout', isNutrition: s.tab==='nutrition', isProgress: s.tab==='progress', isCoach: s.tab==='coach',
+
+      streakLabel: '5-day streak', coachTeaser: 'You crushed leg day yesterday — want a lighter recovery push session today?',
+      goCoach: this.goCoach, goNutrition: this.goNutrition, goWorkoutStart: this.goWorkoutStart,
+      calRingCirc: circ1, calRingOffset: circ1*(1-calPct/100), calPct,
+      calSummary: `${Math.round(consumed.calories)} of ${targets.calories} kcal`,
+      workoutCtaTitle: s.workoutStatus==='idle' ? "Today's session" : 'Session in progress',
+      workoutCtaSub: s.workoutStatus==='idle' ? '3 exercises planned · ~50 min' : `${fmtTime(s.elapsed)} elapsed`,
+      workoutCtaBtn: s.workoutStatus==='idle' ? 'Start' : 'Resume',
+      latestWeight: bw[bw.length-1],
+
+      workoutIsIdle: s.workoutStatus==='idle', workoutIsLive: s.workoutStatus==='live', workoutIsPaused: s.workoutStatus==='paused',
+      sessionStatusLabel: s.workoutStatus==='live' ? 'SESSION LIVE' : s.workoutStatus==='paused' ? 'SESSION PAUSED' : 'NOT STARTED',
+      sessionDotStyle: `width:9px;height:9px;border-radius:50%;background:${s.workoutStatus==='live'?t.primary:s.workoutStatus==='paused'?t.secondary:t.textDim};${s.workoutStatus==='live'?'animation:softPulse 1.2s infinite;':''}`,
+      elapsedLabel: fmtTime(s.elapsed),
+      startWorkout: this.startWorkout, pauseWorkout: this.pauseWorkout, resumeWorkout: this.resumeWorkout, openFinishConfirm: this.openFinishConfirm,
+      volLabel: `${Math.round(volume).toLocaleString()} lb`, setsDone: `${doneSets.length}/${allSets.length}`, bestE1rmLabel: bestE1rm ? `${Math.round(bestE1rm)} lb` : '—',
+      exercises, openPicker: this.openPicker,
+
+      pickerOpen: s.pickerOpen, pickerSearch: s.pickerSearch, onPickerSearch: this.onPickerSearch, closePicker: this.closePicker, pickerResults, stop: this.stop,
+      noteOpen: s.noteOpen, noteText: s.noteText, onNoteText: this.onNoteText, closeNote: this.closeNote, saveNote: this.saveNote,
+      restOpen: s.restOpen, restLabel: fmtTime(s.restRemaining), restCirc: 2*Math.PI*58, restOffset: (2*Math.PI*58)*(1-(s.restTotal? s.restRemaining/s.restTotal : 0)),
+      addRest15: this.addRest15, skipRest: this.skipRest,
+      finishOpen: s.finishOpen, confirmFinish: this.confirmFinish,
+
+      calRingCircBig: circ2, calRingOffsetBig: circ2*(1-calPct/100), calConsumed: Math.round(consumed.calories), calTarget: targets.calories,
+      macros, openAddFood: this.openAddFood, openPhoto: this.openPhoto,
+      hasNutritionLogs: s.nutritionLogs.length>0, noNutritionLogs: s.nutritionLogs.length===0,
+      nutritionLogs: s.nutritionLogs.map((l,i) => ({id:l.id, food:l.food, qty:l.qty, calories: Math.round(l.food.cal*l.qty/100), remove: () => this.removeLog(l.id),
+        thumbStyle: `flex-shrink:0;width:44px;height:44px;border-radius:12px;background:repeating-linear-gradient(${45+i*30}deg,${t.cardAlt},${t.cardAlt} 6px,${t.primarySoft} 6px,${t.primarySoft} 12px);`})),
+      addFoodOpen: s.addFoodOpen, foodSearch: s.foodSearch, onFoodSearch: this.onFoodSearch, closeAddFood: this.closeAddFood, foodResults,
+      noPickedFood: !pickedFood, hasPickedFood: !!pickedFood,
+      pickedFoodName: pickedFood ? pickedFood.name : '', foodQty: s.foodQty, qtyMinus: this.qtyMinus, qtyPlus: this.qtyPlus,
+      pickedFoodCalcLabel: `≈ ${pickedCalc} kcal`, confirmAddFood: this.confirmAddFood,
+      photoOpen: s.photoOpen, closePhoto: this.closePhoto, photoAttached: s.photoAttached, photoNotAttached: !s.photoAttached, attachPhoto: this.attachPhoto,
+      progressPhotos: [0,1,2].map(i => ({label:['4 wks ago','2 wks ago','Today'][i],
+        style:`flex-shrink:0;width:78px;height:96px;border-radius:16px;overflow:hidden;position:relative;display:flex;align-items:flex-end;padding:6px;background:repeating-linear-gradient(${60+i*40}deg,${t.cardAlt},${t.cardAlt} 8px,${i%2?t.secondarySoft:t.primarySoft} 8px,${i%2?t.secondarySoft:t.primarySoft} 16px);`})),
+
+      progressIsOverview: s.progressView==='overview', progressIsDetail: s.progressView!=='overview', progressView: s.progressView,
+      consistLabel: `${consistTrained}/${consistTotal}`, consistCirc: circ3, consistOffset: circ3*(1-consistTrained/consistTotal),
+      openWeightLog: this.openWeightLog, weightLinePoints, weightTrendLabel: bw[bw.length-1]<bw[0] ? 'trending down' : 'trending up',
+      muscleGroups, backProgress: this.backProgress,
+      hasDetailData: detail.trend && detail.trend.length>0, noDetailData: !(detail.trend && detail.trend.length>0), detailLinePoints,
+      weightLogOpen: s.weightLogOpen, weightInput: s.weightInput, onWeightInput: this.onWeightInput, weightUnit: s.weightUnit,
+      toggleWeightUnit: this.toggleWeightUnit, closeWeightLog: this.closeWeightLog, saveWeight: this.saveWeight,
+
+      messages, isTyping: s.isTyping, quickPrompts, chatInput: s.chatInput, onChatInput: this.onChatInput, sendMessage: this.sendMessage,
+
+      tabs, navPillLeft: tabIdx*20+10,
+    };
+  }
+}
+</script>
+</body>
+</html>
