@@ -28,6 +28,33 @@ const SUGGESTIONS = [
   "Am I eating enough protein?",
 ];
 
+// Bubble keys must be unique and stable for the lifetime of the bubble.
+// Neither candidate works alone: Date.now() collides when two sends land in
+// the same millisecond, and the server's message id is absent whenever the
+// response is not the shape we expect - which silently produced the same
+// key ("reply-undefined") for every reply. A local counter cannot collide.
+let turnSequence = 0;
+const nextTurnId = () => `turn-${(turnSequence += 1)}`;
+
+// POST /coach returns the assistant turn as an object: { reply: { content } }.
+// An earlier revision of this same endpoint returned it as a bare string,
+// { reply: "..." }, so a backend that has not been redeployed still answers
+// in that shape. Accept both, and return null when neither yields text so an
+// unreadable response surfaces as an error instead of an empty bubble.
+function extractReplyText(data: unknown): string | null {
+  const reply = (data as { reply?: unknown } | null)?.reply;
+  if (typeof reply === "string") {
+    return reply.trim() || null;
+  }
+  if (reply && typeof reply === "object") {
+    const content = (reply as { content?: unknown }).content;
+    if (typeof content === "string") {
+      return content.trim() || null;
+    }
+  }
+  return null;
+}
+
 export default function Coach() {
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
@@ -49,7 +76,7 @@ export default function Coach() {
       setSending(true);
       setTurns((prev) => [
         ...prev,
-        { id: `local-${Date.now()}`, role: "user", content: message },
+        { id: nextTurnId(), role: "user", content: message },
       ]);
 
       try {
@@ -77,14 +104,21 @@ export default function Coach() {
         }
 
         const data = await response.json();
-        setConversationId(data.conversation_id);
+        const replyText = extractReplyText(data);
+
+        if (replyText === null) {
+          setTurns((prev) => prev.slice(0, -1));
+          setDraft(message);
+          setError("Coach replied in a format this app could not read.");
+          return;
+        }
+
+        if (typeof data?.conversation_id === "number") {
+          setConversationId(data.conversation_id);
+        }
         setTurns((prev) => [
           ...prev,
-          {
-            id: `reply-${data.reply.id}`,
-            role: "assistant",
-            content: data.reply.content,
-          },
+          { id: nextTurnId(), role: "assistant", content: replyText },
         ]);
       } catch {
         setTurns((prev) => prev.slice(0, -1));

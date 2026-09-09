@@ -229,3 +229,52 @@ def test_request_completion_without_api_key_raises(monkeypatch):
     monkeypatch.delenv("OPENROUTER_API_KEY", raising=False)
     with pytest.raises(coach_service.CoachUnavailable):
         coach_service.request_completion([{"role": "user", "content": "hi"}])
+
+
+def test_coach_reply_is_an_object_not_a_bare_string(client, stub_provider):
+    """
+    Regression guard for the empty-reply bug.
+
+    An earlier revision of this endpoint returned {"reply": "<text>"}. The
+    app reads the assistant text from reply.content, so if the contract ever
+    reverts to a bare string every reply renders as an empty bubble - and,
+    because reply.id is then undefined too, every bubble is keyed
+    "reply-undefined" and React drops all but one of them. Pin the shape.
+    """
+    token = register_login_and_create_profile(
+        client, "shape@example.com", "shapeuser"
+    )
+    body = client.post(
+        "/coach",
+        json={"message": "What should I train today?"},
+        headers={"Authorization": f"Bearer {token}"},
+    ).json()
+
+    assert isinstance(body["reply"], dict), (
+        "reply must be an object; a bare string renders as an empty bubble"
+    )
+    assert isinstance(body["reply"]["content"], str)
+    assert body["reply"]["content"].strip()
+    assert isinstance(body["reply"]["id"], int)
+    assert isinstance(body["conversation_id"], int)
+
+
+def test_coach_reply_ids_are_unique_across_turns(client, stub_provider):
+    """
+    The app may derive a React list key from the reply id, so two turns in
+    one thread must never carry the same id.
+    """
+    token = register_login_and_create_profile(
+        client, "uniqueids@example.com", "uniqueidsuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    first = client.post("/coach", json={"message": "One"}, headers=headers).json()
+    second = client.post(
+        "/coach",
+        json={"message": "Two", "conversation_id": first["conversation_id"]},
+        headers=headers,
+    ).json()
+
+    assert first["reply"]["id"] != second["reply"]["id"]
+    assert first["conversation_id"] == second["conversation_id"]
