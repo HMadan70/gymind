@@ -56,6 +56,11 @@ export default function Nutrition() {
   const insets = useSafeAreaInsets();
 
   const [logs, setLogs] = useState<NutritionLog[]>([]);
+  // Today's totals come from GET /nutrition/summary rather than being
+  // reduced from `logs` here. The server bounds the day in UTC; a local
+  // isToday() filter disagrees with it either side of midnight, which put
+  // this ring and Home's out of step against the same daily target.
+  const [consumed, setConsumed] = useState<Totals>(EMPTY_TOTALS);
   const [targets, setTargets] = useState<{
     target_calories: number | null;
     target_protein: number | null;
@@ -97,12 +102,24 @@ export default function Nutrition() {
   const loadNutrition = useCallback(async () => {
     setLoadError("");
     try {
-      const [logsResponse, targetsResponse] = await Promise.all([
+      const [logsResponse, targetsResponse, summaryResponse] = await Promise.all([
         authFetch(`${API_URL}/nutrition`),
         authFetch(`${API_URL}/nutrition/targets`),
+        // No ?date= — the server defaults to today, which is what the ring
+        // shows. Home reads the same endpoint, so both screens agree.
+        authFetch(`${API_URL}/nutrition/summary`),
       ]);
       if (logsResponse.ok) setLogs(await logsResponse.json());
       if (targetsResponse.ok) setTargets(await targetsResponse.json());
+      if (summaryResponse.ok) {
+        const summary = await summaryResponse.json();
+        setConsumed({
+          calories: summary?.total_calories ?? 0,
+          protein: summary?.total_protein ?? 0,
+          carbs: summary?.total_carbs ?? 0,
+          fat: summary?.total_fat ?? 0,
+        });
+      }
       if (!logsResponse.ok && !targetsResponse.ok) setLoadError("Could not load nutrition data.");
     } catch {
       setLoadError("Could not reach the server.");
@@ -292,22 +309,6 @@ export default function Nutrition() {
     setIsCreatingFood(false);
     setCreateError("");
   };
-
-  // GET /nutrition/summary exists but has no date filter — it sums every
-  // log ever, so it can't answer "today" against a daily target. Totals
-  // are computed here from the logs (which carry logged_at plus the
-  // food's per-100g macros) for the same reason as on Home.
-  const todaysLogs = logs.filter((log) => isToday(log.logged_at));
-  const consumed = todaysLogs.reduce<Totals>((acc, log) => {
-    if (!log.food) return acc;
-    const factor = (log.quantity_grams || 0) / 100;
-    return {
-      calories: acc.calories + (log.food.calories || 0) * factor,
-      protein: acc.protein + (log.food.protein || 0) * factor,
-      carbs: acc.carbs + (log.food.carbs || 0) * factor,
-      fat: acc.fat + (log.food.fat || 0) * factor,
-    };
-  }, EMPTY_TOTALS);
 
   const calorieTarget = targets?.target_calories ?? null;
   const caloriePct =
