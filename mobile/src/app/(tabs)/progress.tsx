@@ -14,6 +14,7 @@ import { authFetch } from "../../lib/session";
 import { pickPhoto, uploadPhoto } from "../../lib/photos";
 import { AuthImage } from "../../components/AuthImage";
 import { ConfirmModal } from "../../components/ConfirmModal";
+import { useAsyncGuard } from "../../lib/asyncGuard";
 
 type Consistency = { days_trained: number; total_days: number };
 type BodyWeightPoint = { weight: number; unit?: string; logged_at?: string | null; date?: string };
@@ -89,7 +90,8 @@ export default function Progress() {
   const [isWeightModalOpen, setIsWeightModalOpen] = useState(false);
   const [weightInput, setWeightInput] = useState("");
   const [unitDraft, setUnitDraft] = useState<"lb" | "kg">("lb");
-  const [isSavingWeight, setIsSavingWeight] = useState(false);
+  // Duplicate-submission guard - see src/lib/asyncGuard.ts.
+  const saveWeightGuard = useAsyncGuard();
   const [weightError, setWeightError] = useState("");
 
   // Drilldown: muscle group -> its exercises -> one exercise's e1RM trend.
@@ -215,27 +217,26 @@ export default function Progress() {
       setWeightError("Enter a weight.");
       return;
     }
-    setIsSavingWeight(true);
     setWeightError("");
-    try {
-      const response = await authFetch(`${API_URL}/body-weight`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ weight, unit: unitDraft }),
-      });
-      if (!response.ok) {
-        setWeightError("Could not save that entry.");
-        return;
+    await saveWeightGuard.run(async () => {
+      try {
+        const response = await authFetch(`${API_URL}/body-weight`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ weight, unit: unitDraft }),
+        });
+        if (!response.ok) {
+          setWeightError("Could not save that entry.");
+          return;
+        }
+        setIsWeightModalOpen(false);
+        // Re-read the trend so the chart and "latest" line include the new
+        // point (and re-normalise if the unit just changed).
+        loadBodyWeight(rangeDays);
+      } catch {
+        setWeightError("Could not reach the server.");
       }
-      setIsWeightModalOpen(false);
-      // Re-read the trend so the chart and "latest" line include the new
-      // point (and re-normalise if the unit just changed).
-      loadBodyWeight(rangeDays);
-    } catch {
-      setWeightError("Could not reach the server.");
-    } finally {
-      setIsSavingWeight(false);
-    }
+    });
   };
 
   const openGroup = async (group: string) => {
@@ -837,28 +838,32 @@ export default function Progress() {
             <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
               <Pressable
                 onPress={() => setIsWeightModalOpen(false)}
+                disabled={saveWeightGuard.pending}
                 style={{
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
                   backgroundColor: colors.bgInset,
                   alignItems: "center",
+                  opacity: saveWeightGuard.pending ? 0.5 : 1,
                 }}
               >
                 <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodySemi }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={saveBodyWeight}
+                disabled={saveWeightGuard.pending}
                 style={{
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
                   backgroundColor: colors.teal,
                   alignItems: "center",
+                  opacity: saveWeightGuard.pending ? 0.5 : 1,
                 }}
               >
                 <Text style={{ color: colors.tealOn, fontSize: 14, fontFamily: fonts.bodySemi }}>
-                  {isSavingWeight ? "Saving…" : "Save"}
+                  {saveWeightGuard.pending ? "Saving…" : "Save"}
                 </Text>
               </Pressable>
             </View>
