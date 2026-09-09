@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
-import { X } from "lucide-react-native";
+import { X, Camera } from "lucide-react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -11,6 +11,8 @@ import { fonts } from "../../constants/theme";
 import { API_URL } from "../../constants/api";
 import { Card } from "../../components/Card";
 import { authFetch } from "../../lib/session";
+import { pickPhoto, uploadPhoto, type PickedPhoto } from "../../lib/photos";
+import { AuthImage } from "../../components/AuthImage";
 
 type Food = {
   id: number;
@@ -31,6 +33,7 @@ type NutritionLog = {
   quantity_grams: number;
   logged_at: string | null;
   food: { name: string; calories: number; protein: number; carbs: number; fat: number } | null;
+  has_photo: boolean;
 };
 
 type Totals = { calories: number; protein: number; carbs: number; fat: number };
@@ -77,6 +80,10 @@ export default function Nutrition() {
   const [pickedFood, setPickedFood] = useState<Food | null>(null);
   const [quantityText, setQuantityText] = useState("100");
   const [isSaving, setIsSaving] = useState(false);
+  // Picked before the food itself, since a photo has nowhere to attach to
+  // until the log it belongs to exists - "Attach photo" opens the picker,
+  // then walks straight into the same food/quantity flow as "+ Log food".
+  const [pendingPhoto, setPendingPhoto] = useState<PickedPhoto | null>(null);
 
   // Editing an already-logged entry (quantity only — same shape as
   // Workout's set editor, which edits weight/reps but never which
@@ -186,6 +193,13 @@ export default function Nutrition() {
         body: JSON.stringify({ food_id: pickedFood.id, quantity_grams: grams }),
       });
       if (response.ok) {
+        if (pendingPhoto) {
+          const newLog = await response.json();
+          // Best-effort: the log itself is already saved, so a failed
+          // photo attach here shouldn't block closing the picker or
+          // surface as a logging error - it's a separate resource.
+          await uploadPhoto(`${API_URL}/nutrition/${newLog.id}/photo`, pendingPhoto).catch(() => {});
+        }
         closePicker();
         loadNutrition();
       } else {
@@ -309,6 +323,15 @@ export default function Nutrition() {
     setQuantityText("100");
     setIsCreatingFood(false);
     setCreateError("");
+    setPendingPhoto(null);
+  };
+
+  const attachPhotoThenLog = async () => {
+    const photo = await pickPhoto();
+    if (!photo) return;
+    setPendingPhoto(photo);
+    setIsPickerOpen(true);
+    fetchFavoriteFoods();
   };
 
   const calorieTarget = targets?.target_calories ?? null;
@@ -385,20 +408,27 @@ export default function Nutrition() {
           paddingHorizontal: 14,
         }}
       >
-        <View
-          style={{
-            width: 44,
-            height: 44,
-            borderRadius: 12,
-            backgroundColor: colors.bgInset,
-            alignItems: "center",
-            justifyContent: "center",
-          }}
-        >
-          <Text style={{ color: colors.textFaint, fontSize: 15, fontFamily: fonts.bodyExtra }}>
-            {(log.food?.name ?? "?").trim().charAt(0).toUpperCase()}
-          </Text>
-        </View>
+        {log.has_photo ? (
+          <AuthImage
+            uri={`${API_URL}/nutrition/${log.id}/photo`}
+            style={{ width: 44, height: 44, borderRadius: 12 }}
+          />
+        ) : (
+          <View
+            style={{
+              width: 44,
+              height: 44,
+              borderRadius: 12,
+              backgroundColor: colors.bgInset,
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <Text style={{ color: colors.textFaint, fontSize: 15, fontFamily: fonts.bodyExtra }}>
+              {(log.food?.name ?? "?").trim().charAt(0).toUpperCase()}
+            </Text>
+          </View>
+        )}
 
         <View style={{ flex: 1 }}>
           <Text numberOfLines={2} style={{ color: colors.textPrimary, fontSize: 13, fontFamily: fonts.bodyBold }}>
@@ -563,8 +593,10 @@ export default function Nutrition() {
             <Text style={{ color: colors.tealOn, fontSize: 13, fontFamily: fonts.bodyExtra }}>+ Log food</Text>
           </Pressable>
 
-          <View
-            accessibilityLabel="Photo attachment is not available yet"
+          <Pressable
+            onPress={attachPhotoThenLog}
+            accessibilityRole="button"
+            accessibilityLabel="Attach a photo to a logged meal"
             style={{
               flex: 1,
               padding: 14,
@@ -573,10 +605,14 @@ export default function Nutrition() {
               borderStyle: "dashed",
               borderColor: colors.border,
               alignItems: "center",
+              flexDirection: "row",
+              justifyContent: "center",
+              gap: 6,
             }}
           >
+            <Camera size={15} color={colors.textDim} />
             <Text style={{ color: colors.textDim, fontSize: 13, fontFamily: fonts.bodyBold }}>Attach photo</Text>
-          </View>
+          </Pressable>
         </View>
 
         {/* Logged foods */}
@@ -805,6 +841,18 @@ export default function Nutrition() {
                 <Text style={{ color: colors.textDim, fontSize: 12, marginTop: 10, fontFamily: fonts.body }}>
                   {Math.round((pickedFood.calories * (Number(quantityText) || 0)) / 100)} kcal total
                 </Text>
+
+                {pendingPhoto && (
+                  <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 12 }}>
+                    <Image
+                      source={{ uri: pendingPhoto.uri }}
+                      style={{ width: 40, height: 40, borderRadius: 8 }}
+                    />
+                    <Text style={{ color: colors.textDim, fontSize: 12, fontFamily: fonts.body }}>
+                      Photo will be attached
+                    </Text>
+                  </View>
+                )}
 
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
                   <Pressable

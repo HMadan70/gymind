@@ -58,6 +58,13 @@ export async function signIn(token: string) {
   setState({ status: "signedIn", verified: false });
 }
 
+// Exposes the raw token for the one case authFetch can't cover: React
+// Native's <Image> takes a URI + headers, not a fetch() Response, so an
+// authenticated photo thumbnail has to attach this itself.
+export async function getToken(): Promise<string | null> {
+  return AsyncStorage.getItem(TOKEN_KEY);
+}
+
 export async function clearSession() {
   await AsyncStorage.removeItem(TOKEN_KEY);
   setState({ status: "signedOut", verified: false });

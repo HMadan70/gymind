@@ -29,6 +29,13 @@
           "image": "./assets/images/splash-icon.png",
           "imageWidth": 76
         }
+      ],
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "Gymind needs access to your photos to attach a meal or progress photo.",
+          "cameraPermission": "Gymind needs access to your camera to take a meal or progress photo."
+        }
       ]
     ],
     "experiments": {
