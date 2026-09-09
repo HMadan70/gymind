@@ -4,7 +4,7 @@ import { X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../constants/theme";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { API_URL } from "../../constants/api";
 import { ConfirmModal } from "../../components/ConfirmModal";
 import { Card } from "../../components/Card";
@@ -15,6 +15,8 @@ import { LoggedSetRow } from "../../components/LoggedSetRow";
 import { EditableSetRow } from "../../components/EditableSetRow";
 import { Button } from "../../components/Button";
 import { authFetch } from "../../lib/session";
+import { useAsyncGuard, useAsyncGuardMap } from "../../lib/asyncGuard";
+import { useDebouncedValue } from "../../lib/useDebounce";
 
 type SetEntry = {
   id: string;
@@ -128,9 +130,18 @@ export default function Workout() {
   const [editingWorkoutId, setEditingWorkoutId] = useState<number | null>(null);
   const [editingSets, setEditingSets] = useState<EditableWorkoutSet[]>([]);
   const [isLoadingEdit, setIsLoadingEdit] = useState(false);
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
-  
+
+  // Duplicate-submission guards - see src/lib/asyncGuard.ts. One per
+  // distinct action; the *Map variants are keyed per-row so completing one
+  // set or favouriting one exercise never blocks a different one.
+  const startSessionGuard = useAsyncGuard();
+  const finishWorkoutGuard = useAsyncGuard();
+  const deleteWorkoutGuard = useAsyncGuard();
+  const saveEditGuard = useAsyncGuard();
+  const saveNoteGuard = useAsyncGuard();
+  const favoriteGuard = useAsyncGuardMap<number>();
+  const setSyncGuard = useAsyncGuardMap<string>();
 
   const stats = useMemo(() => {
     const allSets = exercises.flatMap((exercise) => exercise.sets);
@@ -220,7 +231,7 @@ export default function Workout() {
     setExpandedGroups((prev) => ({ ...prev, [group]: !prev[group] }));
   };
 
-  const searchExercises = async (query: string, muscleGroup: string | null) => {
+  const searchExercises = useCallback(async (query: string, muscleGroup: string | null) => {
     if (query.length === 0 && !muscleGroup) {
       setSearchResults([]);
       return;
@@ -230,7 +241,15 @@ export default function Workout() {
     );
     const data = await response.json();
     setSearchResults(data);
-  };
+  }, []);
+
+  // Debounced so typing "chick" fires one request instead of five - the
+  // effect below reacts to the settled value, not every keystroke.
+  const debouncedSearchQuery = useDebouncedValue(searchQuery, 400);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void searchExercises(debouncedSearchQuery, activeMuscleGroup);
+  }, [debouncedSearchQuery, activeMuscleGroup, searchExercises]);
 
   const fetchFavorites = async () => {
     const response = await authFetch(`${API_URL}/exercises?favorites_only=true`);
@@ -245,11 +264,13 @@ export default function Workout() {
   };
 
  const deletePastWorkout = async (id: number) => {
-    await authFetch(`${API_URL}/workouts/${id}`, {
-      method: "DELETE",
+    await deleteWorkoutGuard.run(async () => {
+      await authFetch(`${API_URL}/workouts/${id}`, {
+        method: "DELETE",
+      });
+      setPastWorkouts((prev) => prev.filter((w) => w.id !== id));
+      setPendingWorkoutDeletion(null);
     });
-    setPastWorkouts((prev) => prev.filter((w) => w.id !== id));
-    setPendingWorkoutDeletion(null);
   };
 
   const openWorkoutEditor = async (workoutId: number) => {
@@ -295,52 +316,52 @@ export default function Workout() {
 
   const saveWorkoutEdits = async () => {
     if (editingWorkoutId === null) return;
-    setIsSavingEdit(true);
-    setEditError("");
-    try {
-      for (const set of editingSets) {
-        const weight = Number(set.weightText);
-        const reps = Number(set.repsText);
-        // Skip rows the user left blank/invalid rather than writing a 0
-        // over a real logged value.
-        if (!set.weightText || !set.repsText || Number.isNaN(weight) || Number.isNaN(reps)) {
-          continue;
-        }
-        const response = await authFetch(
-          `${API_URL}/workouts/${editingWorkoutId}/sets/${set.id}`,
-          {
-            method: "PUT",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ weight, reps }),
+    await saveEditGuard.run(async () => {
+      setEditError("");
+      try {
+        for (const set of editingSets) {
+          const weight = Number(set.weightText);
+          const reps = Number(set.repsText);
+          // Skip rows the user left blank/invalid rather than writing a 0
+          // over a real logged value.
+          if (!set.weightText || !set.repsText || Number.isNaN(weight) || Number.isNaN(reps)) {
+            continue;
           }
-        );
-        if (!response.ok) {
-          // 409 = outside the server's edit window; surface its message.
-          const detail = await response.json().catch(() => null);
-          throw new Error(detail?.detail || "save failed");
+          const response = await authFetch(
+            `${API_URL}/workouts/${editingWorkoutId}/sets/${set.id}`,
+            {
+              method: "PUT",
+              headers: {
+                "Content-Type": "application/json",
+              },
+              body: JSON.stringify({ weight, reps }),
+            }
+          );
+          if (!response.ok) {
+            // 409 = outside the server's edit window; surface its message.
+            const detail = await response.json().catch(() => null);
+            throw new Error(detail?.detail || "save failed");
+          }
         }
+        closeWorkoutEditor();
+      } catch (error) {
+        setEditError(error instanceof Error ? error.message : "Could not save changes.");
       }
-      closeWorkoutEditor();
-    } catch (error) {
-      setEditError(error instanceof Error ? error.message : "Could not save changes.");
-    } finally {
-      setIsSavingEdit(false);
-    }
+    });
   };
 
   const toggleFavorite = async (option: ExerciseOption, isFavorited: boolean) => {
-    await authFetch(`${API_URL}/exercises/${option.id}/favorite`, {
-      method: isFavorited ? "DELETE" : "POST",
+    await favoriteGuard.run(option.id, async () => {
+      await authFetch(`${API_URL}/exercises/${option.id}/favorite`, {
+        method: isFavorited ? "DELETE" : "POST",
+      });
+      fetchFavorites();
     });
-    fetchFavorites();
   };
 
   const toggleMuscleGroupFilter = (group: string) => {
     const next = activeMuscleGroup === group ? null : group;
     setActiveMuscleGroup(next);
-    searchExercises(searchQuery, next);
   };
 
   const fetchExerciseHistory = async (localExerciseId: string, realExerciseId: number) => {
@@ -359,13 +380,15 @@ export default function Workout() {
   };
 
   const startSession = async () => {
-    setIsRunning(true);
-    setHasStarted(true);
-    const response = await authFetch(`${API_URL}/workouts`, {
-      method: "POST",
+    await startSessionGuard.run(async () => {
+      setIsRunning(true);
+      setHasStarted(true);
+      const response = await authFetch(`${API_URL}/workouts`, {
+        method: "POST",
+      });
+      const data = await response.json();
+      setWorkoutId(data.id);
     });
-    const data = await response.json();
-    setWorkoutId(data.id);
   };
 
   const openNoteEditor = (exercise: ExerciseEntry) => {
@@ -374,51 +397,57 @@ export default function Workout() {
   };
 
   const saveNote = async (exercise: ExerciseEntry) => {
-    if (workoutId !== null && exercise.exerciseId !== undefined) {
-      await authFetch(`${API_URL}/workouts/${workoutId}/exercises/${exercise.exerciseId}/note`, {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ note: noteDraft }),
-      });
-    }
-    setNotesByExercise((prev) => ({ ...prev, [exercise.id]: noteDraft }));
-    setOpenNoteFor(null);
+    await saveNoteGuard.run(async () => {
+      if (workoutId !== null && exercise.exerciseId !== undefined) {
+        await authFetch(`${API_URL}/workouts/${workoutId}/exercises/${exercise.exerciseId}/note`, {
+          method: "PUT",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ note: noteDraft }),
+        });
+      }
+      setNotesByExercise((prev) => ({ ...prev, [exercise.id]: noteDraft }));
+      setOpenNoteFor(null);
+    });
   };
 
   const finishWorkout = async () => {
-  setIsRunning(false);
-  setConfirmFinish(false);
-  if (workoutId === null) return;
-  await authFetch(`${API_URL}/workouts/${workoutId}`, {
-    method: "PUT",
-  });
-  fetchPastWorkouts();
-};
+    await finishWorkoutGuard.run(async () => {
+      setIsRunning(false);
+      if (workoutId === null) return;
+      await authFetch(`${API_URL}/workouts/${workoutId}`, {
+        method: "PUT",
+      });
+      setConfirmFinish(false);
+      fetchPastWorkouts();
+    });
+  };
 
   const syncSet = async (exercise: ExerciseEntry, set: SetEntry) => {
-  if (workoutId === null || exercise.exerciseId === undefined) return;
-  try {
-    const response = await authFetch(`${API_URL}/workouts/${workoutId}/sets`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        exercise_id: exercise.exerciseId,
-        set_number: exercise.sets.indexOf(set) + 1,
-        weight: set.weight,
-        reps: set.reps,
-      }),
+    if (workoutId === null || exercise.exerciseId === undefined) return;
+    await setSyncGuard.run(set.id, async () => {
+      try {
+        const response = await authFetch(`${API_URL}/workouts/${workoutId}/sets`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            exercise_id: exercise.exerciseId,
+            set_number: exercise.sets.indexOf(set) + 1,
+            weight: set.weight,
+            reps: set.reps,
+          }),
+        });
+        if (!response.ok) throw new Error("save failed");
+      } catch {
+        // If the save fails, un-check the set so it doesn't sit checked
+        // locally while the backend never actually received it.
+        updateSet(exercise.id, set.id, { completed: false });
+      }
     });
-    if (!response.ok) throw new Error("save failed");
-  } catch {
-    // If the save fails, un-check the set so it doesn't sit checked
-    // locally while the backend never actually received it.
-    updateSet(exercise.id, set.id, { completed: false });
-  }
-};
+  };
 
   useEffect(() => {
     if (!isRunning) return;
@@ -590,6 +619,7 @@ export default function Workout() {
                     index={index}
                     weight={set.weight}
                     reps={set.reps}
+                    disabled={setSyncGuard.isPending(set.id)}
                     onUncomplete={() => {
                       updateSet(exercise.id, set.id, { completed: false });
                       syncSet(exercise, { ...set, completed: false });
@@ -622,6 +652,7 @@ export default function Workout() {
                     });
                   }}
                   canComplete={set.weight > 0 && set.reps > 0}
+                  disabled={setSyncGuard.isPending(set.id)}
                   onComplete={() => {
                     updateSet(exercise.id, set.id, { completed: true });
                     syncSet(exercise, { ...set, completed: true });
@@ -670,13 +701,31 @@ export default function Workout() {
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 8 }}>
                   <Pressable
                     onPress={() => saveNote(exercise)}
-                    style={{ flex: 1, backgroundColor: colors.teal, borderRadius: 8, padding: 8, alignItems: "center" }}
+                    disabled={saveNoteGuard.pending}
+                    style={{
+                      flex: 1,
+                      backgroundColor: colors.teal,
+                      borderRadius: 8,
+                      padding: 8,
+                      alignItems: "center",
+                      opacity: saveNoteGuard.pending ? 0.5 : 1,
+                    }}
                   >
-                    <Text style={{ color: colors.tealOn, fontWeight: "700" }}>Save</Text>
+                    <Text style={{ color: colors.tealOn, fontWeight: "700" }}>
+                      {saveNoteGuard.pending ? "Saving…" : "Save"}
+                    </Text>
                   </Pressable>
                   <Pressable
                     onPress={() => setOpenNoteFor(null)}
-                    style={{ flex: 1, backgroundColor: colors.bgInset, borderRadius: 8, padding: 8, alignItems: "center" }}
+                    disabled={saveNoteGuard.pending}
+                    style={{
+                      flex: 1,
+                      backgroundColor: colors.bgInset,
+                      borderRadius: 8,
+                      padding: 8,
+                      alignItems: "center",
+                      opacity: saveNoteGuard.pending ? 0.5 : 1,
+                    }}
                   >
                     <Text style={{ color: colors.textPrimary }}>Cancel</Text>
                   </Pressable>
@@ -715,7 +764,11 @@ export default function Workout() {
                       <Pressable onPress={() => selectExercise(fav)} style={{ flex: 1 }}>
                         <Text style={{ color: colors.textPrimary }}>{fav.name}</Text>
                       </Pressable>
-                      <Pressable onPress={() => toggleFavorite(fav, true)}>
+                      <Pressable
+                        onPress={() => toggleFavorite(fav, true)}
+                        disabled={favoriteGuard.isPending(fav.id)}
+                        style={{ opacity: favoriteGuard.isPending(fav.id) ? 0.5 : 1 }}
+                      >
                         <Text style={{ color: colors.teal }}>★</Text>
                       </Pressable>
                     </View>
@@ -752,10 +805,7 @@ export default function Workout() {
 
           <TextInput
             value={searchQuery}
-            onChangeText={(text) => {
-              setSearchQuery(text);
-              searchExercises(text, activeMuscleGroup);
-            }}
+            onChangeText={setSearchQuery}
             placeholder="Search exercises..."
             style={{
               color: colors.textPrimary,
@@ -776,7 +826,11 @@ export default function Workout() {
                   {result.name} ({result.muscle_group})
                 </Text>
               </Pressable>
-              <Pressable onPress={() => toggleFavorite(result, false)}>
+              <Pressable
+                onPress={() => toggleFavorite(result, false)}
+                disabled={favoriteGuard.isPending(result.id)}
+                style={{ opacity: favoriteGuard.isPending(result.id) ? 0.5 : 1 }}
+              >
                 <Text style={{ color: colors.textFaint }}>☆</Text>
               </Pressable>
             </View>
@@ -817,7 +871,13 @@ export default function Workout() {
       )}
 
       {!hasStarted && (
-        <Button label="Start Session" onPress={startSession} variant="primary" size="lg" />
+        <Button
+          label={startSessionGuard.pending ? "Starting…" : "Start Session"}
+          onPress={startSession}
+          variant="primary"
+          size="lg"
+          disabled={startSessionGuard.pending}
+        />
       )}
 
       {hasStarted && (
@@ -927,8 +987,22 @@ export default function Workout() {
         This marks the session as complete and stops the timer.
       </Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Button label="Cancel" onPress={() => setConfirmFinish(false)} variant="secondary" size="sm" flex />
-        <Button label="Finish" onPress={finishWorkout} variant="primary" size="sm" flex />
+        <Button
+          label="Cancel"
+          onPress={() => setConfirmFinish(false)}
+          variant="secondary"
+          size="sm"
+          disabled={finishWorkoutGuard.pending}
+          flex
+        />
+        <Button
+          label={finishWorkoutGuard.pending ? "Finishing…" : "Finish"}
+          onPress={finishWorkout}
+          variant="primary"
+          size="sm"
+          disabled={finishWorkoutGuard.pending}
+          flex
+        />
       </View>
     </View>
   </View>
@@ -1074,11 +1148,11 @@ export default function Workout() {
       <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
         <Button label="Cancel" onPress={closeWorkoutEditor} variant="secondary" size="sm" flex />
         <Button
-          label={isSavingEdit ? "Saving…" : "Save"}
+          label={saveEditGuard.pending ? "Saving…" : "Save"}
           onPress={saveWorkoutEdits}
           variant="primary"
           size="sm"
-          disabled={isSavingEdit || isLoadingEdit || editingSets.length === 0}
+          disabled={saveEditGuard.pending || isLoadingEdit || editingSets.length === 0}
           flex
         />
       </View>
@@ -1107,12 +1181,20 @@ export default function Workout() {
         This permanently deletes the whole session and every set logged in it.
       </Text>
       <View style={{ flexDirection: "row", gap: 8 }}>
-        <Button label="Cancel" onPress={() => setPendingWorkoutDeletion(null)} variant="secondary" size="sm" flex />
         <Button
-          label="Delete"
-          onPress={() => deletePastWorkout(pendingWorkoutDeletion)}
+          label="Cancel"
+          onPress={() => setPendingWorkoutDeletion(null)}
+          variant="secondary"
+          size="sm"
+          disabled={deleteWorkoutGuard.pending}
+          flex
+        />
+        <Button
+          label={deleteWorkoutGuard.pending ? "Deleting…" : "Delete"}
+          onPress={() => pendingWorkoutDeletion !== null && deletePastWorkout(pendingWorkoutDeletion)}
           variant="danger"
           size="sm"
+          disabled={deleteWorkoutGuard.pending}
           flex
         />
       </View>

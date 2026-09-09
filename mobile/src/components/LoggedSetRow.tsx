@@ -8,9 +8,12 @@ type LoggedSetRowProps = {
   weight: number;
   reps: number;
   onUncomplete: () => void;
+  // True while this specific set's sync request is in flight - blocks a
+  // second tap synchronously (see src/lib/asyncGuard.ts), not just visually.
+  disabled?: boolean;
 };
 
-export function LoggedSetRow({ index, weight, reps, onUncomplete }: LoggedSetRowProps) {
+export function LoggedSetRow({ index, weight, reps, onUncomplete, disabled = false }: LoggedSetRowProps) {
   const { colors } = useTheme();
 
   return (
@@ -21,7 +24,8 @@ export function LoggedSetRow({ index, weight, reps, onUncomplete }: LoggedSetRow
       </Text>
       <Pressable
         onPress={onUncomplete}
-        style={{ ...setCircleBase, backgroundColor: colors.teal }}
+        disabled={disabled}
+        style={{ ...setCircleBase, backgroundColor: colors.teal, opacity: disabled ? 0.5 : 1 }}
       >
         <Check size={16} color={colors.tealOn} />
       </Pressable>
