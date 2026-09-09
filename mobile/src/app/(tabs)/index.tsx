@@ -126,7 +126,9 @@ export default function Home() {
 
   const trainedToday = isSameDay(lastFinishedWorkout?.ended_at ?? null, new Date());
 
-  const coachTeaser = "Coach is being rebuilt.";
+  const coachTeaser = trainedToday
+    ? "Session logged. Ask your coach what to prioritise next."
+    : "Ask your coach what to train today.";
 
   const caloriePct =
     nutrition && calorieTarget && calorieTarget > 0
