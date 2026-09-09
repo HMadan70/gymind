@@ -1,24 +1,22 @@
 import { View, Text, Pressable } from "react-native";
 import { Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
+import { Home, Sparkles, Dumbbell, UtensilsCrossed, TrendingUp, type LucideIcon } from "lucide-react-native";
 
 import { useTheme } from "../../context/ThemeContext";
 import { fonts, shapeTokens } from "../../constants/theme";
 
-// Glyphs from the design source's `iconChars` map. Kept as text rather
-// than an icon font so the bar has no new dependency.
-//
-// Each carries U+FE0E (variation selector-15) to force *text* presentation.
-// Without it the platform renders ⚡ and friends as colour emoji, which
-// ignore the `color` style — so the active tab's teal tint applied to the
-// label but not the icon.
-const TEXT_PRESENTATION = "︎";
-const TAB_ICONS: Record<string, string> = {
-  index: "⌂" + TEXT_PRESENTATION,
-  coach: "✦" + TEXT_PRESENTATION,
-  workout: "⚡" + TEXT_PRESENTATION,
-  nutrition: "◍" + TEXT_PRESENTATION,
-  progress: "▲" + TEXT_PRESENTATION,
+// Lucide, per Design2/BRAND_GUIDE.md's Iconography section: "adopt a single
+// simple/geometric icon set (e.g. Lucide or Phosphor, regular weight)".
+// Stroke-only by construction, so there's no fill/duotone/bold variant to
+// accidentally reach for later and break the guide's "no filled/glossy/3D"
+// rule - unlike Phosphor, which offers those as a weight prop.
+const TAB_ICONS: Record<string, LucideIcon> = {
+  index: Home,
+  coach: Sparkles,
+  workout: Dumbbell,
+  nutrition: UtensilsCrossed,
+  progress: TrendingUp,
 };
 
 // Expo Router 57 vendors React Navigation inside its own build output, so
@@ -122,9 +120,16 @@ function BrandTabBar({ state, descriptors, navigation }: TabBarProps) {
                 paddingBottom: 14,
               }}
             >
-              <Text style={{ fontSize: 16, color: isFocused ? colors.teal : colors.textDim }}>
-                {TAB_ICONS[route.name] ?? "•"}
-              </Text>
+              {(() => {
+                const Icon = TAB_ICONS[route.name] ?? Home;
+                return (
+                  <Icon
+                    size={20}
+                    color={isFocused ? colors.teal : colors.textDim}
+                    strokeWidth={2}
+                  />
+                );
+              })()}
               <Text
                 style={{
                   fontSize: 10,

@@ -1,6 +1,7 @@
 import { View, Text, Pressable } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { setCircleBase } from "../constants/theme";
+import { Check } from "lucide-react-native";
 
 type LoggedSetRowProps = {
   index: number;
@@ -22,7 +23,7 @@ export function LoggedSetRow({ index, weight, reps, onUncomplete }: LoggedSetRow
         onPress={onUncomplete}
         style={{ ...setCircleBase, backgroundColor: colors.teal }}
       >
-        <Text style={{ color: colors.tealOn }}>✓</Text>
+        <Check size={16} color={colors.tealOn} />
       </Pressable>
     </View>
   );

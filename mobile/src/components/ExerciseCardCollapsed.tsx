@@ -3,6 +3,7 @@ import { View, Text, Pressable } from "react-native";
 import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../constants/theme";
 import { Card } from "./Card";
+import { Check } from "lucide-react-native";
 
 type ExerciseCardCollapsedProps = {
   name: string;
@@ -69,7 +70,7 @@ export function ExerciseCardCollapsed({
               alignItems: "center",
             }}
           >
-            <Text style={{ color: colors.tealOn, fontSize: 14 }}>✓</Text>
+            <Check size={14} color={colors.tealOn} />
           </View>
         ) : (
           <Text style={{ color: colors.textFaint, fontSize: 20 }}>›</Text>

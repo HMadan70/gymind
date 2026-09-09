@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle, Polyline } from "react-native-svg";
+import { ChevronLeft, TrendingUp, TrendingDown, X } from "lucide-react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -251,7 +252,16 @@ export default function Progress() {
       ? "not enough data yet"
       : Math.abs(weightDelta) < 0.05
         ? "no change"
-        : `${weightDelta > 0 ? "▲" : "▼"} ${Math.abs(weightDelta).toFixed(1)} ${weightUnit ?? "lb"}`;
+        : `${Math.abs(weightDelta).toFixed(1)} ${weightUnit ?? "lb"}`;
+  // null when there's no direction to show (no data, or change below the
+  // 0.05 "no change" threshold above) - callers render the icon only when
+  // this is non-null, so the two stay in sync with the label automatically.
+  const weightDeltaDirection: "up" | "down" | null =
+    weightDelta === null || Math.abs(weightDelta) < 0.05
+      ? null
+      : weightDelta > 0
+        ? "up"
+        : "down";
 
   const weightHigh = weightValues.length ? Math.max(...weightValues) : null;
   const weightLow = weightValues.length ? Math.min(...weightValues) : null;
@@ -453,10 +463,18 @@ export default function Progress() {
                     <Text style={{ color: colors.textPrimary, fontSize: 13, fontFamily: fonts.bodyBold }}>
                       {latestWeight ? `${latestWeight.weight} ${weightUnit ?? "lb"}` : "—"}
                     </Text>
-                    <Text style={{ color: colors.textDim, fontSize: 11, fontFamily: fonts.body }}>
-                      {weightDeltaLabel}
-                      {weightDelta !== null && ` over ${rangeLabelFor(rangeDays)}`}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      {weightDeltaDirection === "up" && (
+                        <TrendingUp size={12} color={colors.textDim} />
+                      )}
+                      {weightDeltaDirection === "down" && (
+                        <TrendingDown size={12} color={colors.textDim} />
+                      )}
+                      <Text style={{ color: colors.textDim, fontSize: 11, fontFamily: fonts.body }}>
+                        {weightDeltaLabel}
+                        {weightDelta !== null && ` over ${rangeLabelFor(rangeDays)}`}
+                      </Text>
+                    </View>
                   </View>
                 </>
               )}
@@ -537,9 +555,13 @@ export default function Progress() {
         ) : (
           /* Detail: exercises in a group, then one exercise's e1RM trend */
           <>
-            <Pressable onPress={selectedExercise ? () => setSelectedExercise(null) : closeDetail}>
-              <Text style={{ color: colors.textDim, fontSize: 13, marginBottom: 12, fontFamily: fonts.bodyBold }}>
-                ← {selectedExercise ? selectedGroup : "Muscle groups"}
+            <Pressable
+              onPress={selectedExercise ? () => setSelectedExercise(null) : closeDetail}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 }}
+            >
+              <ChevronLeft size={14} color={colors.textDim} />
+              <Text style={{ color: colors.textDim, fontSize: 13, fontFamily: fonts.bodyBold }}>
+                {selectedExercise ? selectedGroup : "Muscle groups"}
               </Text>
             </Pressable>
 
@@ -653,7 +675,7 @@ export default function Progress() {
                 Log body weight
               </Text>
               <Pressable onPress={() => setIsWeightModalOpen(false)} hitSlop={8}>
-                <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+                <X size={18} color={colors.textFaint} />
               </Pressable>
             </View>
 

@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
+import { X } from "lucide-react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -682,7 +683,7 @@ export default function Nutrition() {
                 {isCreatingFood ? "New food" : "Log food"}
               </Text>
               <Pressable onPress={closePicker} hitSlop={8}>
-                <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+                <X size={18} color={colors.textFaint} />
               </Pressable>
             </View>
 
@@ -996,7 +997,7 @@ export default function Nutrition() {
                 Edit entry
               </Text>
               <Pressable onPress={() => setEditingLog(null)} hitSlop={8}>
-                <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+                <X size={18} color={colors.textFaint} />
               </Pressable>
             </View>
 
