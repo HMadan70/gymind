@@ -1,6 +1,6 @@
 # Gymind Project Status
 
-_Updated: 2026-09-08_
+_Updated: 2026-09-09_
 
 ## Current state
 
@@ -9,10 +9,11 @@ onboarding/profile data, workout logging, exercise favorites/history/notes,
 nutrition logging/targets/favorites, body weight, and progress summaries are
 implemented. The same Expo application targets native and static web output.
 
-**AI Coach implementation intentionally reset for manual rebuild and learning.**
-The Coach tab remains in its intended navigation position but is now only a
-clean placeholder. There is no Coach backend route, AI provider integration,
-prompt logic, conversation storage, or OpenRouter configuration.
+The AI Coach has been rebuilt. `POST /coach` assembles a system prompt from
+the caller's own profile, training consistency, best Epley e1RM per exercise,
+body-weight trend and nutrition targets, then calls an OpenRouter-hosted
+model; conversations and messages persist in `coach_conversations` and
+`coach_messages`. The Coach tab is a working chat screen.
 
 ## Feature status
 
@@ -24,8 +25,8 @@ prompt logic, conversation storage, or OpenRouter configuration.
 | Home | Implemented | Aggregates consistency, nutrition, workouts, e1RM, and body weight. |
 | Workout | Implemented, polish remains | Sessions, sets, custom/shared exercises, favorites, history, notes, recent-edit window. Rest timer and secondary finish actions remain. |
 | Nutrition | Implemented, upload remains | Food search/create/favorite, logs, edit/delete, daily summary, automatic/manual targets. No photo upload yet. |
-| Progress | Implemented, upload remains | Weight trend/ranges, consistency, muscle groups, exercise e1RM. No progress-photo storage yet. |
-| Coach | Intentionally reset | Themed placeholder only, ready for a from-zero manual rebuild. |
+| Progress | Implemented, upload remains | Weight trend/ranges, consistency, muscle groups, exercise e1RM, plus an aggregate `GET /progress`. No progress-photo storage yet. |
+| Coach | Implemented | `POST /coach` with data-grounded prompts, conversation storage, and a chat UI. Requires `OPENROUTER_API_KEY`; returns 503 when unset. |
 | Web | Functional shared export | Expo static export uses the mobile routes; desktop-specific navigation/layout still needs polish. |
 
 ## Architecture
@@ -36,6 +37,21 @@ prompt logic, conversation storage, or OpenRouter configuration.
 - Deployment: Docker Compose on a self-hosted server.
 - State: screen-local React state, typed ThemeContext, AsyncStorage-backed session store.
 - API: JSON REST. Protected frontend requests use the shared `authFetch` helper.
+
+## Design system
+
+Brand 2.0 lives in `Design2/`, not `Design/`. There is no `DESIGN_SYSTEM.md`
+and no `theme.json` anywhere in the repo; anything referring to those is out
+of date. The two sources that do exist are:
+
+- `Design2/BRAND_GUIDE.md` — the written spec (color, typography, shape
+  language, motion), alongside `Design2/Gymind UI.dc.html` and `Design2/brand/`.
+- `mobile/src/constants/theme.ts` — the runtime tokens transcribed from that
+  guide, consumed through `ThemeContext`. Screens read tokens from the
+  context rather than hardcoding values.
+
+Palette is two brand hues (teal, gold) plus coral for alerts only; type is
+Space Grotesk for headings and Manrope for body, with no third family.
 
 ## Security and quality state
 
@@ -62,10 +78,12 @@ Current model groups:
 - shared/private exercises and user favorites
 - shared/private foods, food favorites, nutrition logs and targets
 - body-weight logs
+- coach conversations and messages
 
-Alembic currently has one linear head: `9c4a1b7fe210`. The Coach reset required
-no database change because no Coach-specific tables existed. Cascade changes
-remain deferred until account-deletion semantics are designed and reviewed.
+Alembic currently has one linear head: `b4d21c0a7e15`, which adds the two
+Coach tables. Those two cascade from their parents; cascade changes to the
+older tables remain deferred until account-deletion semantics are designed
+and reviewed.
 
 ## Configuration
 
@@ -77,17 +95,18 @@ Backend/server:
 - `POSTGRES_DB`
 - `JWT_SECRET`
 - `CORS_ORIGINS`
+- `OPENROUTER_API_KEY` (Coach; unset disables `POST /coach` with a 503)
+- `OPENROUTER_MODEL` (Coach; defaults to `anthropic/claude-sonnet-4.5`)
 
 Frontend:
 
 - `EXPO_PUBLIC_API_URL`
 
-The removed `OPENROUTER_API_KEY` and `OPENROUTER_MODEL` variables are no longer
-part of the application contract.
-
 ## Next priorities
 
-1. Rebuild Coach manually from the clean placeholder when ready.
+1. Coach follow-ups: conversation history UI (the list/detail/delete routes
+   exist but no screen consumes them), streaming replies, and per-user rate
+   limiting on `POST /coach` before public launch.
 2. Deploy behind HTTPS and formalize database backups/migrations.
 3. Add frontend tests and CI validation.
 4. Plan token refresh/revocation and account deletion.
@@ -114,9 +133,9 @@ See `CODEBASE_REVIEW.md` for the detailed architecture and remaining risk regist
 
 ## Latest validation
 
-- Backend suite: 52 passed.
+- Backend suite: 67 passed.
 - Python compilation: passed.
-- Alembic: one head (`9c4a1b7fe210`).
+- Alembic: one head (`b4d21c0a7e15`).
 - TypeScript: passed.
 - ESLint: passed with zero warnings.
 - Expo Doctor: 21/21 checks passed.
