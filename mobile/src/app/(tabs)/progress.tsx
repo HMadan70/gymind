@@ -580,7 +580,9 @@ export default function Progress() {
               confirmLabel="Delete"
               confirmColor={colors.coral}
               confirmTextColor={colors.coralOn}
-              onConfirm={() => photoPendingDelete && deleteProgressPhoto(photoPendingDelete)}
+              onConfirm={async () => {
+                if (photoPendingDelete) await deleteProgressPhoto(photoPendingDelete);
+              }}
               onCancel={() => setPhotoPendingDelete(null)}
             />
 
