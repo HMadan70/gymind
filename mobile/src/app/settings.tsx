@@ -11,6 +11,7 @@ import { Card } from "../components/Card";
 import { Check } from "lucide-react-native";
 import { Button } from "../components/Button";
 import { authFetch, clearSession } from "../lib/session";
+import { useAsyncGuardMap } from "../lib/asyncGuard";
 
 type Me = { id: number; email: string; username: string };
 
@@ -25,6 +26,10 @@ export default function Settings() {
 
   const [me, setMe] = useState<Me | null>(null);
   const [statusMessage, setStatusMessage] = useState("");
+  // Keyed per value, not a single guard: switching dark->light mid-save is
+  // a real, distinct choice that must go through, not get dropped by a
+  // guard meant only to stop the *same* row being tapped twice.
+  const themeGuard = useAsyncGuardMap<"dark" | "light">();
 
   const loadAccount = useCallback(async () => {
     try {
@@ -45,17 +50,19 @@ export default function Settings() {
   const chooseTheme = async (next: "dark" | "light") => {
     setMode(next);
     setStatusMessage("");
-    try {
-      const response = await authFetch(`${API_URL}/users/preferences`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ theme_mode: next }),
-      });
-      if (!response.ok) throw new Error("save failed");
-    } catch {
-      // The switch still applies for this session; only persistence failed.
-      setStatusMessage("Theme changed, but couldn't be saved to your account.");
-    }
+    await themeGuard.run(next, async () => {
+      try {
+        const response = await authFetch(`${API_URL}/users/preferences`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ theme_mode: next }),
+        });
+        if (!response.ok) throw new Error("save failed");
+      } catch {
+        // The switch still applies for this session; only persistence failed.
+        setStatusMessage("Theme changed, but couldn't be saved to your account.");
+      }
+    });
   };
 
   // Normally just pops back to Home. Falls back to replacing with the tab
@@ -112,6 +119,7 @@ export default function Settings() {
               <Pressable
                 key={option.value}
                 onPress={() => chooseTheme(option.value)}
+                disabled={themeGuard.isPending(option.value)}
                 style={{
                   flexDirection: "row",
                   alignItems: "center",
@@ -121,6 +129,7 @@ export default function Settings() {
                   borderWidth: 1.5,
                   borderColor: selected ? colors.teal : colors.border,
                   backgroundColor: selected ? colors.tealSoft : colors.bgCard,
+                  opacity: themeGuard.isPending(option.value) ? 0.6 : 1,
                 }}
               >
                 <View
