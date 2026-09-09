@@ -146,6 +146,38 @@ class BodyWeightLog(Base):
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
+class CoachConversation(Base):
+    """
+    One Coach chat thread. A user can hold several, so the Coach tab can
+    offer a history list rather than a single ever-growing transcript.
+    """
+    __tablename__ = "coach_conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CoachMessage(Base):
+    """
+    A single turn in a Coach conversation. `role` is "user" or "assistant";
+    the system prompt is rebuilt from live profile/training data on every
+    request rather than stored, so a user whose goal or stats have changed
+    is never coached against a stale snapshot of themselves.
+    """
+    __tablename__ = "coach_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(
+        Integer, ForeignKey("coach_conversations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
 class NutritionTarget(Base):
     __tablename__ = "nutrition_targets"
 

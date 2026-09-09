@@ -13,6 +13,7 @@ from app.routes.profile_routes import router as profile_router
 from app.routes.nutrition_routes import router as nutrition_router
 from app.routes.body_weight_routes import router as body_weight_router
 from app.routes.progress_routes import router as progress_router
+from app.routes.coach_routes import router as coach_router
 
 
 app = FastAPI(title="Gymind API")
@@ -42,6 +43,7 @@ app.include_router(profile_router)
 app.include_router(nutrition_router)
 app.include_router(body_weight_router)
 app.include_router(progress_router)
+app.include_router(coach_router)
 
 app.state.limiter = limiter
 app.add_exception_handler(RateLimitExceeded, rate_limit_exceeded_handler)

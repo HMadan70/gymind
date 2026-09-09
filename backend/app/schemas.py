@@ -249,3 +249,43 @@ class ExerciseHistorySetOut(BaseModel):
 class ExerciseHistoryOut(BaseModel):
     previous_sets: list[ExerciseHistorySetOut]
     suggested_target_weight: Optional[float] = None
+
+
+class CoachMessageIn(BaseModel):
+    """
+    One user turn. `conversation_id` omitted starts a new thread; supplied,
+    the turn is appended to that thread (which must belong to the caller).
+    """
+    message: str = Field(min_length=1, max_length=4_000)
+    conversation_id: Optional[int] = None
+
+    @field_validator("message")
+    @classmethod
+    def strip_message(cls, value: str) -> str:
+        value = value.strip()
+        if not value:
+            raise ValueError("Message cannot be blank")
+        return value
+
+
+class CoachMessageOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    conversation_id: int
+    role: Literal["user", "assistant"]
+    content: str
+    created_at: datetime
+
+
+class CoachReplyOut(BaseModel):
+    """The assistant's answer plus the thread it landed in."""
+    conversation_id: int
+    reply: CoachMessageOut
+
+
+class CoachConversationOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    title: Optional[str] = None
+    created_at: datetime
+    updated_at: datetime
