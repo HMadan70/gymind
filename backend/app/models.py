@@ -134,6 +134,26 @@ class NutritionLog(Base):
     food_id = Column(Integer, ForeignKey("foods.id"), nullable=False)
     quantity_grams = Column(Float, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Filename only (e.g. "3f9a2b1c.jpg"), not a URL - the file lives under
+    # UPLOAD_DIR/nutrition/ (see app/storage.py). Retrieval always goes
+    # through GET /nutrition/{id}/photo, which checks ownership before
+    # reading the file, so nothing here is a publicly-guessable path.
+    photo_filename = Column(Text, nullable=True)
+
+
+class ProgressPhoto(Base):
+    """
+    A single progress-photo upload, independent of any workout or nutrition
+    log - the Progress tab's photo gallery is its own timeline, not tied to
+    a specific day's data the way body-weight or nutrition entries are.
+    """
+    __tablename__ = "progress_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    photo_filename = Column(Text, nullable=False)
+    taken_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class BodyWeightLog(Base):

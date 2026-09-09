@@ -172,6 +172,22 @@ class NutritionLogOut(NutritionLogIn):
     id: int
     user_id: int
     food: Optional[NutritionLogFoodOut] = None
+    # True/false rather than echoing the stored filename - the frontend
+    # never needs the filename itself, only whether GET /nutrition/{id}/photo
+    # will return something, and the filename is an internal storage detail.
+    has_photo: bool = Field(default=False, validation_alias="photo_filename")
+
+    @field_validator("has_photo", mode="before")
+    @classmethod
+    def _photo_filename_to_bool(cls, value: object) -> bool:
+        return bool(value)
+
+
+class ProgressPhotoOut(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+    id: int
+    taken_at: datetime
+    created_at: datetime
 
 
 class BodyWeightLogIn(BaseModel):

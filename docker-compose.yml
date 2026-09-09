@@ -47,11 +47,19 @@ services:
       # the API is unaffected.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4.5}
+      UPLOAD_DIR: /app/uploads
     ports:
       - "8001:8000"
+    volumes:
+      # Named volume so uploaded meal/progress photos survive a container
+      # rebuild the same way gymind_pgdata does for the database - without
+      # this, `docker compose up -d --build` would silently delete every
+      # photo a user has ever uploaded.
+      - gymind_uploads:/app/uploads
     depends_on:
       db:
         condition: service_healthy
 
 volumes:
   gymind_pgdata:
+  gymind_uploads:
