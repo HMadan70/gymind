@@ -88,6 +88,32 @@ Coach tables. Those two cascade from their parents; cascade changes to the
 older tables remain deferred until account-deletion semantics are designed
 and reviewed.
 
+## Test database
+
+Production (`gymind`, real users and real food data) and the backend test
+suite's database (`gymind_test`) are two separate Postgres databases on the
+same server instance - not two containers, since Postgres databases are
+already fully isolated from each other (no cross-database queries without
+`dblink`), so a second container would only double resource usage without
+adding isolation. `db-init/001-create-test-db.sh` creates `gymind_test`
+alongside `gymind` on a fresh volume, so the separation survives a rebuild
+rather than depending on someone re-creating it by hand, the way it
+originally came to exist. `backend/conftest.py` swaps to it automatically -
+every test run already targets `gymind_test`, never production - and
+`Base.metadata.create_all()`/`drop_all()` per test means it starts and ends
+each run with no tables at all; no production data is ever copied into it.
+
+Both databases stay behind the production Postgres container's loopback-only
+bind (`127.0.0.1:5433`, see `docker-compose.yml`). Running the suite from a
+workstation therefore needs a tunnel, opened on demand rather than kept
+running between sessions:
+
+```text
+ssh -L 5433:localhost:5433 <server>
+# then, in another terminal, from backend/:
+DATABASE_URL=postgresql+psycopg://<user>:<password>@localhost:5433/gymind python -m pytest -q
+```
+
 ## Configuration
 
 Backend/server:

@@ -11,8 +11,19 @@ services:
       # Named volume so data survives container restarts/rebuilds.
       # Without this, `docker compose down` would wipe your database.
       - gymind_pgdata:/var/lib/postgresql/data
+      # Runs once, only on a brand-new volume: creates the gymind_test
+      # database backend/conftest.py's test suite targets, alongside the
+      # production POSTGRES_DB database. Same instance, same credentials,
+      # different database name - Postgres databases are fully isolated
+      # from each other, so this needs no second container. See the
+      # script's own comment for why this exists.
+      - ./db-init:/docker-entrypoint-initdb.d:ro
     ports:
-      # Loopback-only; use an SSH tunnel for remote database administration.
+      # Loopback-only; use an SSH tunnel for remote database administration
+      # (including running the test suite from a workstation - the tests
+      # connect to gymind_test on this same port/host, tunneled the same
+      # way as production access, opened only when actually needed rather
+      # than left running: ssh -L 5433:localhost:5433 <host>).
       - "127.0.0.1:5433:5432"
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
