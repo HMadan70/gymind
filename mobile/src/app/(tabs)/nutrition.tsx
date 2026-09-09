@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { View, Text, Pressable, ScrollView, TextInput, Image } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
@@ -12,6 +12,8 @@ import { API_URL } from "../../constants/api";
 import { Card } from "../../components/Card";
 import { authFetch } from "../../lib/session";
 import { pickPhoto, uploadPhoto, type PickedPhoto } from "../../lib/photos";
+import { useAsyncGuard, useAsyncGuardMap } from "../../lib/asyncGuard";
+import { useDebouncedValue } from "../../lib/useDebounce";
 import { AuthImage } from "../../components/AuthImage";
 
 type Food = {
@@ -79,7 +81,6 @@ export default function Nutrition() {
   const [favoriteFoods, setFavoriteFoods] = useState<Food[]>([]);
   const [pickedFood, setPickedFood] = useState<Food | null>(null);
   const [quantityText, setQuantityText] = useState("100");
-  const [isSaving, setIsSaving] = useState(false);
   // Picked before the food itself, since a photo has nowhere to attach to
   // until the log it belongs to exists - "Attach photo" opens the picker,
   // then walks straight into the same food/quantity flow as "+ Log food".
@@ -90,8 +91,18 @@ export default function Nutrition() {
   // exercise the set belongs to).
   const [editingLog, setEditingLog] = useState<NutritionLog | null>(null);
   const [editQuantityText, setEditQuantityText] = useState("");
-  const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [editError, setEditError] = useState("");
+
+  // Duplicate-submission guards - see src/lib/asyncGuard.ts. Log/create
+  // are separate guards (previously shared one boolean, harmlessly since
+  // they're never both on screen at once, but each now guards only its
+  // own action). The *Map variants are keyed per-row so removing/
+  // favouriting one item never blocks another.
+  const logFoodGuard = useAsyncGuard();
+  const createFoodGuard = useAsyncGuard();
+  const saveEditGuard = useAsyncGuard();
+  const removeLogGuard = useAsyncGuardMap<number>();
+  const favoriteGuard = useAsyncGuardMap<number>();
 
   // Custom-food creation. Same shared/private model the exercises table
   // uses: POST /foods stores the row against the user, and GET /foods
@@ -140,8 +151,7 @@ export default function Nutrition() {
     }, [loadNutrition])
   );
 
-  const searchFoods = async (query: string) => {
-    setFoodSearch(query);
+  const performFoodSearch = useCallback(async (query: string) => {
     if (query.trim().length === 0) {
       setFoodResults([]);
       return;
@@ -152,7 +162,15 @@ export default function Nutrition() {
     } catch {
       setFoodResults([]);
     }
-  };
+  }, []);
+
+  // Debounced so typing "chick" fires one request instead of five - the
+  // effect below reacts to the settled value, not every keystroke.
+  const debouncedFoodSearch = useDebouncedValue(foodSearch, 400);
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    void performFoodSearch(debouncedFoodSearch);
+  }, [debouncedFoodSearch, performFoodSearch]);
 
   // Mirrors workout.tsx's fetchFavorites()/toggleFavorite() for exercises.
   const fetchFavoriteFoods = async () => {
@@ -166,59 +184,62 @@ export default function Nutrition() {
 
   const toggleFoodFavorite = async (food: Food) => {
     const isFavorited = !!food.is_favorited;
-    try {
-      await authFetch(`${API_URL}/foods/${food.id}/favorite`, {
-        method: isFavorited ? "DELETE" : "POST",
-      });
-      // Flip it locally so the star responds immediately, then re-read the
-      // favourites list from the server as the source of truth.
-      setFoodResults((prev) =>
-        prev.map((f) => (f.id === food.id ? { ...f, is_favorited: !isFavorited } : f))
-      );
-      fetchFavoriteFoods();
-    } catch {
-      setLoadError("Could not update that favorite.");
-    }
+    await favoriteGuard.run(food.id, async () => {
+      try {
+        await authFetch(`${API_URL}/foods/${food.id}/favorite`, {
+          method: isFavorited ? "DELETE" : "POST",
+        });
+        // Flip it locally so the star responds immediately, then re-read the
+        // favourites list from the server as the source of truth.
+        setFoodResults((prev) =>
+          prev.map((f) => (f.id === food.id ? { ...f, is_favorited: !isFavorited } : f))
+        );
+        fetchFavoriteFoods();
+      } catch {
+        setLoadError("Could not update that favorite.");
+      }
+    });
   };
 
   const logFood = async () => {
     if (!pickedFood) return;
     const grams = Number(quantityText);
     if (!quantityText || Number.isNaN(grams) || grams <= 0) return;
-    setIsSaving(true);
-    try {
-      const response = await authFetch(`${API_URL}/nutrition`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ food_id: pickedFood.id, quantity_grams: grams }),
-      });
-      if (response.ok) {
-        if (pendingPhoto) {
-          const newLog = await response.json();
-          // Best-effort: the log itself is already saved, so a failed
-          // photo attach here shouldn't block closing the picker or
-          // surface as a logging error - it's a separate resource.
-          await uploadPhoto(`${API_URL}/nutrition/${newLog.id}/photo`, pendingPhoto).catch(() => {});
+    await logFoodGuard.run(async () => {
+      try {
+        const response = await authFetch(`${API_URL}/nutrition`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ food_id: pickedFood.id, quantity_grams: grams }),
+        });
+        if (response.ok) {
+          if (pendingPhoto) {
+            const newLog = await response.json();
+            // Best-effort: the log itself is already saved, so a failed
+            // photo attach here shouldn't block closing the picker or
+            // surface as a logging error - it's a separate resource.
+            await uploadPhoto(`${API_URL}/nutrition/${newLog.id}/photo`, pendingPhoto).catch(() => {});
+          }
+          closePicker();
+          loadNutrition();
+        } else {
+          setLoadError("Could not log that food.");
         }
-        closePicker();
-        loadNutrition();
-      } else {
-        setLoadError("Could not log that food.");
+      } catch {
+        setLoadError("Could not reach the server.");
       }
-    } catch {
-      setLoadError("Could not reach the server.");
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
   const removeLog = async (logId: number) => {
-    try {
-      await authFetch(`${API_URL}/nutrition/${logId}`, { method: "DELETE" });
-      setLogs((prev) => prev.filter((l) => l.id !== logId));
-    } catch {
-      setLoadError("Could not remove that entry.");
-    }
+    await removeLogGuard.run(logId, async () => {
+      try {
+        await authFetch(`${API_URL}/nutrition/${logId}`, { method: "DELETE" });
+        setLogs((prev) => prev.filter((l) => l.id !== logId));
+      } catch {
+        setLoadError("Could not remove that entry.");
+      }
+    });
   };
 
   const openLogEditor = (log: NutritionLog) => {
@@ -234,33 +255,32 @@ export default function Nutrition() {
       setEditError("Enter a quantity.");
       return;
     }
-    setIsSavingEdit(true);
     setEditError("");
-    try {
-      const response = await authFetch(`${API_URL}/nutrition/${editingLog.id}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        // food_id and logged_at must both be sent back unchanged: the
-        // endpoint replaces all three fields, and omitting logged_at makes
-        // it default to now — which would silently drag a past entry into
-        // today just for changing its quantity.
-        body: JSON.stringify({
-          food_id: editingLog.food_id,
-          quantity_grams: grams,
-          logged_at: editingLog.logged_at,
-        }),
-      });
-      if (!response.ok) {
-        setEditError("Could not save that change.");
-        return;
+    await saveEditGuard.run(async () => {
+      try {
+        const response = await authFetch(`${API_URL}/nutrition/${editingLog.id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          // food_id and logged_at must both be sent back unchanged: the
+          // endpoint replaces all three fields, and omitting logged_at makes
+          // it default to now — which would silently drag a past entry into
+          // today just for changing its quantity.
+          body: JSON.stringify({
+            food_id: editingLog.food_id,
+            quantity_grams: grams,
+            logged_at: editingLog.logged_at,
+          }),
+        });
+        if (!response.ok) {
+          setEditError("Could not save that change.");
+          return;
+        }
+        setEditingLog(null);
+        loadNutrition();
+      } catch {
+        setEditError("Could not reach the server.");
       }
-      setEditingLog(null);
-      loadNutrition();
-    } catch {
-      setEditError("Could not reach the server.");
-    } finally {
-      setIsSavingEdit(false);
-    }
+    });
   };
 
   const startCreatingFood = () => {
@@ -285,34 +305,33 @@ export default function Nutrition() {
       }
     }
 
-    setIsSaving(true);
     setCreateError("");
-    try {
-      const response = await authFetch(`${API_URL}/foods`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          name: name.trim(),
-          calories: Number(calories),
-          protein: Number(protein),
-          carbs: Number(carbs),
-          fat: Number(fat),
-        }),
-      });
-      if (!response.ok) {
-        setCreateError("Could not save that food.");
-        return;
+    await createFoodGuard.run(async () => {
+      try {
+        const response = await authFetch(`${API_URL}/foods`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            name: name.trim(),
+            calories: Number(calories),
+            protein: Number(protein),
+            carbs: Number(carbs),
+            fat: Number(fat),
+          }),
+        });
+        if (!response.ok) {
+          setCreateError("Could not save that food.");
+          return;
+        }
+        // Drop straight into the quantity step with the food just created,
+        // so creating and logging is one continuous flow.
+        const created: Food = await response.json();
+        setIsCreatingFood(false);
+        setPickedFood(created);
+      } catch {
+        setCreateError("Could not reach the server.");
       }
-      // Drop straight into the quantity step with the food just created,
-      // so creating and logging is one continuous flow.
-      const created: Food = await response.json();
-      setIsCreatingFood(false);
-      setPickedFood(created);
-    } catch {
-      setCreateError("Could not reach the server.");
-    } finally {
-      setIsSaving(false);
-    }
+    });
   };
 
   const closePicker = () => {
@@ -446,6 +465,7 @@ export default function Nutrition() {
           </Pressable>
           <Pressable
             onPress={() => removeLog(log.id)}
+            disabled={removeLogGuard.isPending(log.id)}
             hitSlop={8}
             style={{
               width: 26,
@@ -454,6 +474,7 @@ export default function Nutrition() {
               backgroundColor: colors.bgInset,
               alignItems: "center",
               justifyContent: "center",
+              opacity: removeLogGuard.isPending(log.id) ? 0.5 : 1,
             }}
           >
             <Text style={{ color: colors.textDim, fontSize: 13 }}>×</Text>
@@ -792,16 +813,32 @@ export default function Nutrition() {
                 <View style={{ flexDirection: "row", gap: 8 }}>
                   <Pressable
                     onPress={() => setIsCreatingFood(false)}
-                    style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: colors.bgInset, alignItems: "center" }}
+                    disabled={createFoodGuard.pending}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.bgInset,
+                      alignItems: "center",
+                      opacity: createFoodGuard.pending ? 0.5 : 1,
+                    }}
                   >
                     <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodySemi }}>Back</Text>
                   </Pressable>
                   <Pressable
                     onPress={createFood}
-                    style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: colors.teal, alignItems: "center" }}
+                    disabled={createFoodGuard.pending}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.teal,
+                      alignItems: "center",
+                      opacity: createFoodGuard.pending ? 0.5 : 1,
+                    }}
                   >
                     <Text style={{ color: colors.tealOn, fontSize: 14, fontFamily: fonts.bodySemi }}>
-                      {isSaving ? "Saving…" : "Create food"}
+                      {createFoodGuard.pending ? "Saving…" : "Create food"}
                     </Text>
                   </Pressable>
                 </View>
@@ -857,16 +894,32 @@ export default function Nutrition() {
                 <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
                   <Pressable
                     onPress={() => setPickedFood(null)}
-                    style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: colors.bgInset, alignItems: "center" }}
+                    disabled={logFoodGuard.pending}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.bgInset,
+                      alignItems: "center",
+                      opacity: logFoodGuard.pending ? 0.5 : 1,
+                    }}
                   >
                     <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodySemi }}>Back</Text>
                   </Pressable>
                   <Pressable
                     onPress={logFood}
-                    style={{ flex: 1, padding: 12, borderRadius: 8, backgroundColor: colors.teal, alignItems: "center" }}
+                    disabled={logFoodGuard.pending}
+                    style={{
+                      flex: 1,
+                      padding: 12,
+                      borderRadius: 8,
+                      backgroundColor: colors.teal,
+                      alignItems: "center",
+                      opacity: logFoodGuard.pending ? 0.5 : 1,
+                    }}
                   >
                     <Text style={{ color: colors.tealOn, fontSize: 14, fontFamily: fonts.bodySemi }}>
-                      {isSaving ? "Saving…" : "Add to log"}
+                      {logFoodGuard.pending ? "Saving…" : "Add to log"}
                     </Text>
                   </Pressable>
                 </View>
@@ -875,7 +928,7 @@ export default function Nutrition() {
               <View>
                 <TextInput
                   value={foodSearch}
-                  onChangeText={searchFoods}
+                  onChangeText={setFoodSearch}
                   placeholder="Search foods…"
                   placeholderTextColor={colors.textFaint}
                   autoCapitalize="none"
@@ -930,7 +983,12 @@ export default function Nutrition() {
                                 {Math.round(food.calories)} kcal / 100g
                               </Text>
                             </View>
-                            <Pressable onPress={() => toggleFoodFavorite({ ...food, is_favorited: true })} hitSlop={8}>
+                            <Pressable
+                              onPress={() => toggleFoodFavorite({ ...food, is_favorited: true })}
+                              disabled={favoriteGuard.isPending(food.id)}
+                              hitSlop={8}
+                              style={{ opacity: favoriteGuard.isPending(food.id) ? 0.5 : 1 }}
+                            >
                               <Text style={{ color: colors.teal }}>★</Text>
                             </Pressable>
                           </Pressable>
@@ -981,7 +1039,12 @@ export default function Nutrition() {
                           </View>
                         )}
                         {/* Same ★/☆ treatment as the exercise picker. */}
-                        <Pressable onPress={() => toggleFoodFavorite(food)} hitSlop={8}>
+                        <Pressable
+                          onPress={() => toggleFoodFavorite(food)}
+                          disabled={favoriteGuard.isPending(food.id)}
+                          hitSlop={8}
+                          style={{ opacity: favoriteGuard.isPending(food.id) ? 0.5 : 1 }}
+                        >
                           <Text style={{ color: food.is_favorited ? colors.teal : colors.textFaint }}>
                             {food.is_favorited ? "★" : "☆"}
                           </Text>
@@ -1100,28 +1163,32 @@ export default function Nutrition() {
             <View style={{ flexDirection: "row", gap: 8, marginTop: 16 }}>
               <Pressable
                 onPress={() => setEditingLog(null)}
+                disabled={saveEditGuard.pending}
                 style={{
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
                   backgroundColor: colors.bgInset,
                   alignItems: "center",
+                  opacity: saveEditGuard.pending ? 0.5 : 1,
                 }}
               >
                 <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodySemi }}>Cancel</Text>
               </Pressable>
               <Pressable
                 onPress={saveLogEdit}
+                disabled={saveEditGuard.pending}
                 style={{
                   flex: 1,
                   padding: 12,
                   borderRadius: 8,
                   backgroundColor: colors.teal,
                   alignItems: "center",
+                  opacity: saveEditGuard.pending ? 0.5 : 1,
                 }}
               >
                 <Text style={{ color: colors.tealOn, fontSize: 14, fontFamily: fonts.bodySemi }}>
-                  {isSavingEdit ? "Saving…" : "Save"}
+                  {saveEditGuard.pending ? "Saving…" : "Save"}
                 </Text>
               </Pressable>
             </View>
