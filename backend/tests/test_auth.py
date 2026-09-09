@@ -320,3 +320,117 @@ def test_require_profile_allows_with_profile(client):
 
     body = response.json()
     assert body["status"] == "profile complete"
+
+
+def _expired_token(user_id: int) -> str:
+    """
+    A structurally valid token whose `exp` is already in the past. Built here
+    rather than by waiting out ACCESS_TOKEN_EXPIRE_MINUTES (seven days).
+    """
+    from datetime import datetime, timedelta, timezone
+
+    from jose import jwt
+
+    from app import auth
+
+    payload = {
+        "sub": str(user_id),
+        "exp": datetime.now(timezone.utc) - timedelta(minutes=1),
+    }
+    return jwt.encode(payload, auth.JWT_SECRET, algorithm=auth.JWT_ALGORITHM)
+
+
+def test_expired_token_is_rejected(client, db_session):
+    """
+    Expiry is what eventually forces a re-login, so a stale token must fail
+    closed. The app's authFetch clears the session on 401, which is what
+    bounces the user back to the login screen.
+    """
+    from app import models
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": "expired@example.com",
+            "username": "expireduser",
+            "password": "TestPass123!",
+        },
+    )
+    user = db_session.query(models.User).filter(
+        models.User.username == "expireduser"
+    ).first()
+
+    response = client.get(
+        "/users/me",
+        headers={"Authorization": f"Bearer {_expired_token(user.id)}"},
+    )
+    assert response.status_code == 401
+
+
+def test_token_for_a_deleted_user_is_rejected(client, db_session):
+    """
+    The closest server-side equivalent of a revoked session: the token still
+    verifies cryptographically, but the subject no longer exists.
+    """
+    from app import models
+
+    client.post(
+        "/auth/register",
+        json={
+            "email": "gone@example.com",
+            "username": "goneuser",
+            "password": "TestPass123!",
+        },
+    )
+    token = client.post(
+        "/auth/login",
+        json={"identifier": "goneuser", "password": "TestPass123!"},
+    ).json()["access_token"]
+
+    headers = {"Authorization": f"Bearer {token}"}
+    assert client.get("/users/me", headers=headers).status_code == 200
+
+    db_session.query(models.User).filter(
+        models.User.username == "goneuser"
+    ).delete(synchronize_session=False)
+    db_session.commit()
+
+    assert client.get("/users/me", headers=headers).status_code == 401
+
+
+def test_full_auth_journey_register_to_authenticated_use(client):
+    """
+    End-to-end walk of the flow the app performs on a fresh install:
+    register, then the onboarding guard rejects until a profile exists,
+    then the same token works. Mirrors checkOnboarding.tsx's sequence.
+    """
+    register = client.post(
+        "/auth/register",
+        json={
+            "email": "journey@example.com",
+            "username": "journeyuser",
+            "password": "TestPass123!",
+        },
+    )
+    assert register.status_code == 200
+    token = register.json()["access_token"]
+    headers = {"Authorization": f"Bearer {token}"}
+
+    # Registration alone must not satisfy the profile gate.
+    assert client.get("/users/onboarding-check", headers=headers).status_code == 403
+
+    client.post("/users/profile", json={"goal": "get stronger"}, headers=headers)
+    assert client.get("/users/onboarding-check", headers=headers).status_code == 200
+
+    # Logging in again issues a token that is equally usable - the app holds
+    # exactly one token at a time, so a re-login must fully replace it.
+    relogin_token = client.post(
+        "/auth/login",
+        json={"identifier": "journeyuser", "password": "TestPass123!"},
+    ).json()["access_token"]
+    assert (
+        client.get(
+            "/users/me", headers={"Authorization": f"Bearer {relogin_token}"}
+        ).status_code
+        == 200
+    )
