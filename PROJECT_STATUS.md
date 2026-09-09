@@ -7,7 +7,8 @@ _Updated: 2026-09-09_
 Gymind is an active Expo/FastAPI/PostgreSQL fitness tracker. Authentication,
 onboarding/profile data, workout logging, exercise favorites/history/notes,
 nutrition logging/targets/favorites, body weight, and progress summaries are
-implemented. The same Expo application targets native and static web output.
+implemented. The Expo application targets iOS and Android only; the web
+target was removed.
 
 The AI Coach has been rebuilt. `POST /coach` assembles a system prompt from
 the caller's own profile, training consistency, best Epley e1RM per exercise,
@@ -27,11 +28,13 @@ model; conversations and messages persist in `coach_conversations` and
 | Nutrition | Implemented, upload remains | Food search/create/favorite, logs, edit/delete, daily summary, automatic/manual targets. No photo upload yet. |
 | Progress | Implemented, upload remains | Weight trend/ranges, consistency, muscle groups, exercise e1RM, plus an aggregate `GET /progress`. No progress-photo storage yet. |
 | Coach | Implemented | `POST /coach` with data-grounded prompts, conversation storage, and a chat UI. Requires `OPENROUTER_API_KEY`; returns 503 when unset. |
-| Web | Functional shared export | Expo static export uses the mobile routes; desktop-specific navigation/layout still needs polish. |
+| Web | Removed | **Scope change:** Gymind is mobile-only (iOS/Android). The web target, `react-native-web` and `react-dom` were removed; there is no longer a browser build. The previous row read "Functional shared export — Expo static export uses the mobile routes; desktop-specific navigation/layout still needs polish." Screens themselves were not changed. |
 
 ## Architecture
 
-- Frontend: Expo SDK 57, React Native, TypeScript, Expo Router, React Native Web.
+- Frontend: Expo SDK 57, React Native, TypeScript, Expo Router. Mobile-only -
+  `app.json` declares `"platforms": ["ios", "android"]`, so a web build is
+  refused rather than silently attempted.
 - Backend: FastAPI, Pydantic, SQLAlchemy.
 - Database: PostgreSQL 16 with Alembic migrations.
 - Deployment: Docker Compose on a self-hosted server.
@@ -114,7 +117,8 @@ Frontend:
    length/enumeration hardening before public launch.
 6. Finish meal/progress photo storage and upload.
 7. Complete workout rest timing and finish-session polish.
-8. Improve responsive desktop web navigation and layouts.
+8. (Removed) Responsive desktop web navigation and layouts - no longer
+   applicable now that the web target is gone.
 
 ## Validation commands
 
@@ -122,7 +126,7 @@ Frontend:
 mobile:  npx tsc --noEmit
 mobile:  npm run lint -- --max-warnings=0
 mobile:  npx expo-doctor
-mobile:  npx expo export --platform web
+mobile:  npx expo export --platform android
 backend: python -m pytest -q
 backend: python -m compileall -q app tests
 backend: alembic heads
@@ -133,13 +137,16 @@ See `CODEBASE_REVIEW.md` for the detailed architecture and remaining risk regist
 
 ## Latest validation
 
-- Backend suite: 67 passed.
+- Backend suite: 69 passed.
 - Python compilation: passed.
 - Alembic: one head (`b4d21c0a7e15`).
 - TypeScript: passed.
 - ESLint: passed with zero warnings.
-- Expo Doctor: 21/21 checks passed.
-- Expo web export: 17 static routes exported successfully.
+- Expo Doctor: 20/21 checks passed. The one failure is pre-existing patch
+  drift unrelated to the web removal (`expo` 57.0.20 vs `~57.0.21`,
+  `expo-router` 57.0.19 vs `~57.0.20`); no dependency upgrade was applied.
+- Expo native export: Android bundle built successfully.
+- Expo web export: no longer applicable - refused by the `platforms` array.
 - npm audit: 14 moderate transitive advisories, no high/critical advisories;
   forced incompatible downgrade suggestions were not applied.
 - Docker Compose: not executable on this workstation because Docker is absent;

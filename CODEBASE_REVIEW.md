@@ -13,7 +13,7 @@ development diary or deployment runbook.
 Gymind is a three-tier application:
 
 ```text
-Expo / React Native / React Native Web
+Expo / React Native (iOS + Android)
                 | JSON REST + bearer JWT
                 v
              FastAPI
@@ -33,8 +33,9 @@ Expo / React Native / React Native Web
 - `backend/alembic/` contains versioned PostgreSQL migrations.
 - `backend/tests/` contains API, validation, and authorization regressions.
 
-The mobile and web experiences share one Expo codebase. There is no separate
-web backend or independent web application.
+One Expo codebase targets iOS and Android. The web target was removed, so
+there is no browser build, no separate web backend, and no independent web
+application.
 
 ## Authentication and authorization
 
@@ -128,9 +129,9 @@ or use a hash scheme that safely incorporates the full accepted password.
 ## Quality and known limitations
 
 The backend has API and authorization tests. The frontend currently relies on
-TypeScript, ESLint, Expo Doctor, and static web export rather than a dedicated
-component test suite. Photo upload/storage, workout rest timing, desktop-specific
-web polish, and the rebuilt Coach remain incomplete.
+TypeScript, ESLint, Expo Doctor, and a native export rather than a dedicated
+component test suite. Photo upload/storage and workout rest timing remain
+incomplete.
 
 The repository deliberately retains `Design2/` as a non-runtime Brand 2.0
 reference. Its interactive HTML and design notes are inputs for visual work, not
@@ -139,5 +140,5 @@ an alternative application implementation.
 ## Validation baseline
 
 The latest full validation recorded in `PROJECT_STATUS.md` passes backend tests,
-Python compilation, TypeScript, ESLint, Expo Doctor, and Expo web export. Docker
+Python compilation, TypeScript, ESLint, Expo Doctor, and Expo native export. Docker
 Compose must still be validated in an environment where Docker is installed.
