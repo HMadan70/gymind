@@ -175,6 +175,7 @@ export default function Coach() {
                 <Pressable
                   key={suggestion}
                   onPress={() => send(suggestion)}
+                  disabled={sending}
                   style={{
                     ...shapeTokens.secondaryCard,
                     backgroundColor: colors.bgCard,
@@ -182,6 +183,7 @@ export default function Coach() {
                     borderColor: colors.border,
                     paddingHorizontal: 18,
                     paddingVertical: 16,
+                    opacity: sending ? 0.5 : 1,
                   }}
                 >
                   <Text
