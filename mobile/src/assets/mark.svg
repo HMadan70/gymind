@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52" width="52" height="52">
+  <defs>
+    <linearGradient id="gymindMark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#dcbc33"/>
+      <stop offset="1" stop-color="#00bcc7"/>
+    </linearGradient>
+  </defs>
+  <path d="M16,0 H46 A6,6 0 0 1 52,6 V36 A16,16 0 0 1 36,52 H6 A6,6 0 0 1 0,46 V16 A16,16 0 0 1 16,0 Z" fill="url(#gymindMark)"/>
+  <polyline points="15,28 21,28 24,19 28,33 31,24 37,24" fill="none" stroke="#ffffff" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
