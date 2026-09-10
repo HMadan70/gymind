@@ -150,6 +150,9 @@ Backend/server:
 - `CORS_ORIGINS`
 - `OPENROUTER_API_KEY` (Coach; unset disables `POST /coach` with a 503)
 - `OPENROUTER_MODEL` (Coach; defaults to `anthropic/claude-sonnet-4.5`)
+- `COACH_RATE_LIMIT_REQUESTS`, `COACH_RATE_LIMIT_WINDOW_SECONDS` (Coach;
+  default 10 requests / 60s per authenticated user - see
+  `backend/app/coach_rate_limit.py`)
 - `UPLOAD_DIR` (photos; defaults to `backend/uploads/`, gitignored - see
   Photo storage below)
 
@@ -160,10 +163,12 @@ Frontend:
 ## Next priorities
 
 1. Coach follow-ups: conversation history UI (the list/detail/delete routes
-   exist but no screen consumes them), streaming replies, and per-user rate
-   limiting on `POST /coach` before public launch.
+   exist but no screen consumes them) and streaming replies. Per-user rate
+   limiting is done (below).
 2. Deploy behind HTTPS and formalize database backups/migrations.
-3. Add frontend tests and CI validation.
+3. Backend CI is done (`.github/workflows/backend-tests.yml`). Frontend has
+   no automated test suite yet - validation is tsc/ESLint/expo-doctor/native
+   export only, run locally, not in CI.
 4. Plan token refresh/revocation and account deletion.
 5. Move native token storage to a platform-secure facility and review password
    length/enumeration hardening before public launch.
@@ -186,8 +191,6 @@ backend: python -m compileall -q app tests
 backend: alembic heads
 root:    docker compose config
 ```
-
-See `CODEBASE_REVIEW.md` for the detailed architecture and remaining risk register.
 
 ## Latest validation
 
