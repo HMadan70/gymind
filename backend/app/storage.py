@@ -4,8 +4,8 @@ Local-filesystem storage for uploaded photos (meal photos, progress photos).
 Local disk rather than object storage: this app is self-hosted on a home
 server with no cloud storage account configured anywhere in the stack, and
 nothing else here talks to S3/GCS-style APIs. UPLOAD_DIR is a plain
-directory, mirroring how backend/scripts/import_foods.py resolves its own
-data directory relative to the package.
+directory, mirroring how backend/scripts/seed_reference_data.py resolves
+its own data directory relative to the package.
 
 Deliberately out of scope, per the task this module was built for: no image
 analysis, no macro estimation from a photo. A photo is an opaque uploaded

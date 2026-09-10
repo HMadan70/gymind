@@ -94,6 +94,29 @@ cascades from its user, same as the Coach tables; cascade changes to the
 older tables remain deferred until account-deletion semantics are designed
 and reviewed.
 
+## Backups and seed data
+
+**Reference data (foods, exercises).** The ~7,793 shared USDA foods and 119
+shared exercises are not derivable from anything else in the repo - they
+were originally loaded from source files (raw USDA SR Legacy CSVs, a
+free-exercise-db-style JSON file) that are no longer tracked. To close that
+gap, `backend/data/seed/foods.csv` and `backend/data/seed/exercises.csv`
+are flat exports of exactly those rows, taken directly from production and
+committed to git (the only exception to the `backend/data/` ignore rule -
+see the comment in `.gitignore`). `backend/scripts/seed_reference_data.py`
+loads them into whatever database `DATABASE_URL` points at:
+
+```text
+python scripts/seed_reference_data.py
+```
+
+Idempotent - re-running it against an already-seeded database inserts
+nothing and reports what it skipped. Tested against a genuinely empty,
+freshly-migrated database (not `gymind_test`, which the suite tears down
+per test) and confirmed it recreates all 7,793 foods and 119 exercises
+exactly. Replaces the old `scripts/import_foods.py`, which read the raw
+USDA CSVs directly and could no longer run once those files were gone.
+
 ## Test database
 
 Production (`gymind`, real users and real food data) and the backend test
@@ -165,7 +188,8 @@ Frontend:
 1. Coach follow-ups: conversation history UI (the list/detail/delete routes
    exist but no screen consumes them) and streaming replies. Per-user rate
    limiting is done (below).
-2. Deploy behind HTTPS and formalize database backups/migrations.
+2. Deploy behind HTTPS. Database backups and reference-data seeding are
+   done - see "Backups and seed data" above.
 3. Backend CI is done (`.github/workflows/backend-tests.yml`). Frontend has
    no automated test suite yet - validation is tsc/ESLint/expo-doctor/native
    export only, run locally, not in CI.

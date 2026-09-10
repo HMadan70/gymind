@@ -18,7 +18,15 @@ profile.json
 *_test.json
 test_*.json
 
-backend/data/
+backend/data/*
+# Exception: the tracked, re-seedable snapshot scripts/seed_reference_data.py
+# reads from. Everything else directly under backend/data/ (e.g. raw USDA
+# source files, if ever re-added) stays ignored - only this one directory,
+# and everything in it, is committed. (A directory-level ignore like
+# "backend/data/" can't be selectively un-ignored below itself - git won't
+# even look inside an excluded directory - hence the /* + explicit
+# re-include instead.)
+!backend/data/seed
 backend/uploads/
 
 # Python tooling caches / artifacts
