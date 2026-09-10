@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { router, useFocusEffect } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
+import { ArrowRight } from "lucide-react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -126,7 +127,9 @@ export default function Home() {
 
   const trainedToday = isSameDay(lastFinishedWorkout?.ended_at ?? null, new Date());
 
-  const coachTeaser = "Coach is being rebuilt.";
+  const coachTeaser = trainedToday
+    ? "Session logged. Ask your coach what to prioritise next."
+    : "Ask your coach what to train today.";
 
   const caloriePct =
     nutrition && calorieTarget && calorieTarget > 0
@@ -270,17 +273,28 @@ export default function Home() {
             >
               {coachTeaser}
             </Text>
-            <Text
+            <View
               style={{
-                color: "#ffffff",
-                fontSize: 12,
+                flexDirection: "row",
+                alignItems: "center",
+                gap: 4,
                 marginTop: 12,
-                opacity: 0.9,
-                fontFamily: fonts.bodyBold,
               }}
             >
-              Ask something →
-            </Text>
+              <Text
+                style={{
+                  color: "#ffffff",
+                  fontSize: 12,
+                  opacity: 0.9,
+                  fontFamily: fonts.bodyBold,
+                }}
+              >
+                Ask something
+              </Text>
+              <View style={{ opacity: 0.9 }}>
+                <ArrowRight size={13} color="#ffffff" />
+              </View>
+            </View>
           </LinearGradient>
         </Pressable>
 

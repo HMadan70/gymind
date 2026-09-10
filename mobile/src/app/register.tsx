@@ -7,6 +7,7 @@ import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../constants/theme";
 import { API_URL } from "../constants/api";
 import Mark from "../assets/mark.svg";
+import { Check } from "lucide-react-native";
 import { Button } from "../components/Button";
 import { signIn } from "../lib/session";
 
@@ -214,7 +215,7 @@ export default function Register() {
           alignItems: "center",
           justifyContent: "center",
         }}>
-          {agreedToTerms && <Text style={{ color: colors.tealOn, fontSize: 13 }}>✓</Text>}
+          {agreedToTerms && <Check size={13} color={colors.tealOn} />}
         </View>
         <Text style={{ color: colors.textDim, flex: 1, fontSize: 13, fontFamily: fonts.body }}>
           I agree to the <Text style={{ color: colors.teal, fontFamily: fonts.bodyBold }}>Terms</Text> and{" "}

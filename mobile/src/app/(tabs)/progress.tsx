@@ -3,6 +3,7 @@ import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle, Polyline } from "react-native-svg";
+import { ChevronLeft, TrendingUp, TrendingDown, X, Plus } from "lucide-react-native";
 
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
@@ -10,12 +11,16 @@ import { fonts } from "../../constants/theme";
 import { API_URL } from "../../constants/api";
 import { Card } from "../../components/Card";
 import { authFetch } from "../../lib/session";
+import { pickPhoto, uploadPhoto } from "../../lib/photos";
+import { AuthImage } from "../../components/AuthImage";
+import { ConfirmModal } from "../../components/ConfirmModal";
 
 type Consistency = { days_trained: number; total_days: number };
 type BodyWeightPoint = { weight: number; unit?: string; logged_at?: string | null; date?: string };
 type MuscleGroup = { muscle_group: string; best_e1rm: number };
 type Exercise = { id: number; name: string; muscle_group: string };
 type E1rmEntry = { date: string; weight: number; reps: number; e1rm: number };
+type ProgressPhoto = { id: number; taken_at: string; created_at: string };
 
 const CONSISTENCY_RADIUS = 23;
 const CONSISTENCY_CIRCUMFERENCE = 2 * Math.PI * CONSISTENCY_RADIUS;
@@ -94,6 +99,10 @@ export default function Progress() {
   const [e1rmEntries, setE1rmEntries] = useState<E1rmEntry[]>([]);
   const [isLoadingDetail, setIsLoadingDetail] = useState(false);
 
+  const [progressPhotos, setProgressPhotos] = useState<ProgressPhoto[]>([]);
+  const [isUploadingPhoto, setIsUploadingPhoto] = useState(false);
+  const [photoPendingDelete, setPhotoPendingDelete] = useState<ProgressPhoto | null>(null);
+
   const loadProgress = useCallback(async () => {
     setLoadError("");
     try {
@@ -143,11 +152,46 @@ export default function Progress() {
     }
   }, []);
 
+  const loadProgressPhotos = useCallback(async () => {
+    try {
+      const response = await authFetch(`${API_URL}/progress-photos`);
+      if (response.ok) setProgressPhotos(await response.json());
+    } catch {
+      // leave whatever's already on screen rather than blanking the gallery
+    }
+  }, []);
+
   useFocusEffect(
     useCallback(() => {
       loadProgress();
-    }, [loadProgress])
+      loadProgressPhotos();
+    }, [loadProgress, loadProgressPhotos])
   );
+
+  const addProgressPhoto = async () => {
+    const photo = await pickPhoto();
+    if (!photo) return;
+    setIsUploadingPhoto(true);
+    try {
+      const response = await uploadPhoto(`${API_URL}/progress-photos`, photo);
+      if (response.ok) loadProgressPhotos();
+      else setLoadError("Could not upload that photo.");
+    } catch {
+      setLoadError("Could not reach the server.");
+    } finally {
+      setIsUploadingPhoto(false);
+    }
+  };
+
+  const deleteProgressPhoto = async (photo: ProgressPhoto) => {
+    setPhotoPendingDelete(null);
+    try {
+      await authFetch(`${API_URL}/progress-photos/${photo.id}`, { method: "DELETE" });
+      setProgressPhotos((prev) => prev.filter((p) => p.id !== photo.id));
+    } catch {
+      setLoadError("Could not delete that photo.");
+    }
+  };
 
   // Runs on mount and on every range change.
   useEffect(() => {
@@ -251,7 +295,16 @@ export default function Progress() {
       ? "not enough data yet"
       : Math.abs(weightDelta) < 0.05
         ? "no change"
-        : `${weightDelta > 0 ? "▲" : "▼"} ${Math.abs(weightDelta).toFixed(1)} ${weightUnit ?? "lb"}`;
+        : `${Math.abs(weightDelta).toFixed(1)} ${weightUnit ?? "lb"}`;
+  // null when there's no direction to show (no data, or change below the
+  // 0.05 "no change" threshold above) - callers render the icon only when
+  // this is non-null, so the two stay in sync with the label automatically.
+  const weightDeltaDirection: "up" | "down" | null =
+    weightDelta === null || Math.abs(weightDelta) < 0.05
+      ? null
+      : weightDelta > 0
+        ? "up"
+        : "down";
 
   const weightHigh = weightValues.length ? Math.max(...weightValues) : null;
   const weightLow = weightValues.length ? Math.min(...weightValues) : null;
@@ -453,25 +506,35 @@ export default function Progress() {
                     <Text style={{ color: colors.textPrimary, fontSize: 13, fontFamily: fonts.bodyBold }}>
                       {latestWeight ? `${latestWeight.weight} ${weightUnit ?? "lb"}` : "—"}
                     </Text>
-                    <Text style={{ color: colors.textDim, fontSize: 11, fontFamily: fonts.body }}>
-                      {weightDeltaLabel}
-                      {weightDelta !== null && ` over ${rangeLabelFor(rangeDays)}`}
-                    </Text>
+                    <View style={{ flexDirection: "row", alignItems: "center", gap: 3 }}>
+                      {weightDeltaDirection === "up" && (
+                        <TrendingUp size={12} color={colors.textDim} />
+                      )}
+                      {weightDeltaDirection === "down" && (
+                        <TrendingDown size={12} color={colors.textDim} />
+                      )}
+                      <Text style={{ color: colors.textDim, fontSize: 11, fontFamily: fonts.body }}>
+                        {weightDeltaLabel}
+                        {weightDelta !== null && ` over ${rangeLabelFor(rangeDays)}`}
+                      </Text>
+                    </View>
                   </View>
                 </>
               )}
             </Card>
 
-            {/* Progress photos — visual only. No progress_photos table or
-                upload endpoint exists, so the tiles are inert placeholders
-                rather than a broken feature. */}
+            {/* Progress photos - basic upload/storage only. No analysis or
+                body-composition estimation is performed on these images. */}
             <View style={{ gap: 10 }}>
               <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodyBold }}>
                 Progress photos
               </Text>
               <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 10 }}>
-                <View
-                  accessibilityLabel="Photo tracking is not available yet"
+                <Pressable
+                  onPress={addProgressPhoto}
+                  disabled={isUploadingPhoto}
+                  accessibilityRole="button"
+                  accessibilityLabel="Add a progress photo"
                   style={{
                     width: 78,
                     height: 96,
@@ -483,15 +546,43 @@ export default function Progress() {
                     justifyContent: "center",
                   }}
                 >
-                  <Text style={{ color: colors.textDim, fontSize: 22 }}>+</Text>
-                </View>
-                <View style={{ justifyContent: "center", paddingLeft: 4 }}>
-                  <Text style={{ color: colors.textFaint, fontSize: 11, fontFamily: fonts.body }}>
-                    {"Photo tracking isn't available yet."}
-                  </Text>
-                </View>
+                  <Plus size={22} color={colors.textDim} />
+                </Pressable>
+
+                {progressPhotos.map((photo) => (
+                  <Pressable
+                    key={photo.id}
+                    onLongPress={() => setPhotoPendingDelete(photo)}
+                    accessibilityRole="button"
+                    accessibilityLabel="Progress photo. Long-press to delete."
+                  >
+                    <AuthImage
+                      uri={`${API_URL}/progress-photos/${photo.id}/photo`}
+                      style={{ width: 78, height: 96, borderRadius: 16 }}
+                    />
+                  </Pressable>
+                ))}
+
+                {progressPhotos.length === 0 && (
+                  <View style={{ justifyContent: "center", paddingLeft: 4 }}>
+                    <Text style={{ color: colors.textFaint, fontSize: 11, fontFamily: fonts.body }}>
+                      {"No progress photos yet."}
+                    </Text>
+                  </View>
+                )}
               </ScrollView>
             </View>
+
+            <ConfirmModal
+              visible={photoPendingDelete !== null}
+              title="Delete photo"
+              description="This progress photo will be permanently deleted."
+              confirmLabel="Delete"
+              confirmColor={colors.coral}
+              confirmTextColor={colors.coralOn}
+              onConfirm={() => photoPendingDelete && deleteProgressPhoto(photoPendingDelete)}
+              onCancel={() => setPhotoPendingDelete(null)}
+            />
 
             {/* Muscle groups */}
             <Text style={{ color: colors.textPrimary, fontSize: 14, fontFamily: fonts.bodyBold }}>
@@ -537,9 +628,13 @@ export default function Progress() {
         ) : (
           /* Detail: exercises in a group, then one exercise's e1RM trend */
           <>
-            <Pressable onPress={selectedExercise ? () => setSelectedExercise(null) : closeDetail}>
-              <Text style={{ color: colors.textDim, fontSize: 13, marginBottom: 12, fontFamily: fonts.bodyBold }}>
-                ← {selectedExercise ? selectedGroup : "Muscle groups"}
+            <Pressable
+              onPress={selectedExercise ? () => setSelectedExercise(null) : closeDetail}
+              style={{ flexDirection: "row", alignItems: "center", gap: 4, marginBottom: 12 }}
+            >
+              <ChevronLeft size={14} color={colors.textDim} />
+              <Text style={{ color: colors.textDim, fontSize: 13, fontFamily: fonts.bodyBold }}>
+                {selectedExercise ? selectedGroup : "Muscle groups"}
               </Text>
             </Pressable>
 
@@ -653,7 +748,7 @@ export default function Progress() {
                 Log body weight
               </Text>
               <Pressable onPress={() => setIsWeightModalOpen(false)} hitSlop={8}>
-                <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+                <X size={18} color={colors.textFaint} />
               </Pressable>
             </View>
 

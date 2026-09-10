@@ -1,8 +1,9 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, status
+from fastapi.responses import FileResponse
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from app.database import get_db
-from app import auth, models, schemas
+from app import auth, models, schemas, storage
 from app.models import Food, NutritionLog, BodyWeightLog, NutritionTarget  # you'll need NutritionLog later too
 from app.schemas import FoodIn, FoodOut, NutritionLogIn
 from typing import List, Literal, Optional, Union
@@ -234,6 +235,7 @@ def add_nutrition_log(
         food_id=new_log.food_id,
         quantity_grams=new_log.quantity_grams,
         logged_at=new_log.logged_at,
+        photo_filename=new_log.photo_filename,
         food=schemas.NutritionLogFoodOut(
             name=food.name,
             calories=food.calories,
@@ -267,6 +269,7 @@ def get_nutrition_logs(
             food_id=log.food_id,
             quantity_grams=log.quantity_grams,
             logged_at=log.logged_at,
+            photo_filename=log.photo_filename,
             food=schemas.NutritionLogFoodOut(
                 name=food.name,
                 calories=food.calories,
@@ -390,6 +393,7 @@ def update_nutrition_log(
         food_id=log.food_id,
         quantity_grams=log.quantity_grams,
         logged_at=log.logged_at,
+        photo_filename=log.photo_filename,
         food=schemas.NutritionLogFoodOut(
             name=food.name,
             calories=food.calories,
@@ -474,3 +478,83 @@ def get_nutrition_summary(
         "total_carbs": round(total_carbs, 1),
         "total_fat": round(total_fat, 1)
     }
+
+
+def _get_owned_nutrition_log(db: Session, log_id: int, user_id: int) -> NutritionLog:
+    log = db.query(NutritionLog).filter(
+        NutritionLog.id == log_id,
+        NutritionLog.user_id == user_id,
+    ).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Nutrition log not found")
+    return log
+
+
+@router.post("/nutrition/{log_id}/photo", response_model=schemas.NutritionLogOut)
+def upload_nutrition_log_photo(
+    log_id: int,
+    photo: UploadFile,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    """
+    Attaches a photo to an already-logged meal. Basic storage only - no
+    image analysis, no macro estimation from the photo; the macros on this
+    log are still whatever the caller entered manually via POST /nutrition.
+    """
+    log = _get_owned_nutrition_log(db, log_id, current_user.id)
+    food = _get_visible_food(db, log.food_id, current_user.id)
+
+    old_filename = log.photo_filename
+    log.photo_filename = storage.save_photo(photo, "nutrition")
+    db.commit()
+    db.refresh(log)
+
+    # Replacing a photo, not adding a second one - drop the old file now
+    # that the new one is committed, so uploads never leak on re-attach.
+    if old_filename:
+        storage.delete_photo("nutrition", old_filename)
+
+    return schemas.NutritionLogOut(
+        id=log.id,
+        user_id=log.user_id,
+        food_id=log.food_id,
+        quantity_grams=log.quantity_grams,
+        logged_at=log.logged_at,
+        photo_filename=log.photo_filename,
+        food=schemas.NutritionLogFoodOut(
+            name=food.name,
+            calories=food.calories,
+            protein=food.protein,
+            carbs=food.carbs,
+            fat=food.fat,
+        ) if food else None,
+    )
+
+
+@router.get("/nutrition/{log_id}/photo")
+def get_nutrition_log_photo(
+    log_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    log = _get_owned_nutrition_log(db, log_id, current_user.id)
+    if not log.photo_filename:
+        raise HTTPException(status_code=404, detail="This log has no photo")
+    return FileResponse(storage.photo_path("nutrition", log.photo_filename))
+
+
+@router.delete("/nutrition/{log_id}/photo", status_code=status.HTTP_204_NO_CONTENT)
+def delete_nutrition_log_photo(
+    log_id: int,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    log = _get_owned_nutrition_log(db, log_id, current_user.id)
+    if not log.photo_filename:
+        raise HTTPException(status_code=404, detail="This log has no photo")
+
+    filename = log.photo_filename
+    log.photo_filename = None
+    db.commit()
+    storage.delete_photo("nutrition", filename)

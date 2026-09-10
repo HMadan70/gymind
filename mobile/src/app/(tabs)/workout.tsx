@@ -1,5 +1,6 @@
 import { View, Text, Pressable, TextInput, ScrollView } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
+import { X } from "lucide-react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useTheme } from "../../context/ThemeContext";
 import { fonts } from "../../constants/theme";
@@ -951,7 +952,7 @@ export default function Workout() {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 16 }}>
         <Text style={{ color: colors.textPrimary, fontWeight: "bold", fontSize: 18 }}>Past Workouts</Text>
         <Pressable onPress={() => setIsPastWorkoutsOpen(false)}>
-          <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+          <X size={18} color={colors.textFaint} />
         </Pressable>
       </View>
 
@@ -1013,7 +1014,7 @@ export default function Workout() {
       <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 4 }}>
         <Text style={{ color: colors.textPrimary, fontSize: 18, fontFamily: fonts.heading }}>Edit workout</Text>
         <Pressable onPress={closeWorkoutEditor} hitSlop={8}>
-          <Text style={{ color: colors.textFaint, fontSize: 18 }}>✕</Text>
+          <X size={18} color={colors.textFaint} />
         </Pressable>
       </View>
       <Text style={{ color: colors.textDim, fontSize: 12, marginBottom: 14, fontFamily: fonts.body }}>

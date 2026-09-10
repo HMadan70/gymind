@@ -11,6 +11,48 @@ from app import models, auth
 router = APIRouter()
 
 
+@router.get("/progress")
+def get_progress_overview(
+    days: int = 28,
+    current_user: models.User = Depends(auth.require_profile),
+    db: Session = Depends(get_db),
+):
+    """
+    Everything the Progress tab needs in one round trip: body-weight trend,
+    e1RM trend per trained exercise, muscle-group strength summary, and the
+    consistency count.
+
+    A composition of the four /progress/* routes below, which remain the
+    place to go for one section at a time (and are what the drilldown chart
+    uses when it needs a single exercise). Both `days` arguments are driven
+    from the same parameter so the window is consistent across sections.
+    """
+    trained_exercise_ids = [
+        exercise_id
+        for (exercise_id,) in (
+            db.query(models.WorkoutSet.exercise_id)
+            .join(models.UserWorkout, models.WorkoutSet.workout_id == models.UserWorkout.id)
+            .filter(
+                models.UserWorkout.user_id == current_user.id,
+                models.WorkoutSet.weight.isnot(None),
+                models.WorkoutSet.reps.isnot(None),
+            )
+            .distinct()
+            .all()
+        )
+    ]
+
+    return {
+        "body_weight": get_body_weight_trend(days=days, current_user=current_user, db=db),
+        "exercises": [
+            get_e1rm_trend(exercise_id=exercise_id, current_user=current_user, db=db)
+            for exercise_id in trained_exercise_ids
+        ],
+        "muscle_groups": get_muscle_group_summary(current_user=current_user, db=db),
+        "consistency": get_consistency(days=days, current_user=current_user, db=db),
+    }
+
+
 @router.get("/progress/body-weight")
 def get_body_weight_trend(
     days: Optional[int] = None,

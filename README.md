@@ -1,7 +1,7 @@
 # Gymind
 
 Gymind is a fitness-tracking application for workouts, nutrition, body weight,
-and progress. One Expo/React Native codebase targets native devices and the web;
+and progress. One Expo/React Native codebase targets iOS and Android;
 a FastAPI service and PostgreSQL provide the API and persistence layer.
 
 > The AI Coach implementation was intentionally removed on 2026-09-08 so it can
@@ -11,7 +11,7 @@ a FastAPI service and PostgreSQL provide the API and persistence layer.
 ## Architecture
 
 ```text
-Expo / React Native / React Native Web
+Expo / React Native (iOS + Android)
               │ JSON REST + bearer JWT
               ▼
          FastAPI API
@@ -64,7 +64,7 @@ pip install -r requirements.txt
 uvicorn app.main:app --reload
 ```
 
-Mobile/web:
+Mobile:
 
 ```powershell
 cd mobile
@@ -79,7 +79,7 @@ cd mobile
 npx tsc --noEmit
 npm run lint -- --max-warnings=0
 npx expo-doctor
-npx expo export --platform web
+npx expo export --platform android
 
 cd ../backend
 python -m pytest -q

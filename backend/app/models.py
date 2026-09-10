@@ -134,6 +134,26 @@ class NutritionLog(Base):
     food_id = Column(Integer, ForeignKey("foods.id"), nullable=False)
     quantity_grams = Column(Float, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Filename only (e.g. "3f9a2b1c.jpg"), not a URL - the file lives under
+    # UPLOAD_DIR/nutrition/ (see app/storage.py). Retrieval always goes
+    # through GET /nutrition/{id}/photo, which checks ownership before
+    # reading the file, so nothing here is a publicly-guessable path.
+    photo_filename = Column(Text, nullable=True)
+
+
+class ProgressPhoto(Base):
+    """
+    A single progress-photo upload, independent of any workout or nutrition
+    log - the Progress tab's photo gallery is its own timeline, not tied to
+    a specific day's data the way body-weight or nutrition entries are.
+    """
+    __tablename__ = "progress_photos"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    photo_filename = Column(Text, nullable=False)
+    taken_at = Column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class BodyWeightLog(Base):
@@ -144,6 +164,38 @@ class BodyWeightLog(Base):
     weight = Column(Float, nullable=False)
     unit = Column(Text, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+
+
+class CoachConversation(Base):
+    """
+    One Coach chat thread. A user can hold several, so the Coach tab can
+    offer a history list rather than a single ever-growing transcript.
+    """
+    __tablename__ = "coach_conversations"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    title = Column(Text, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class CoachMessage(Base):
+    """
+    A single turn in a Coach conversation. `role` is "user" or "assistant";
+    the system prompt is rebuilt from live profile/training data on every
+    request rather than stored, so a user whose goal or stats have changed
+    is never coached against a stale snapshot of themselves.
+    """
+    __tablename__ = "coach_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    conversation_id = Column(
+        Integer, ForeignKey("coach_conversations.id", ondelete="CASCADE"), nullable=False, index=True
+    )
+    role = Column(Text, nullable=False)
+    content = Column(Text, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class NutritionTarget(Base):

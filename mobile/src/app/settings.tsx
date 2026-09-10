@@ -8,6 +8,7 @@ import { useTheme } from "../context/ThemeContext";
 import { fonts } from "../constants/theme";
 import { API_URL } from "../constants/api";
 import { Card } from "../components/Card";
+import { Check } from "lucide-react-native";
 import { Button } from "../components/Button";
 import { authFetch, clearSession } from "../lib/session";
 
@@ -158,7 +159,7 @@ export default function Settings() {
                     justifyContent: "center",
                   }}
                 >
-                  {selected && <Text style={{ color: colors.tealOn, fontSize: 13 }}>✓</Text>}
+                  {selected && <Check size={13} color={colors.tealOn} />}
                 </View>
               </Pressable>
             );

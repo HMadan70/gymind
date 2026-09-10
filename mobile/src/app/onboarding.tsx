@@ -8,6 +8,7 @@ import { router } from "expo-router";
 import { API_URL } from "../constants/api";
 import type { ThemeColors } from "../context/ThemeContext";
 import { authFetch } from "../lib/session";
+import { TrendingDown, TrendingUp, Equal, Check, type LucideIcon } from "lucide-react-native";
 
 type FormData = {
   goal: string;
@@ -18,16 +19,19 @@ type FormData = {
 };
 
 const GOAL_OPTIONS = [
-  { value: "lose_weight", title: "Lose weight", subtitle: "Fat loss with muscle retention", icon: "↓" },
-  { value: "build_muscle", title: "Build muscle", subtitle: "Hypertrophy & progressive overload", icon: "↑" },
-  { value: "maintain", title: "Maintain", subtitle: "Stay consistent & healthy", icon: "≈" },
+  { value: "lose_weight", title: "Lose weight", subtitle: "Fat loss with muscle retention", icon: TrendingDown },
+  { value: "build_muscle", title: "Build muscle", subtitle: "Hypertrophy & progressive overload", icon: TrendingUp },
+  { value: "maintain", title: "Maintain", subtitle: "Stay consistent & healthy", icon: Equal },
 ];
 
-// PLACEHOLDER copy — real design for steps 2-5 wasn't exported, swap if you have it
+// PLACEHOLDER copy — real design for steps 2-5 wasn't exported, swap if you have it.
+// Experience level has no natural single-glyph icon, so it keeps its own
+// dot-count meter (rendered as Views below, not text) rather than forcing
+// an ill-fitting Lucide icon onto a concept the set doesn't represent well.
 const EXPERIENCE_OPTIONS = [
-  { value: "beginner", title: "Beginner", subtitle: "New to structured training", icon: "●" },
-  { value: "intermediate", title: "Intermediate", subtitle: "6+ months consistent training", icon: "●●" },
-  { value: "advanced", title: "Advanced", subtitle: "Years of consistent training", icon: "●●●" },
+  { value: "beginner", title: "Beginner", subtitle: "New to structured training", level: 1 },
+  { value: "intermediate", title: "Intermediate", subtitle: "6+ months consistent training", level: 2 },
+  { value: "advanced", title: "Advanced", subtitle: "Years of consistent training", level: 3 },
 ];
 
 const EQUIPMENT_OPTIONS = ["None (bodyweight)", "Dumbbells", "Barbell", "Machines", "Resistance bands"];
@@ -52,14 +56,16 @@ const STEP_SUBTITLES = [
 // Reusable card for single-select steps (goal, experience) — same visual pattern
 // you already built and confirmed against the design for step 1.
 function OptionCard({
-  icon,
+  icon: Icon,
+  level,
   title,
   subtitle,
   selected,
   onPress,
   colors,
 }: {
-  icon: string;
+  icon?: LucideIcon;
+  level?: number;
   title: string;
   subtitle: string;
   selected: boolean;
@@ -90,7 +96,24 @@ function OptionCard({
           justifyContent: "center",
         }}
       >
-        <Text style={{ color: colors.textPrimary }}> {icon} </Text>
+        {Icon ? (
+          <Icon size={20} color={colors.textPrimary} />
+        ) : (
+          <View style={{ flexDirection: "row", gap: 3 }}>
+            {[1, 2, 3].map((dot) => (
+              <View
+                key={dot}
+                style={{
+                  width: 6,
+                  height: 6,
+                  borderRadius: 3,
+                  backgroundColor:
+                    dot <= (level ?? 0) ? colors.textPrimary : colors.textFaint,
+                }}
+              />
+            ))}
+          </View>
+        )}
       </View>
 
       <View style={{ flex: 1 }}>
@@ -110,7 +133,11 @@ function OptionCard({
           backgroundColor: selected ? colors.teal : "transparent",
         }}
       >
-        {selected && <Text style={{ color: colors.tealOn, fontSize: 15 }}> ✓ </Text>}
+        {selected && (
+          <View style={{ alignItems: "center", justifyContent: "center" }}>
+            <Check size={14} color={colors.tealOn} />
+          </View>
+        )}
       </View>
     </Pressable>
   );
@@ -256,7 +283,7 @@ export default function Onboarding() {
             {EXPERIENCE_OPTIONS.map((opt) => (
               <OptionCard
                 key={opt.value}
-                icon={opt.icon}
+                level={opt.level}
                 title={opt.title}
                 subtitle={opt.subtitle}
                 selected={formData.experience_level === opt.value}
