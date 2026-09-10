@@ -20,6 +20,17 @@ router = APIRouter()
 # match between an original request and its retry).
 DUPLICATE_NUTRITION_LOG_WINDOW_SECONDS = 5
 
+# GET /foods with neither `search` nor `favorites_only` returns every food
+# visible to the user - shared USDA rows plus their own private ones. With
+# ~7800 shared rows currently in the table and no pagination, that was an
+# unbounded query on every plain "browse all foods" call. search and
+# favorites_only are left uncapped here since both are already naturally
+# bounded (a text match narrows the shared set; favorites are inherently
+# a small per-user list) - only the no-filter case gets this default cap.
+# 100 comfortably covers a browse-all screen without needing pagination
+# UI yet, while cutting off what would otherwise be a ~7800-row response.
+DEFAULT_FOODS_LIMIT = 100
+
 
 def _get_visible_food(db: Session, food_id: int, user_id: int) -> Food | None:
     """Return shared foods or private foods owned by this user."""
@@ -153,6 +164,9 @@ def get_food(
 
     if search:
         query = query.filter(Food.name.ilike(f"%{search}%"))
+
+    if not search and not favorites_only:
+        query = query.limit(DEFAULT_FOODS_LIMIT)
 
     results = query.all()
     return [
