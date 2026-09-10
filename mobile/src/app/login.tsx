@@ -9,6 +9,7 @@ import { API_URL } from "../constants/api";
 import { signIn } from "../lib/session";
 import Mark from "../assets/mark.svg";
 import { Button } from "../components/Button";
+import { useAsyncGuard } from "../lib/asyncGuard";
 
 export default function Login() {
   const { colors } = useTheme();
@@ -18,27 +19,30 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  const submitGuard = useAsyncGuard();
 
   async function handleSubmit() {
     setError("");
-    try {
-      const response = await fetch(`${API_URL}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password }),
-      });
+    await submitGuard.run(async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/login`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ identifier, password }),
+        });
 
-      if (!response.ok) {
-        setError("Invalid email/username or password");
-        return;
+        if (!response.ok) {
+          setError("Invalid email/username or password");
+          return;
+        }
+
+        const data = await response.json();
+        await signIn(data.access_token);
+        router.replace("/checkOnboarding");
+      } catch {
+        setError("Could not reach the server");
       }
-
-      const data = await response.json();
-      await signIn(data.access_token);
-      router.replace("/checkOnboarding");
-    } catch {
-      setError("Could not reach the server");
-    }
+    });
   }
 
   return (
@@ -91,7 +95,13 @@ export default function Login() {
       </View>
 
       <View style={{ marginTop: 22 }}>
-        <Button label="Log In" onPress={handleSubmit} variant="primary" size="lg" />
+        <Button
+          label={submitGuard.pending ? "Logging in…" : "Log In"}
+          onPress={handleSubmit}
+          variant="primary"
+          size="lg"
+          disabled={submitGuard.pending}
+        />
       </View>
 
       <View style={{ flex: 1 }} />

@@ -14,6 +14,9 @@ type EditableSetRowProps = {
   // past workout reuses the same row for weight/reps, but there's
   // nothing to complete there, so the circle is omitted.
   showComplete?: boolean;
+  // True while this specific set's sync request is in flight - blocks a
+  // second tap synchronously (see src/lib/asyncGuard.ts), not just visually.
+  disabled?: boolean;
 };
 
 export function EditableSetRow({
@@ -25,6 +28,7 @@ export function EditableSetRow({
   canComplete = false,
   onComplete,
   showComplete = true,
+  disabled = false,
 }: EditableSetRowProps) {
   const { colors } = useTheme();
 
@@ -83,13 +87,15 @@ export function EditableSetRow({
       {showComplete && (
         <Pressable
           onPress={() => {
-            if (canComplete && onComplete) onComplete();
+            if (canComplete && onComplete && !disabled) onComplete();
           }}
+          disabled={disabled}
           style={{
             ...setCircleBase,
             backgroundColor: "transparent",
             borderWidth: 1,
             borderColor: colors.border,
+            opacity: disabled ? 0.5 : 1,
           }}
         />
       )}

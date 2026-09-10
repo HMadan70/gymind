@@ -15,6 +15,7 @@ import { API_URL } from "../../constants/api";
 import { fonts, shapeTokens } from "../../constants/theme";
 import { useTheme } from "../../context/ThemeContext";
 import { authFetch } from "../../lib/session";
+import { useAsyncGuard } from "../../lib/asyncGuard";
 
 type ChatTurn = {
   id: string;
@@ -63,72 +64,82 @@ export default function Coach() {
   const [turns, setTurns] = useState<ChatTurn[]>([]);
   const [draft, setDraft] = useState("");
   const [conversationId, setConversationId] = useState<number | null>(null);
-  const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // Was a plain `sending` boolean checked at the top of send() - a same-tick
+  // double-tap (Send plus a suggestion chip, or two fast taps) could invoke
+  // send() twice before either call's setSending(true) had been committed
+  // by React, so both would read the same stale `false` and both would
+  // fire. useAsyncGuard's ref check has no such gap - see its own comment
+  // for why - and is now this screen's single source of truth for whether
+  // a request is in flight.
+  const sendGuard = useAsyncGuard();
 
   const send = useCallback(
     async (text: string) => {
       const message = text.trim();
-      if (!message || sending) return;
+      if (!message) return;
 
-      setError(null);
-      setDraft("");
-      setSending(true);
-      setTurns((prev) => [
-        ...prev,
-        { id: nextTurnId(), role: "user", content: message },
-      ]);
-
-      try {
-        const response = await authFetch(`${API_URL}/coach`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            message,
-            ...(conversationId === null ? {} : { conversation_id: conversationId }),
-          }),
-        });
-
-        if (!response.ok) {
-          // The backend returns 503 when the Coach provider is unconfigured
-          // or unreachable; anything else is unexpected. Either way the turn
-          // was not stored server-side, so drop the optimistic bubble.
-          setTurns((prev) => prev.slice(0, -1));
-          setDraft(message);
-          setError(
-            response.status === 503
-              ? "Coach is unavailable right now. Please try again shortly."
-              : "Something went wrong. Please try again."
-          );
-          return;
-        }
-
-        const data = await response.json();
-        const replyText = extractReplyText(data);
-
-        if (replyText === null) {
-          setTurns((prev) => prev.slice(0, -1));
-          setDraft(message);
-          setError("Coach replied in a format this app could not read.");
-          return;
-        }
-
-        if (typeof data?.conversation_id === "number") {
-          setConversationId(data.conversation_id);
-        }
+      await sendGuard.run(async () => {
+        setError(null);
+        setDraft("");
         setTurns((prev) => [
           ...prev,
-          { id: nextTurnId(), role: "assistant", content: replyText },
+          { id: nextTurnId(), role: "user", content: message },
         ]);
-      } catch {
-        setTurns((prev) => prev.slice(0, -1));
-        setDraft(message);
-        setError("Could not reach the server. Check your connection.");
-      } finally {
-        setSending(false);
-      }
+
+        try {
+          const response = await authFetch(`${API_URL}/coach`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              message,
+              ...(conversationId === null ? {} : { conversation_id: conversationId }),
+            }),
+          });
+
+          if (!response.ok) {
+            // 503 = the Coach provider is unconfigured/unreachable; 429 =
+            // the per-user rate limit (backend-enforced, authoritative -
+            // this is just a friendlier message than the raw error).
+            // Either way the turn was not stored server-side, so drop the
+            // optimistic bubble.
+            setTurns((prev) => prev.slice(0, -1));
+            setDraft(message);
+            setError(
+              response.status === 503
+                ? "Coach is unavailable right now. Please try again shortly."
+                : response.status === 429
+                  ? "You're sending messages too quickly. Try again shortly."
+                  : "Something went wrong. Please try again."
+            );
+            return;
+          }
+
+          const data = await response.json();
+          const replyText = extractReplyText(data);
+
+          if (replyText === null) {
+            setTurns((prev) => prev.slice(0, -1));
+            setDraft(message);
+            setError("Coach replied in a format this app could not read.");
+            return;
+          }
+
+          if (typeof data?.conversation_id === "number") {
+            setConversationId(data.conversation_id);
+          }
+          setTurns((prev) => [
+            ...prev,
+            { id: nextTurnId(), role: "assistant", content: replyText },
+          ]);
+        } catch {
+          setTurns((prev) => prev.slice(0, -1));
+          setDraft(message);
+          setError("Could not reach the server. Check your connection.");
+        }
+      });
     },
-    [conversationId, sending]
+    [conversationId, sendGuard]
   );
 
   const isEmpty = turns.length === 0;
@@ -175,6 +186,7 @@ export default function Coach() {
                 <Pressable
                   key={suggestion}
                   onPress={() => send(suggestion)}
+                  disabled={sendGuard.pending}
                   style={{
                     ...shapeTokens.secondaryCard,
                     backgroundColor: colors.bgCard,
@@ -182,6 +194,7 @@ export default function Coach() {
                     borderColor: colors.border,
                     paddingHorizontal: 18,
                     paddingVertical: 16,
+                    opacity: sendGuard.pending ? 0.5 : 1,
                   }}
                 >
                   <Text
@@ -229,7 +242,7 @@ export default function Coach() {
             })
           )}
 
-          {sending ? (
+          {sendGuard.pending ? (
             <View style={{ alignSelf: "flex-start", paddingVertical: 8 }}>
               <ActivityIndicator color={colors.teal} />
             </View>
@@ -268,7 +281,7 @@ export default function Coach() {
             placeholder="Ask your coach"
             placeholderTextColor={colors.textFaint}
             multiline
-            editable={!sending}
+            editable={!sendGuard.pending}
             onSubmitEditing={() => send(draft)}
             style={{
               flex: 1,
@@ -286,11 +299,11 @@ export default function Coach() {
             accessibilityRole="button"
             accessibilityLabel="Send message"
             onPress={() => send(draft)}
-            disabled={sending || draft.trim().length === 0}
+            disabled={sendGuard.pending || draft.trim().length === 0}
             style={{
               ...shapeTokens.pill,
               backgroundColor:
-                sending || draft.trim().length === 0 ? colors.border : colors.teal,
+                sendGuard.pending || draft.trim().length === 0 ? colors.border : colors.teal,
               paddingHorizontal: 20,
               paddingVertical: 14,
             }}

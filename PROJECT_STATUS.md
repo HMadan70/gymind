@@ -150,6 +150,9 @@ Backend/server:
 - `CORS_ORIGINS`
 - `OPENROUTER_API_KEY` (Coach; unset disables `POST /coach` with a 503)
 - `OPENROUTER_MODEL` (Coach; defaults to `anthropic/claude-sonnet-4.5`)
+- `COACH_RATE_LIMIT_REQUESTS`, `COACH_RATE_LIMIT_WINDOW_SECONDS` (Coach;
+  default 10 requests / 60s per authenticated user - see
+  `backend/app/coach_rate_limit.py`)
 - `UPLOAD_DIR` (photos; defaults to `backend/uploads/`, gitignored - see
   Photo storage below)
 
@@ -160,10 +163,12 @@ Frontend:
 ## Next priorities
 
 1. Coach follow-ups: conversation history UI (the list/detail/delete routes
-   exist but no screen consumes them), streaming replies, and per-user rate
-   limiting on `POST /coach` before public launch.
+   exist but no screen consumes them) and streaming replies. Per-user rate
+   limiting is done (below).
 2. Deploy behind HTTPS and formalize database backups/migrations.
-3. Add frontend tests and CI validation.
+3. Backend CI is done (`.github/workflows/backend-tests.yml`). Frontend has
+   no automated test suite yet - validation is tsc/ESLint/expo-doctor/native
+   export only, run locally, not in CI.
 4. Plan token refresh/revocation and account deletion.
 5. Move native token storage to a platform-secure facility and review password
    length/enumeration hardening before public launch.
@@ -173,6 +178,17 @@ Frontend:
 7. Complete workout rest timing and finish-session polish.
 8. (Removed) Responsive desktop web navigation and layouts - no longer
    applicable now that the web target is gone.
+9. Tracked, not fixed: Starlette 0.38.6 (pulled in transitively by
+   fastapi==0.115.0, which pins `starlette<0.39.0,>=0.37.2`) has a known
+   multipart text-field buffering DoS (PYSEC-2026-1943) - applicable now
+   that the app has real multipart upload endpoints (meal/progress
+   photos), since `storage.py`'s 8MB check runs after Starlette has
+   already buffered the request, so an oversized non-file form field
+   isn't yet bounded by the app's own code before that point. Fixing it
+   means bumping FastAPI too (the version pin above), which needs its own
+   regression pass rather than a live dependency change. Medium priority,
+   not blocking - the concrete exploit needs an attacker who can already
+   reach the upload endpoints (i.e., an authenticated user).
 
 ## Validation commands
 
@@ -186,8 +202,6 @@ backend: python -m compileall -q app tests
 backend: alembic heads
 root:    docker compose config
 ```
-
-See `CODEBASE_REVIEW.md` for the detailed architecture and remaining risk register.
 
 ## Latest validation
 

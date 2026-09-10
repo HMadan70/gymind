@@ -10,6 +10,7 @@ import Mark from "../assets/mark.svg";
 import { Check } from "lucide-react-native";
 import { Button } from "../components/Button";
 import { signIn } from "../lib/session";
+import { useAsyncGuard } from "../lib/asyncGuard";
 
 export default function Register() {
   const { colors } = useTheme();
@@ -23,6 +24,7 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
+  const submitGuard = useAsyncGuard();
 
   // Password strength: 0-4, based on simple checks (length, uppercase, number, symbol)
   function getPasswordStrength(pw: string) {
@@ -61,24 +63,26 @@ export default function Register() {
       return;
     }
 
-    try {
-      const response = await fetch(`${API_URL}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, username, password }),
-      });
+    await submitGuard.run(async () => {
+      try {
+        const response = await fetch(`${API_URL}/auth/register`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ email, username, password }),
+        });
 
-      if (!response.ok) {
-        setError("Registration failed");
-        return;
+        if (!response.ok) {
+          setError("Registration failed");
+          return;
+        }
+
+        const data = await response.json();
+        await signIn(data.access_token);
+        router.replace("/checkOnboarding");
+      } catch {
+        setError("An error occurred");
       }
-
-      const data = await response.json();
-      await signIn(data.access_token);
-      router.replace("/checkOnboarding");
-    } catch {
-      setError("An error occurred");
-    }
+    });
   }
 
   return (
@@ -224,7 +228,13 @@ export default function Register() {
       </Pressable>
 
       <View style={{ marginTop: 22 }}>
-        <Button label="Create account" onPress={handleSubmit} variant="primary" size="lg" />
+        <Button
+          label={submitGuard.pending ? "Creating account…" : "Create account"}
+          onPress={handleSubmit}
+          variant="primary"
+          size="lg"
+          disabled={submitGuard.pending}
+        />
       </View>
 
       <View style={{ flex: 1 }} />

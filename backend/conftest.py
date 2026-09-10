@@ -50,6 +50,25 @@ from app.database import Base, get_db  # noqa: E402
 from app.main import app  # noqa: E402
 
 
+@pytest.fixture(autouse=True)
+def reset_coach_rate_limit():
+    """
+    app/coach_rate_limit.py keys its in-memory hit counters by numeric
+    user_id, and every test's schema is dropped and recreated (see the
+    module docstring above), which resets Postgres's SERIAL sequence - so
+    an unrelated later test can be handed the exact same user_id an earlier
+    test already used, and inherit its hit count. In production this never
+    happens (ids are never reused), but here it silently made an unrelated
+    /coach test start failing once enough other coach tests had run before
+    it in the same session. Clearing the global dict before every test
+    removes the leak at its source rather than special-casing it per test.
+    """
+    from app import coach_rate_limit
+
+    coach_rate_limit._hits.clear()
+    yield
+
+
 @pytest.fixture()
 def db_session():
     """Fresh schema, fresh session, for exactly one test."""
