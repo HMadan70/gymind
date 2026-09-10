@@ -117,6 +117,34 @@ per test) and confirmed it recreates all 7,793 foods and 119 exercises
 exactly. Replaces the old `scripts/import_foods.py`, which read the raw
 USDA CSVs directly and could no longer run once those files were gone.
 
+**Full database backups.** `backend/scripts/backup_db.sh` runs a `pg_dump`
+of the entire `gymind` database (all tables - real user data included, not
+just the reference set above) and gzips it. On the server it runs daily via
+cron:
+
+```text
+0 3 * * * /DATA/gymind/backend/scripts/backup_db.sh >> /DATA/gymind-backups/backup.log 2>&1
+```
+
+Dumps land in `/DATA/gymind-backups/` (outside the git repo, on the server
+only) as `gymind_<timestamp>.sql.gz`; the script keeps the last 7 and
+deletes anything older, and refuses to leave a zero-byte file behind if
+`pg_dump` fails partway through. It reads `docker compose exec`, not a
+locally-installed `pg_dump`, so it only needs to run from the repo root on
+the server itself.
+
+To restore a dump:
+
+```text
+gunzip -c /DATA/gymind-backups/gymind_<timestamp>.sql.gz | \
+  docker compose exec -T db psql -U gymind gymind
+```
+
+Restoring into a database that already has data will conflict on primary
+keys - drop and recreate the `gymind` database first (or restore into a
+fresh one) if this is a real disaster-recovery restore rather than a
+selective merge.
+
 ## Test database
 
 Production (`gymind`, real users and real food data) and the backend test
