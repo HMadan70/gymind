@@ -178,6 +178,17 @@ Frontend:
 7. Complete workout rest timing and finish-session polish.
 8. (Removed) Responsive desktop web navigation and layouts - no longer
    applicable now that the web target is gone.
+9. Tracked, not fixed: Starlette 0.38.6 (pulled in transitively by
+   fastapi==0.115.0, which pins `starlette<0.39.0,>=0.37.2`) has a known
+   multipart text-field buffering DoS (PYSEC-2026-1943) - applicable now
+   that the app has real multipart upload endpoints (meal/progress
+   photos), since `storage.py`'s 8MB check runs after Starlette has
+   already buffered the request, so an oversized non-file form field
+   isn't yet bounded by the app's own code before that point. Fixing it
+   means bumping FastAPI too (the version pin above), which needs its own
+   regression pass rather than a live dependency change. Medium priority,
+   not blocking - the concrete exploit needs an attacker who can already
+   reach the upload endpoints (i.e., an authenticated user).
 
 ## Validation commands
 
