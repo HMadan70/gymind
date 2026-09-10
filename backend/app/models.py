@@ -92,6 +92,12 @@ class WorkoutSet(Base):
     set_number = Column(Integer, nullable=False)
     weight = Column(Float, nullable=True)
     reps = Column(Integer, nullable=True)
+    # Server-set only, never exposed via the API - exists purely so add_set
+    # can tell "this exact set was already submitted a few seconds ago"
+    # (a duplicate-submission retry) apart from "this exact set was
+    # submitted again much later" (a legitimate re-added exercise block
+    # with coincidentally the same numbers). See app/routes/workout_routes.py.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class UserFavoriteFood(Base):
@@ -134,6 +140,15 @@ class NutritionLog(Base):
     food_id = Column(Integer, ForeignKey("foods.id"), nullable=False)
     quantity_grams = Column(Float, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Server-set only, never exposed via the API - distinct from logged_at,
+    # which is client-suppliable ("when I ate this") and therefore unsafe to
+    # use for duplicate-submission detection: two genuinely separate meals
+    # logged with the same food/quantity/logged_at (e.g. the same breakfast
+    # two days running, both logged "this morning") must not be merged. This
+    # column is purely "when did the server receive this row," used only to
+    # tell a same-request retry apart from a later, real second log. See
+    # app/routes/nutrition_routes.py.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
     # Filename only (e.g. "3f9a2b1c.jpg"), not a URL - the file lives under
     # UPLOAD_DIR/nutrition/ (see app/storage.py). Retrieval always goes
     # through GET /nutrition/{id}/photo, which checks ownership before
@@ -164,6 +179,11 @@ class BodyWeightLog(Base):
     weight = Column(Float, nullable=False)
     unit = Column(Text, nullable=False)
     logged_at = Column(DateTime(timezone=True), server_default=func.now())
+    # Server-set only, never exposed via the API - same reasoning as
+    # NutritionLog.created_at: logged_at is client-suppliable, so it can't
+    # safely stand in for "when did the server receive this row" when
+    # detecting a duplicate submission.
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class CoachConversation(Base):

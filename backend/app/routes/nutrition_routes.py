@@ -13,6 +13,13 @@ from datetime import date as date_type, datetime, time, timedelta, timezone
 
 router = APIRouter()
 
+# add_nutrition_log's duplicate-submission guard: see the identical
+# constant/comment on workout_routes.py's DUPLICATE_SET_WINDOW_SECONDS for
+# the full reasoning. Short window, identity fields only (not logged_at,
+# which most callers leave unset and would then almost never coincidentally
+# match between an original request and its retry).
+DUPLICATE_NUTRITION_LOG_WINDOW_SECONDS = 5
+
 
 def _get_visible_food(db: Session, food_id: int, user_id: int) -> Food | None:
     """Return shared foods or private foods owned by this user."""
@@ -216,18 +223,33 @@ def add_nutrition_log(
     if not food:
         raise HTTPException(status_code=404, detail="Food not found")
 
-    new_log = NutritionLog(
-        user_id=current_user.id,
-        food_id=log.food_id,
-        quantity_grams=log.quantity_grams,
-        # tz-aware: logged_at is timestamptz, so a naive local datetime
-        # would be stored skewed on any host whose clock isn't UTC.
-        logged_at=log.logged_at or datetime.now(timezone.utc)
-    )
+    # Duplicate-submission guard - see the constant's comment above. Handles
+    # a bypassed frontend guard or an ordinary network retry the same way
+    # workout_routes.py's add_set does: return the recent identical row
+    # instead of inserting a second one.
+    duplicate_cutoff = datetime.now(timezone.utc) - timedelta(seconds=DUPLICATE_NUTRITION_LOG_WINDOW_SECONDS)
+    existing_log = db.query(NutritionLog).filter(
+        NutritionLog.user_id == current_user.id,
+        NutritionLog.food_id == log.food_id,
+        NutritionLog.quantity_grams == log.quantity_grams,
+        NutritionLog.created_at >= duplicate_cutoff,
+    ).first()
 
-    db.add(new_log)
-    db.commit()
-    db.refresh(new_log)
+    if existing_log is not None:
+        new_log = existing_log
+    else:
+        new_log = NutritionLog(
+            user_id=current_user.id,
+            food_id=log.food_id,
+            quantity_grams=log.quantity_grams,
+            # tz-aware: logged_at is timestamptz, so a naive local datetime
+            # would be stored skewed on any host whose clock isn't UTC.
+            logged_at=log.logged_at or datetime.now(timezone.utc)
+        )
+
+        db.add(new_log)
+        db.commit()
+        db.refresh(new_log)
 
     return schemas.NutritionLogOut(
         id=new_log.id,

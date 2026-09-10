@@ -14,6 +14,16 @@ router = APIRouter()
 # the edit affordance on the same boundary the server enforces.
 EDIT_WINDOW_DAYS = 7
 
+# add_set's duplicate-submission guard: a request retry or bypassed frontend
+# guard resending the exact same set within this many seconds is treated as
+# the same submission (its existing row is returned rather than a new one
+# inserted). This is deliberately a SHORT window, not a permanent uniqueness
+# rule - the same exercise can legitimately be added to a session twice
+# (e.g. as two separate blocks), and its sets can genuinely repeat the same
+# weight/reps hours or even minutes apart. Only a near-simultaneous exact
+# repeat is treated as a duplicate.
+DUPLICATE_SET_WINDOW_SECONDS = 5
+
 
 def _get_visible_exercise(
     db: Session,
@@ -254,10 +264,29 @@ def add_set(
     if not exercise:
         raise HTTPException(status_code=404, detail="Exercise not found")
 
-    new_set = models.WorkoutSet(workout_id=workout_id, **set_in.model_dump())
-    db.add(new_set)
-    db.commit()
-    db.refresh(new_set)
+    # Duplicate-submission guard: the backend can't assume the frontend's
+    # own guard always ran (a bypassed client, or an ordinary network retry
+    # after a timeout where the first request actually succeeded server-side
+    # and the client never saw the response). If an identical set was
+    # created moments ago, treat this as a replay of that same request and
+    # hand back the existing row instead of inserting a second one.
+    duplicate_cutoff = datetime.now(timezone.utc) - timedelta(seconds=DUPLICATE_SET_WINDOW_SECONDS)
+    existing_set = db.query(models.WorkoutSet).filter(
+        models.WorkoutSet.workout_id == workout_id,
+        models.WorkoutSet.exercise_id == set_in.exercise_id,
+        models.WorkoutSet.set_number == set_in.set_number,
+        models.WorkoutSet.weight == set_in.weight,
+        models.WorkoutSet.reps == set_in.reps,
+        models.WorkoutSet.created_at >= duplicate_cutoff,
+    ).first()
+
+    if existing_set is not None:
+        new_set = existing_set
+    else:
+        new_set = models.WorkoutSet(workout_id=workout_id, **set_in.model_dump())
+        db.add(new_set)
+        db.commit()
+        db.refresh(new_set)
 
     return schemas.WorkoutSetOut(
         id=new_set.id,
