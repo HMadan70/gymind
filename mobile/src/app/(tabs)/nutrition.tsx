@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView, TextInput, Image } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, Image, KeyboardAvoidingView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle } from "react-native-svg";
@@ -726,7 +726,14 @@ export default function Nutrition() {
 
       {/* Food picker */}
       {isPickerOpen && (
-        <View
+        // KeyboardAvoidingView, not a plain View: this overlay covers the
+        // whole screen and centers its Card vertically. Without it, iOS
+        // never resizes the screen for the keyboard, so the Card stays put
+        // and the keyboard just covers whatever inputs/buttons were in its
+        // lower half - the "New food" form especially, which has 5 stacked
+        // inputs below a maxHeight ScrollView.
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{
             position: "absolute",
             top: 0,
@@ -1081,13 +1088,16 @@ export default function Nutrition() {
               </View>
             )}
           </Card>
-        </View>
+        </KeyboardAvoidingView>
       )}
 
       {/* Edit a logged entry — quantity only, same as Workout's set editor
           which edits the numbers but not which exercise the set is on. */}
       {editingLog !== null && (
-        <View
+        // Same KeyboardAvoidingView fix as the food picker above - this is
+        // the same centered full-screen overlay shape with a TextInput.
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{
             position: "absolute",
             top: 0,
@@ -1198,7 +1208,7 @@ export default function Nutrition() {
               </Pressable>
             </View>
           </Card>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </LinearGradient>
   );
