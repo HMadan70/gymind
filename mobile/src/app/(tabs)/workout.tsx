@@ -191,8 +191,8 @@ export default function Workout() {
   };
 
   const updateSet = (exerciseId: string, setId: string, updates: Partial<SetEntry>) => {
-    setExercises(
-      exercises.map((exercise) => {
+    setExercises((currentExercises) =>
+      currentExercises.map((exercise) => {
         if (exercise.id !== exerciseId) return exercise;
         return {
           ...exercise,
@@ -439,6 +439,8 @@ export default function Workout() {
     if (workoutId === null || exercise.exerciseId === undefined) return;
     await setSyncGuard.run(set.id, async () => {
       try {
+        const setIndex = exercise.sets.findIndex((candidate) => candidate.id === set.id);
+        if (setIndex < 0) throw new Error("set is not part of exercise");
         const response = await authFetch(`${API_URL}/workouts/${workoutId}/sets`, {
           method: "POST",
           headers: {
@@ -446,7 +448,7 @@ export default function Workout() {
           },
           body: JSON.stringify({
             exercise_id: exercise.exerciseId,
-            set_number: exercise.sets.indexOf(set) + 1,
+            set_number: setIndex + 1,
             weight: set.weight,
             reps: set.reps,
           }),
@@ -489,9 +491,8 @@ export default function Workout() {
       const updatedSets = [...exercise.sets, newSet];
       setExercises(exercises.map((ex) => (ex.id === exercise.id ? { ...ex, sets: updatedSets } : ex)));
       // Pass the locally-built exercise (with newSet already appended)
-      // rather than the stale `exercise` closure - syncSet computes
-      // set_number via exercise.sets.indexOf(set), which needs the set
-      // to actually be in that array.
+      // rather than the stale `exercise` closure so syncSet can find the
+      // new set's id and compute its set_number.
       await syncSet({ ...exercise, sets: updatedSets }, newSet);
     });
   };
@@ -716,9 +717,6 @@ export default function Workout() {
                   disabled={setSyncGuard.isPending(set.id)}
                   onComplete={() => {
                     updateSet(exercise.id, set.id, { completed: true });
-                    // Existing rows must keep the original set reference so
-                    // syncSet can find its position in exercise.sets. Planned
-                    // rows use completePlannedSet's locally rebuilt exercise.
                     syncSet(exercise, set);
                   }}
                 />
