@@ -716,7 +716,10 @@ export default function Workout() {
                   disabled={setSyncGuard.isPending(set.id)}
                   onComplete={() => {
                     updateSet(exercise.id, set.id, { completed: true });
-                    syncSet(exercise, { ...set, completed: true });
+                    // Existing rows must keep the original set reference so
+                    // syncSet can find its position in exercise.sets. Planned
+                    // rows use completePlannedSet's locally rebuilt exercise.
+                    syncSet(exercise, set);
                   }}
                 />
               );
