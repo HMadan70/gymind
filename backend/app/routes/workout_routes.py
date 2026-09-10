@@ -234,9 +234,14 @@ def finish_workout(
     if not workout:
         raise HTTPException(status_code=404, detail="Workout not found")
 
-    workout.ended_at = func.now()
-    db.commit()
-    db.refresh(workout)
+    # Idempotent: a second finish call (retry, double-tap, or a request
+    # replayed after the response was lost) must not push ended_at
+    # forward again, since that would silently extend the 7-day edit
+    # window past what the first, real finish established.
+    if workout.ended_at is None:
+        workout.ended_at = func.now()
+        db.commit()
+        db.refresh(workout)
     return workout
 
 @router.post("/workouts/{workout_id}/sets", response_model=schemas.WorkoutSetOut)
