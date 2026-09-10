@@ -173,3 +173,7 @@ a platform keychain, and the Coach rate limiter is in-memory and
 per-process (documented in `backend/app/coach_rate_limit.py`), appropriate
 for this app's current single-process deployment but not for multiple
 workers or hosts without a shared backend.
+
+## License
+
+MIT — see [`LICENSE`](LICENSE).
