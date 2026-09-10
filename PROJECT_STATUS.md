@@ -43,9 +43,9 @@ model; conversations and messages persist in `coach_conversations` and
 
 ## Design system
 
-Brand 2.0 lives in `Design2/`, not `Design/`. There is no `DESIGN_SYSTEM.md`
-and no `theme.json` anywhere in the repo; anything referring to those is out
-of date. The two sources that do exist are:
+Brand 2.0 lives in `Design2/`. There is no `DESIGN_SYSTEM.md` and no
+`theme.json` anywhere in the repo; anything referring to those is out of
+date. The two sources that do exist are:
 
 - `Design2/BRAND_GUIDE.md` — the written spec (color, typography, shape
   language, motion), alongside `Design2/Gymind UI.dc.html` and `Design2/brand/`.
