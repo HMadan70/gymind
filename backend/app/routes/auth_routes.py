@@ -12,12 +12,16 @@ router = APIRouter()
 @router.post("/auth/register", response_model=schemas.UserWithToken)
 @limiter.limit("5/minute")
 def register(request: Request, user_in: schemas.UserCreate, db: Session = Depends(get_db)):
-    # Check nothing already uses this email or username.
+    # Check nothing already uses this email or username. The error is
+    # deliberately vague, matching login's approach below: "already
+    # registered" would confirm an account with that email/username
+    # exists, letting an attacker enumerate valid accounts by probing
+    # this endpoint with candidate emails/usernames.
     existing = db.query(models.User).filter(
         or_(models.User.email == user_in.email, models.User.username == user_in.username)
     ).first()
     if existing:
-        raise HTTPException(status_code=400, detail="Email or username already registered")
+        raise HTTPException(status_code=400, detail="Unable to register with the provided details")
 
     new_user = models.User(
         email=user_in.email,
