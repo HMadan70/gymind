@@ -10,7 +10,7 @@ import {
   Mode,
 } from "../constants/theme";
 import { API_URL } from "../constants/api";
-import { authFetch } from "../lib/session";
+import { authFetch, getToken } from "../lib/session";
 
 export type ThemeColors = (typeof brand2Base)[Mode] &
   ReturnType<typeof getBrandTokens> &
@@ -52,7 +52,11 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
       }
 
       try {
-        const token = await AsyncStorage.getItem("token");
+        // Reads the token through session.ts's own accessor rather than a
+        // second hardcoded AsyncStorage key - the token itself now lives in
+        // expo-secure-store (see session.ts), not AsyncStorage, so a
+        // duplicated key here would always read back null.
+        const token = await getToken();
         if (!token) return;
         const response = await authFetch(`${API_URL}/users/preferences`);
         if (!response.ok) return; // 404 = no preference saved yet, keep default
