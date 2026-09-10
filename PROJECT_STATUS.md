@@ -189,6 +189,32 @@ Frontend:
    regression pass rather than a live dependency change. Medium priority,
    not blocking - the concrete exploit needs an attacker who can already
    reach the upload endpoints (i.e., an authenticated user).
+10. Tracked, not fixed (medium): Upload content-type is validated by
+    header only, not actual file bytes (`storage.py:36`) - a client can
+    lie about Content-Type on a meal/progress-photo upload. Blast radius
+    is self-scoped: the endpoint requires an authenticated user uploading
+    to their own account.
+11. Tracked, not fixed (medium): No server-side token revocation - a
+    stolen JWT stays valid for its full 7-day life, since logout only
+    clears the token client-side. Needs a token blocklist or a
+    short-lived-token redesign; deferred pending the token
+    refresh/revocation work already listed in item 4 above.
+12. Tracked, not fixed (low): Upsert races on UserProfile/UserPreference/
+    UserFavoriteFood/UserFavoriteExercise can raise an unhandled
+    IntegrityError under concurrent duplicate writes, surfacing as a
+    generic 500 instead of a clean conflict response - the uniqueness
+    constraints themselves are correct, just ungraceful on collision.
+13. Tracked, not fixed (low): No pagination on GET /workouts,
+    GET /nutrition, GET /body-weight, or GET /exercises - each returns a
+    user's full history/list in one response. Low severity today given
+    realistic per-user row counts, but worth revisiting if usage grows.
+14. Tracked, not fixed (low): The `search` and `days` query params
+    (foods, nutrition summary, etc.) have no explicit upper bound at the
+    application layer beyond normal type validation.
+15. Tracked, not fixed (low): No test exercises a forged or
+    tampered-signature JWT - the signature-verification path itself is
+    only exercised indirectly via expired/missing-token tests. A coverage
+    gap, not a known bug.
 
 ## Validation commands
 

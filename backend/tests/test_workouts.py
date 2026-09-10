@@ -77,6 +77,30 @@ def test_cannot_log_set_on_finished_workout(client):
     assert body["detail"] == "Cannot add a set to a finished workout session"
 
 
+def test_finishing_an_already_finished_workout_does_not_move_ended_at(client):
+    """
+    A second PUT (retry, double-tap, or a request replayed after the
+    response was lost) must be a no-op, not push ended_at forward again -
+    doing so would silently re-extend the 7-day edit window past what the
+    first, real finish established.
+    """
+    token = register_login_and_create_profile(
+        client, "refinishworkout@example.com", "refinishworkoutuser"
+    )
+    headers = {"Authorization": f"Bearer {token}"}
+
+    workout_id = client.post("/workouts", headers=headers).json()["id"]
+
+    first_finish = client.put(f"/workouts/{workout_id}", headers=headers)
+    assert first_finish.status_code == 200
+    first_ended_at = first_finish.json()["ended_at"]
+    assert first_ended_at is not None
+
+    second_finish = client.put(f"/workouts/{workout_id}", headers=headers)
+    assert second_finish.status_code == 200
+    assert second_finish.json()["ended_at"] == first_ended_at
+
+
 def test_can_log_set_on_active_workout(client):
     token = register_login_and_create_profile(
         client, "activeworkout@example.com", "activeworkoutuser"

@@ -5,9 +5,14 @@ from app import auth, models, schemas
 from app.models import BodyWeightLog
 from app.schemas import BodyWeightLogIn
 from typing import List
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 router = APIRouter()
+
+# add_body_weight_log's duplicate-submission guard: see the identical
+# constant/comment on workout_routes.py's DUPLICATE_SET_WINDOW_SECONDS for
+# the full reasoning.
+DUPLICATE_BODY_WEIGHT_LOG_WINDOW_SECONDS = 5
 
 
 @router.post("/body-weight", response_model=schemas.BodyWeightLogOut)
@@ -16,6 +21,18 @@ def add_body_weight_log(
     current_user: models.User = Depends(auth.require_profile),
     db: Session = Depends(get_db)
 ):
+    # Duplicate-submission guard - see the constant's comment above.
+    duplicate_cutoff = datetime.now(timezone.utc) - timedelta(seconds=DUPLICATE_BODY_WEIGHT_LOG_WINDOW_SECONDS)
+    existing_log = db.query(BodyWeightLog).filter(
+        BodyWeightLog.user_id == current_user.id,
+        BodyWeightLog.weight == log.weight,
+        BodyWeightLog.unit == log.unit,
+        BodyWeightLog.created_at >= duplicate_cutoff,
+    ).first()
+
+    if existing_log is not None:
+        return existing_log
+
     new_log = BodyWeightLog(
         user_id=current_user.id,
         weight=log.weight,

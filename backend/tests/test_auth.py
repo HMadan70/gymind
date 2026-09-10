@@ -118,7 +118,7 @@ def test_register_duplicate_email_fails(client):
     assert response.status_code == 400
 
     body = response.json()
-    assert body["detail"] == "Email or username already registered"
+    assert body["detail"] == "Unable to register with the provided details"
 
 
 
@@ -146,7 +146,49 @@ def test_register_duplicate_username_fails(client):
     assert response.status_code == 400
 
     body = response.json()
-    assert body["detail"] == "Email or username already registered"
+    assert body["detail"] == "Unable to register with the provided details"
+
+
+def test_register_duplicate_email_and_username_errors_are_indistinguishable(client):
+    """
+    Security regression test for the account-enumeration finding: a
+    duplicate email and a duplicate username must produce the exact same
+    status code and message, so a caller probing this endpoint can't tell
+    which field matched an existing account (or, by extension, confirm
+    which field belongs to a real account at all).
+    """
+    client.post(
+        "/auth/register",
+        json={
+            "email": "enumcheck@example.com",
+            "username": "enumcheckuser",
+            "password": "TestPass123!",
+        },
+    )
+
+    duplicate_email_response = client.post(
+        "/auth/register",
+        json={
+            "email": "enumcheck@example.com",
+            "username": "somebodyelse",
+            "password": "TestPass123!",
+        },
+    )
+    duplicate_username_response = client.post(
+        "/auth/register",
+        json={
+            "email": "somebodyelse@example.com",
+            "username": "enumcheckuser",
+            "password": "TestPass123!",
+        },
+    )
+
+    assert duplicate_email_response.status_code == duplicate_username_response.status_code == 400
+    assert (
+        duplicate_email_response.json()["detail"]
+        == duplicate_username_response.json()["detail"]
+        == "Unable to register with the provided details"
+    )
 
 
 

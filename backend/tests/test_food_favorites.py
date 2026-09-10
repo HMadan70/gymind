@@ -159,3 +159,27 @@ def test_favorites_are_per_user(client):
 
     # B has no favorites of their own
     assert client.get("/foods?favorites_only=true", headers=headers_b).json() == []
+
+
+def test_unfiltered_foods_listing_is_capped(client):
+    """
+    GET /foods with neither `search` nor `favorites_only` is a "browse
+    everything" call - with thousands of shared USDA rows in production,
+    that must not come back unbounded. search and favorites_only stay
+    uncapped (both are already naturally small), so this only exercises
+    the plain listing.
+    """
+    from app.routes.nutrition_routes import DEFAULT_FOODS_LIMIT
+
+    token = register_login_and_create_profile(client, "foodcap@example.com", "foodcapuser")
+    headers = {"Authorization": f"Bearer {token}"}
+
+    for i in range(DEFAULT_FOODS_LIMIT + 5):
+        make_food(client, headers, name=f"Food {i}")
+
+    unfiltered = client.get("/foods", headers=headers).json()
+    assert len(unfiltered) == DEFAULT_FOODS_LIMIT
+
+    # search and favorites_only are not subject to the cap
+    searched = client.get("/foods?search=Food", headers=headers).json()
+    assert len(searched) == DEFAULT_FOODS_LIMIT + 5

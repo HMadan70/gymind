@@ -5,7 +5,14 @@
 // sign in/out or make an authenticated request. Built on useSyncExternalStore
 // rather than React Context so it can be read and written from plain
 // functions (login, logout, authFetch) without a Provider in the tree.
-import AsyncStorage from "@react-native-async-storage/async-storage";
+//
+// The token specifically goes through expo-secure-store (iOS Keychain /
+// Android Keystore), not AsyncStorage - AsyncStorage is unencrypted on both
+// platforms, so a 7-day bearer token sitting in it is readable by anything
+// with root/jailbreak or filesystem-backup access to the device. Nothing
+// else non-sensitive in the app (e.g. the cached theme preference in
+// ThemeContext) needs to move; this is scoped to the token only.
+import * as SecureStore from "expo-secure-store";
 import { useSyncExternalStore } from "react";
 
 const TOKEN_KEY = "token";
@@ -40,11 +47,11 @@ function getSnapshot() {
 // Resolves the stored token once at module init so the root layout's very
 // first render already knows whether to wait on "loading". Guarded to skip
 // during SSR (Expo Router's web render pass runs this module in a Node
-// environment with no `window`, where AsyncStorage's underlying storage
-// isn't available) — it only needs to run once the app is actually mounted
-// in a browser/native runtime.
+// environment with no `window`, where SecureStore's native module isn't
+// available) — it only needs to run once the app is actually mounted in a
+// browser/native runtime.
 if (typeof window !== "undefined") {
-  AsyncStorage.getItem(TOKEN_KEY).then((token) => {
+  SecureStore.getItemAsync(TOKEN_KEY).then((token) => {
     setState({ status: token ? "signedIn" : "signedOut", verified: false });
   });
 }
@@ -54,7 +61,7 @@ export function useSession() {
 }
 
 export async function signIn(token: string) {
-  await AsyncStorage.setItem(TOKEN_KEY, token);
+  await SecureStore.setItemAsync(TOKEN_KEY, token);
   setState({ status: "signedIn", verified: false });
 }
 
@@ -62,11 +69,11 @@ export async function signIn(token: string) {
 // Native's <Image> takes a URI + headers, not a fetch() Response, so an
 // authenticated photo thumbnail has to attach this itself.
 export async function getToken(): Promise<string | null> {
-  return AsyncStorage.getItem(TOKEN_KEY);
+  return SecureStore.getItemAsync(TOKEN_KEY);
 }
 
 export async function clearSession() {
-  await AsyncStorage.removeItem(TOKEN_KEY);
+  await SecureStore.deleteItemAsync(TOKEN_KEY);
   setState({ status: "signedOut", verified: false });
 }
 
@@ -80,7 +87,7 @@ export function markVerified() {
 // deleted-account token) it clears the session so the root layout's guard
 // bounces the user to Login — callers don't need their own 401 handling.
 export async function authFetch(input: string, init: RequestInit = {}): Promise<Response> {
-  const token = await AsyncStorage.getItem(TOKEN_KEY);
+  const token = await SecureStore.getItemAsync(TOKEN_KEY);
   const response = await fetch(input, {
     ...init,
     headers: { ...(init.headers ?? {}), Authorization: `Bearer ${token}` },
