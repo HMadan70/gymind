@@ -460,6 +460,42 @@ export default function Workout() {
     });
   };
 
+  // Converts a history-derived "planned" row (rendered when an exercise
+  // has fewer real sets than its previous session did - see totalRows
+  // below) into a real, completed SetEntry pre-filled with exactly the
+  // weight/reps already shown on that row. Without this, those rows were
+  // PlannedSetRow - a plain View with no touch handler at all - so
+  // tapping them did nothing and the only way to log a set on a
+  // freshly-added exercise was "+ SET" followed by typing in numbers.
+  //
+  // Guarded on a stable `exercise.id`+`index` key rather than the new
+  // set's id, which doesn't exist until this runs - a fast double-tap on
+  // the same row, before React re-renders it as a real (non-planned)
+  // set, would otherwise call this twice and create two sets. See
+  // src/lib/asyncGuard.ts's module comment on why a ref-backed guard,
+  // not just a `disabled` prop, is required for that race. syncSet above
+  // applies its own guard too, keyed by the new set's id once it exists -
+  // the two keys never collide, so nesting them here is safe.
+  const completePlannedSet = async (exercise: ExerciseEntry, index: number, weight: number, reps: number) => {
+    await setSyncGuard.run(`planned-${exercise.id}-${index}`, async () => {
+      const newSet: SetEntry = {
+        id: createLocalEntryId(),
+        weight,
+        weightText: String(weight),
+        reps,
+        repsText: String(reps),
+        completed: true,
+      };
+      const updatedSets = [...exercise.sets, newSet];
+      setExercises(exercises.map((ex) => (ex.id === exercise.id ? { ...ex, sets: updatedSets } : ex)));
+      // Pass the locally-built exercise (with newSet already appended)
+      // rather than the stale `exercise` closure - syncSet computes
+      // set_number via exercise.sets.indexOf(set), which needs the set
+      // to actually be in that array.
+      await syncSet({ ...exercise, sets: updatedSets }, newSet);
+    });
+  };
+
   useEffect(() => {
     if (!isRunning) return;
 
@@ -616,8 +652,22 @@ export default function Workout() {
                   }
                 }
                 const plannedReps = sessionReps ?? lastKnownReps;
+                // Only offer one-tap logging when both numbers are real -
+                // there's nothing valid to log from "- lb × -".
+                const canLogPlanned = (plannedWeight ?? 0) > 0 && (plannedReps ?? 0) > 0;
                 return (
-                  <PlannedSetRow key={`planned-${index}`} index={index} plannedWeight={plannedWeight ?? undefined} plannedReps={plannedReps ?? undefined} />
+                  <PlannedSetRow
+                    key={`planned-${index}`}
+                    index={index}
+                    plannedWeight={plannedWeight ?? undefined}
+                    plannedReps={plannedReps ?? undefined}
+                    disabled={setSyncGuard.isPending(`planned-${exercise.id}-${index}`)}
+                    onComplete={
+                      canLogPlanned
+                        ? () => completePlannedSet(exercise, index, plannedWeight as number, plannedReps as number)
+                        : undefined
+                    }
+                  />
                 );
               }
 

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { View, Text, Pressable, ScrollView, TextInput } from "react-native";
+import { View, Text, Pressable, ScrollView, TextInput, KeyboardAvoidingView, Platform } from "react-native";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
 import Svg, { Circle, Polyline } from "react-native-svg";
@@ -730,7 +730,12 @@ export default function Progress() {
       {/* Body weight entry sheet — same modal Card + input + Cancel/Save
           shape as Nutrition's food picker. */}
       {isWeightModalOpen && (
-        <View
+        // KeyboardAvoidingView, not a plain View: same fix as Nutrition's
+        // food picker (see that screen's comment) - without it, iOS never
+        // resizes the screen for the keyboard, and this centered overlay's
+        // Save/Cancel row can end up covered by it.
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : "height"}
           style={{
             position: "absolute",
             top: 0,
@@ -873,7 +878,7 @@ export default function Progress() {
               </Pressable>
             </View>
           </Card>
-        </View>
+        </KeyboardAvoidingView>
       )}
     </LinearGradient>
   );

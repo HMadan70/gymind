@@ -24,6 +24,9 @@ export default function Register() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [agreedToTerms, setAgreedToTerms] = useState(false);
   const [error, setError] = useState("");
+  // Separate from `error` so the JSX can decide whether to show the "Log
+  // in instead" shortcut without string-matching the error text.
+  const [showLoginSuggestion, setShowLoginSuggestion] = useState(false);
   const submitGuard = useAsyncGuard();
 
   // Password strength: 0-4, based on simple checks (length, uppercase, number, symbol)
@@ -42,6 +45,7 @@ export default function Register() {
 
   async function handleSubmit() {
     setError("");
+    setShowLoginSuggestion(false);
 
     if (password.length < 8) {
       setError("Password must be at least 8 characters");
@@ -72,7 +76,19 @@ export default function Register() {
         });
 
         if (!response.ok) {
-          setError("Registration failed");
+          if (response.status === 400) {
+            // The backend's duplicate-email/username check (POST
+            // /auth/register) returns 400 without saying which field
+            // matched - deliberately vague, to avoid letting this screen
+            // be used to enumerate existing accounts (see the L1 fix
+            // earlier this session). This message stays just as vague:
+            // it names the two possible causes together, never singling
+            // one out, while still being actionable.
+            setError("That email or username is already registered — try logging in instead.");
+            setShowLoginSuggestion(true);
+          } else {
+            setError("Registration failed");
+          }
           return;
         }
 
@@ -111,7 +127,12 @@ export default function Register() {
         Two minutes, then straight into onboarding.
       </Text>
 
-      {error ? <Text style={{ color: colors.danger, marginBottom: 12 }}>{error}</Text> : null}
+      {error ? <Text style={{ color: colors.danger, marginBottom: showLoginSuggestion ? 4 : 12 }}>{error}</Text> : null}
+      {showLoginSuggestion && (
+        <Pressable onPress={() => router.push("/login")} style={{ marginBottom: 12, alignSelf: "flex-start" }}>
+          <Text style={{ color: colors.teal, fontSize: 13, fontFamily: fonts.bodyBold }}>Log in instead →</Text>
+        </Pressable>
+      )}
 
       <Text style={{ fontSize: 11, fontFamily: fonts.bodyExtra, color: colors.textDim, letterSpacing: 0.55, marginBottom: 6 }}>USERNAME</Text>
       <TextInput
