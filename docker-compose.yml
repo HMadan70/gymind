@@ -47,6 +47,9 @@ services:
       # the API is unaffected.
       OPENROUTER_API_KEY: ${OPENROUTER_API_KEY:-}
       OPENROUTER_MODEL: ${OPENROUTER_MODEL:-anthropic/claude-sonnet-4.5}
+      # Per-authenticated-user, in-memory - see app/coach_rate_limit.py.
+      COACH_RATE_LIMIT_REQUESTS: ${COACH_RATE_LIMIT_REQUESTS:-10}
+      COACH_RATE_LIMIT_WINDOW_SECONDS: ${COACH_RATE_LIMIT_WINDOW_SECONDS:-60}
       UPLOAD_DIR: /app/uploads
     ports:
       - "8001:8000"

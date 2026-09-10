@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 
 from app.database import get_db
-from app import auth, coach_service, models, schemas
+from app import auth, coach_rate_limit, coach_service, models, schemas
 
 router = APIRouter()
 
@@ -36,6 +36,11 @@ def send_coach_message(
     onboarding has supplied a goal, experience level and equipment - without
     those the prompt has nothing user-specific to ground advice in.
     """
+    # Checked first, before any DB write or provider call: a rate-limited
+    # request must have no side effect at all, not even an orphaned
+    # conversation row.
+    coach_rate_limit.check_coach_rate_limit(current_user.id)
+
     if payload.conversation_id is None:
         conversation = models.CoachConversation(
             user_id=current_user.id,
