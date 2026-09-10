@@ -125,6 +125,7 @@ export default function Workout() {
   const [noteDraft, setNoteDraft] = useState("");
   const [confirmFinish, setConfirmFinish] = useState(false);
   const [pastWorkouts, setPastWorkouts] = useState<{ id: number; started_at: string; ended_at: string | null }[]>([]);
+  const [loadError, setLoadError] = useState("");
   const [isPastWorkoutsOpen, setIsPastWorkoutsOpen] = useState(false);
   const [pendingWorkoutDeletion, setPendingWorkoutDeletion] = useState<number | null>(null);
   const [editingWorkoutId, setEditingWorkoutId] = useState<number | null>(null);
@@ -252,15 +253,25 @@ export default function Workout() {
   }, [debouncedSearchQuery, activeMuscleGroup, searchExercises]);
 
   const fetchFavorites = async () => {
-    const response = await authFetch(`${API_URL}/exercises?favorites_only=true`);
-    const data = await response.json();
-    setFavorites(data);
+    try {
+      const response = await authFetch(`${API_URL}/exercises?favorites_only=true`);
+      if (!response.ok) throw new Error("load failed");
+      setFavorites(await response.json());
+    } catch {
+      // Non-critical: the exercise picker's search still works without
+      // favourites, so this fails silently rather than blocking the sheet.
+    }
   };
 
   const fetchPastWorkouts = async () => {
-    const response = await authFetch(`${API_URL}/workouts`);
-    const data = await response.json();
-    setPastWorkouts(data);
+    try {
+      const response = await authFetch(`${API_URL}/workouts`);
+      if (!response.ok) throw new Error("load failed");
+      setPastWorkouts(await response.json());
+      setLoadError("");
+    } catch {
+      setLoadError("Couldn't load your workout history.");
+    }
   };
 
  const deletePastWorkout = async (id: number) => {
@@ -923,7 +934,14 @@ export default function Workout() {
 
 {isPastWorkoutsOpen && (
   <View style={{ backgroundColor: colors.bgCard, borderRadius: 16, padding: 16, marginBottom: 12 }}>
-    {pastWorkouts.length === 0 ? (
+    {loadError !== "" ? (
+      <View style={{ alignItems: "flex-start", gap: 8 }}>
+        <Text style={{ color: colors.danger, fontSize: 13 }}>{loadError}</Text>
+        <Pressable onPress={fetchPastWorkouts}>
+          <Text style={{ color: colors.teal, fontWeight: "700" }}>Retry</Text>
+        </Pressable>
+      </View>
+    ) : pastWorkouts.length === 0 ? (
       <Text style={{ color: colors.textFaint }}>No past workouts yet</Text>
     ) : (
       pastWorkouts.map((workout) => (
@@ -1030,7 +1048,14 @@ export default function Workout() {
         </Pressable>
       </View>
 
-      {pastWorkouts.length === 0 ? (
+      {loadError !== "" ? (
+        <View style={{ alignItems: "flex-start", gap: 8 }}>
+          <Text style={{ color: colors.danger, fontSize: 13 }}>{loadError}</Text>
+          <Pressable onPress={fetchPastWorkouts}>
+            <Text style={{ color: colors.teal, fontWeight: "700" }}>Retry</Text>
+          </Pressable>
+        </View>
+      ) : pastWorkouts.length === 0 ? (
         <Text style={{ color: colors.textFaint }}>No past workouts yet</Text>
       ) : (
         pastWorkouts.map((workout) => (

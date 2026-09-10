@@ -515,7 +515,12 @@ export default function Nutrition() {
         keyboardShouldPersistTaps="handled"
       >
         {loadError !== "" && (
-          <Text style={{ color: colors.danger, fontSize: 12, fontFamily: fonts.body }}>{loadError}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginBottom: 4 }}>
+            <Text style={{ color: colors.danger, fontSize: 12, fontFamily: fonts.body, flex: 1 }}>{loadError}</Text>
+            <Pressable onPress={loadNutrition}>
+              <Text style={{ color: colors.teal, fontSize: 12, fontFamily: fonts.bodyBold }}>Retry</Text>
+            </Pressable>
+          </View>
         )}
 
         {/* Calorie ring + macro bars */}

@@ -359,7 +359,12 @@ export default function Progress() {
         showsVerticalScrollIndicator={false}
       >
         {loadError !== "" && (
-          <Text style={{ color: colors.danger, fontSize: 12, fontFamily: fonts.body }}>{loadError}</Text>
+          <View style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+            <Text style={{ color: colors.danger, fontSize: 12, fontFamily: fonts.body, flex: 1 }}>{loadError}</Text>
+            <Pressable onPress={loadProgress}>
+              <Text style={{ color: colors.teal, fontSize: 12, fontFamily: fonts.bodyBold }}>Retry</Text>
+            </Pressable>
+          </View>
         )}
 
         {selectedGroup === null ? (
